@@ -1,0 +1,157 @@
+#ifndef COSMO_CPP_POWER_SPECTRUM_HPP
+#define COSMO_CPP_POWER_SPECTRUM_HPP
+
+#include <vector>
+#include <cmath>
+
+#include <function.hpp>
+#include <table_function.hpp>
+#include <cubic_spline.hpp>
+
+/// A standard amplitude-tilt-running scalar power spectrum class.
+class StandardPowerSpectrum : public Math::RealFunction
+{
+public:
+    /// Constructor.
+    /// \param as The scalar amplitude.
+    /// \param ns The scalar tilt.
+    /// \param pivot The pivot point in Mpc^(-1).
+    /// \param run The scalar running, 0 by default.
+    StandardPowerSpectrum(double as, double ns, double pivot, double run = 0) : as_(as), ns_(ns), pivot_(pivot), run_(run) {}
+
+    /// Get the scalar tilt.
+    /// \return The scalar tilt.
+    double getNs() const { return ns_; }
+
+    /// Get the scalar amplitude.
+    /// \return The scalar amplitude.
+    double getAs() const { return as_; }
+
+    /// Get the pivot point.
+    /// \return The pivot point in Mpc^(-1).
+    double getPivot() const { return pivot_; }
+
+    /// Get the scalar running.
+    /// \return The scalar running.
+    double getRun() const { return run_; }
+
+    /// Calculate the scalar power spectrum at a given point.
+    /// \param k The k value in Mpc^(-1).
+    /// \return The scalar power spectrum value.
+    virtual double evaluate(double k) const
+    {
+        const double p = ns_ - 1.0 + 0.5 * run_ * std::log(k / pivot_);
+        return as_ * std::pow(k / pivot_, p);
+    }
+
+private:
+    double ns_;
+    double as_;
+    double pivot_;
+    double run_;
+};
+
+/// A scalar power spectrum function with binning with a linear spline.
+class LinearSplinePowerSpectrum : public Math::RealFunction
+{
+public:
+    /// Constructor.
+    /// \param kVals A vector containig the points in k space in Mpc^(-1). At least two points are needed (the endpoints), and the calculation should always be done between these endpoints.
+    /// \param amplitudes A vector containing the amplitudes corresponding to the k values. The size of the vector needs to be the same as kVals.
+    LinearSplinePowerSpectrum(const std::vector<double>& kVals, const std::vector<double>& amplitudes)
+    {
+        check(kVals.size() >= 2, "at least two points needed");
+        check(kVals.size() == amplitudes.size(), "");
+
+        for(int i = 0; i < kVals.size(); ++i)
+            tf_[std::log(kVals[i])] = std::log(amplitudes[i]);
+
+        ns_ = 1; // just whatever
+        as_ = 2e-9; // just whatever
+        pivot_ = 0.05; // just whatever
+    }
+
+    /// Calculate the scalar power spectrum at a given point.
+    /// \param k The k value in Mpc^(-1).
+    /// \return The scalar power spectrum value.
+    virtual double evaluate(double k) const
+    {
+        return std::exp(tf_.evaluate(std::log(k)));
+    }
+
+    /// This function should not be used for this class, just written for compatibility.
+    double getNs() const { return ns_; }
+
+    /// This function should not be used for this class, just written for compatibility.
+    double getAs() const { return as_; }
+
+    /// This function should not be used for this class, just written for compatibility.
+    double getPivot() const { return pivot_; }
+
+private:
+    Math::TableFunction<double, double> tf_;
+
+    double ns_;
+    double as_;
+    double pivot_;
+};
+
+/// A scalar power spectrum function with binning with a cubic spline.
+class CubicSplinePowerSpectrum : public Math::RealFunction
+{
+public:
+    /// Constructor.
+    /// \param kVals A vector containig the points in k space in Mpc^(-1). At least two points are needed (the endpoints), and the calculation should always be done between these endpoints.
+    /// \param amplitudes A vector containing the amplitudes corresponding to the k values. The size of the vector needs to be the same as kVals.
+    CubicSplinePowerSpectrum(const std::vector<double>& kVals, const std::vector<double>& amplitudes)
+    {
+        check(kVals.size() >= 2, "at least two points needed");
+        check(kVals.size() == amplitudes.size(), "");
+
+        std::vector<double> logK, logA;
+        for(int i = 0; i < kVals.size(); ++i)
+        {
+            logK.push_back(std::log(kVals[i]));
+            logA.push_back(std::log(amplitudes[i]));
+        }
+
+        cs_ = new Math::CubicSpline(logK, logA);
+
+        ns_ = 1; // just whatever
+        as_ = 2e-9; // just whatever
+        pivot_ = 0.05; // just whatever
+    }
+
+    /// Destructor.
+    ~CubicSplinePowerSpectrum()
+    {
+        delete cs_;
+    }
+
+    /// Calculate the scalar power spectrum at a given point.
+    /// \param k The k value in Mpc^(-1).
+    /// \return The scalar power spectrum value.
+    virtual double evaluate(double k) const
+    {
+        return std::exp(cs_->evaluate(std::log(k)));
+    }
+
+    /// This function should not be used for this class, just written for compatibility.
+    double getNs() const { return ns_; }
+
+    /// This function should not be used for this class, just written for compatibility.
+    double getAs() const { return as_; }
+
+    /// This function should not be used for this class, just written for compatibility.
+    double getPivot() const { return pivot_; }
+
+private:
+    Math::CubicSpline* cs_;
+
+    double ns_;
+    double as_;
+    double pivot_;
+};
+
+#endif
+
