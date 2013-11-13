@@ -869,7 +869,9 @@ LikelihoodHigh::calculate(const std::vector<double>& cl) const
     check(cl.size() >= lMax_ + 1, "");
 
     double res = 0.0;
+    std::vector<double> resVec(lMax_ + 1, 0);
 
+#pragma omp parallel for default(shared)
     for(int l1 = lMin_; l1 <= lMax_; ++l1)
     {
         const double clTot1 = cl[l1] + nl_[l1];
@@ -887,10 +889,13 @@ LikelihoodHigh::calculate(const std::vector<double>& cl) const
             //const double lnF = f * clTot1 * clTot2;
             //const double alpha = 1.0; //(deltaLn1 != 0 && deltaLn2 != 0 ? 1.0 / 3.0 : 1.0);
             //chi2 += alpha * deltaCl1 * deltaCl2 * f + (1 - alpha) * deltaLn1 * deltaLn2 * lnF;
-            res += deltaCl1 * deltaCl2 * f;
+            resVec[l1] += deltaCl1 * deltaCl2 * f;
             //output_screen(l1 << ' ' << l2 << ' ' << ' ' << coupling_[l1][l2] << ' ' << clTot1 << ' ' << clTot2 << ' ' << ' ' << deltaCl1 << ' ' << deltaCl2 << ' ' << chi2 << std::endl);
         }
     }
+
+    for(int l1 = lMin_; l1 <= lMax_; ++l1)
+        res += resVec[l1];
 
     return res;
 }

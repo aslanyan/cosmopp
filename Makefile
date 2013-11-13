@@ -80,6 +80,7 @@ MN_SCANNER_HPP = include/mn_scanner.hpp $(LIKELIHOOD_FUNCTION_HPP) $(TABLE_FUNCT
 WIGNER_3J_HPP = include/wigner_3j.hpp $(MACROS_HPP)
 RANDOM_HPP = include/random.hpp
 SPIN_SPHERICAL_HARMONICS_HPP = include/spin_spherical_harmonics.hpp $(MACROS_HPP) $(ANGULAR_COORDINATES_HPP) $(COMPLEX_TYPES_HPP) $(MATH_CONSTANTS_HPP)
+CONJUGATE_GRADIENT_HPP = include/conjugate_gradient.hpp $(MACROS_HPP)
 
 C_MATRIX_HPP = include/c_matrix.hpp
 WHOLE_MATRIX_HPP = include/whole_matrix.hpp
@@ -94,12 +95,13 @@ COSMOLOGICAL_PARAMS_HPP = include/cosmological_params.hpp $(MACROS_HPP) $(PHYS_C
 CMB_HPP = include/cmb.hpp $(TABLE_FUNCTION_HPP) $(COSMOLOGICAL_PARAMS_HPP)
 PLANCK_LIKE_HPP = include/planck_like.hpp $(LIKELIHOOD_FUNCTION_HPP) $(CMB_HPP)
 SCALE_FACTOR_HPP = include/scale_factor.hpp $(MACROS_HPP) $(TABLE_FUNCTION_HPP) $(COSMOLOGICAL_PARAMS_HPP)
+CMG_GIBBS_HPP = include/cmb_gibbs.hpp
 
 
 all: lib/libcosmocpp.a bin/sort_chain bin/test $(PLANCK_TARGET) $(PLANCK_AND_MULTINEST_TARGET)
 
 
-OBJ_LIBRARY = obj/whole_matrix.o obj/utils.o obj/c_matrix.o obj/c_matrix_generator.o obj/simulate.o obj/likelihood.o obj/master.o obj/mode_directions.o obj/scale_factor.o obj/cmb.o $(MULTINEST_OBJ) $(PLANCK_OBJ) 
+OBJ_LIBRARY = obj/whole_matrix.o obj/utils.o obj/c_matrix.o obj/c_matrix_generator.o obj/simulate.o obj/likelihood.o obj/master.o obj/mode_directions.o obj/scale_factor.o obj/cmb.o obj/cmb_gibbs.o $(MULTINEST_OBJ) $(PLANCK_OBJ) 
 lib/libcosmocpp.a: $(OBJ_LIBRARY)
 	ar rcs $@ $(OBJ_LIBRARY)
 
@@ -180,6 +182,9 @@ obj/utils.o: source/utils.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(MATH_CONS
 
 obj/whole_matrix.o: source/whole_matrix.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(NUMERICS_HPP) $(THREE_ROTATION_HPP) $(WHOLE_MATRIX_HPP)
 	$(CC) $(CFLAGS) source/whole_matrix.cpp -o $@
+
+obj/cmb_gibbs.o: source/cmb_gibbs.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(MATH_CONSTANTS_HPP) $(PROGRESS_METER_HPP) $(UTILS_HPP) $(CONJUGATE_GRADIENT_HPP) $(NUMERICS_HPP) $(CMB_GIBBS_HPP)
+	$(CC) $(CFLAGS) source/cmb_gibbs.cpp -o $@
 
 clean:
 	rm obj/* bin/* lib/*
