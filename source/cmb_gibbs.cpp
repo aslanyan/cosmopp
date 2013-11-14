@@ -468,7 +468,7 @@ CMBGibbsSampler::generateSignal()
     arr<double> weight(2 * map.Nside(), map.Npix() / (4 * Math::pi));
     arr<double> weight1(2 * map.Nside(), std::sqrt(map.Npix() / (4 * Math::pi)));
     map2alm(map, alm, weight);
-    map2alm(omega1, alm1, weight);
+    map2alm(omega1, alm1, weight1);
 
     for(int l = 0; l <= lMax_; ++l)
         for(int m = 0; m <= l; ++m)

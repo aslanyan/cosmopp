@@ -24,6 +24,7 @@ public:
     void step();
 
     const std::vector<double>& getSigmaL() const { return sigmaL_; }
+    const std::vector<double>& getCl() const { return cl_; }
 
     static double calculateLikelihood(const std::vector<double>& cl, const std::vector<double>& sigmaL, int lMax);
     static double calculateLikelihood(const std::vector<double>& cl, const GibbsSampleChain& chain, int lMax);
