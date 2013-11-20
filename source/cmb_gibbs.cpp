@@ -2,6 +2,7 @@
 #include <sstream>
 #include <ctime>
 #include <fstream>
+#include <algorithm>
 
 #include <macros.hpp>
 #include <exception_handler.hpp>
@@ -615,8 +616,13 @@ CMBGibbsSampler::calculateLikelihood(const std::vector<double>& cl, const GibbsS
         likeVec[i] = calculateLikelihood(cl, chain[i], lMax);
     }
 
+    std::sort(likeVec.begin(), likeVec.end());
+
     for(int i = 0; i < likeVec.size(); ++i)
-        like += std::exp(-(likeVec[i] - likeVec[0]) / 2.0);
+    {
+        if(likeVec[i] - likeVec[0] < 20)
+            like += std::exp(-(likeVec[i] - likeVec[0]) / 2.0);
+    }
 
     like /= chain.size();
     return likeVec[0] - 2 * std::log(like);
