@@ -74,8 +74,11 @@ public:
     /// The tensor spectral index (unitless).
     virtual double getNt() const = 0;
 
-    /// The primordial power spectrum function.
+    /// The primordial scalar power spectrum function.
     virtual const Math::RealFunction& powerSpectrum() const = 0;
+
+    /// The primordial tensor power spectrum function.
+    virtual const Math::RealFunction& powerSpectrumTensor() const = 0;
 
     /// The Hubble constant without units (the reduced Planck mass is assumed to be 1, together with c and hbar).
     virtual double getHubbleUnitless() const
@@ -120,6 +123,13 @@ private:
 
 class LambdaCDMParams : public CosmologicalParams
 {
+    class DummyPS : public Math::RealFunction
+    {
+    public:
+        DummyPS() { }
+        double evaluate(double x) const { return 0.0; }
+    };
+
 public:
     LambdaCDMParams(double omBH2, double omCH2, double h, double tau, double ns, double as, double pivot) : CosmologicalParams(), omBH2_(omBH2), omCH2_(omCH2), h_(h), tau_(tau), ps_(as, ns, pivot) {}
     ~LambdaCDMParams() {}
@@ -144,6 +154,7 @@ public:
     virtual double getNt() const { return 0.0; }
 
     virtual const Math::RealFunction& powerSpectrum() const { return ps_; }
+    virtual const Math::RealFunction& powerSpectrumTensor() const { return psTensor_; }
 
 private:
     double omBH2_;
@@ -151,6 +162,7 @@ private:
     double h_;
     double tau_;
     StandardPowerSpectrum ps_;
+    DummyPS psTensor_;
 };
 
 class LCDMWithTensorParams : public LambdaCDMParams
@@ -158,17 +170,21 @@ class LCDMWithTensorParams : public LambdaCDMParams
 public:
     LCDMWithTensorParams(double omBH2, double omCH2, double h, double tau, double ns, double as, double pivot, double r, double nt) : LambdaCDMParams(omBH2, omCH2, h, tau, ns, as, pivot), r_(r), nt_(nt)
     {
+        psT_ = new StandardPowerSpectrumTensor(powerSpectrum(), r, nt, pivot);
         check(r_ > 0, "invalid r");
     }
 
-    ~LCDMWithTensorParams() {}
+    ~LCDMWithTensorParams() { delete psT_; }
 
     virtual double getR() const { return r_; }
     virtual double getNt() const { return nt_; }
 
+    virtual const Math::RealFunction& powerSpectrumTensor() const { return *psT_; }
+
 private:
     double r_;
     double nt_;
+    StandardPowerSpectrumTensor* psT_;
 };
 
 class LCDMWithDegenerateNeutrinosParams : public LambdaCDMParams

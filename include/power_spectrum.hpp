@@ -51,6 +51,58 @@ private:
     double run_;
 };
 
+/// A standard amplitude-tilt tensor power spectrum class.
+class StandardPowerSpectrumTensor : public Math::RealFunction
+{
+public:
+    /// Constructor.
+    /// \param at The tensor amplitude (equal to r times the scalar amplitude).
+    /// \param nt The tensor tilt.
+    /// \param pivot The pivot point in Mpc^(-1).
+    /// \param run The tensor running, 0 by default.
+    StandardPowerSpectrumTensor(double at, double nt, double pivot, double run = 0) : at_(at), nt_(nt), pivot_(pivot), run_(run) {}
+
+    /// Constructor.
+    /// \param scalarPs A constant reference to the scalar power spectrum. This is used to set the amplitude from the tensor-to-scalar ratio.
+    /// \param r The tensor-to-scalar ratio.
+    /// \param nt The tensor tilt.
+    /// \param pivot The pivot point in Mpc^(-1).
+    /// \param run The tensor running, 0 by default.
+    StandardPowerSpectrumTensor(const Math::RealFunction& scalarPs, double r, double nt, double pivot, double run = 0) : at_(1.0), nt_(nt), pivot_(pivot), run_(run)
+    {
+        const double s = scalarPs.evaluate(pivot);
+        const double t = evaluate(pivot);
+        at_ = r * s / t;
+    }
+
+    /// Get the tensor tilt.
+    /// \return The tensor tilt.
+    double getNt() const { return nt_; }
+
+    /// Get the tensor amplitude.
+    /// \return The tensor amplitude.
+    double getAt() const { return at_; }
+
+    /// Get the pivot point.
+    /// \return The pivot point in Mpc^(-1).
+    double getPivot() const { return pivot_; }
+
+    /// Calculate the tensor power spectrum at a given point.
+    /// \param k The k value in Mpc^(-1).
+    /// \return The tensor power spectrum value.
+    virtual double evaluate(double k) const
+    {
+        const double p = nt_ + 0.5 * run_ * std::log(k / pivot_);
+        return at_ * std::pow(k / pivot_, p);
+    }
+
+private:
+    double nt_;
+    double at_;
+    double pivot_;
+    double run_;
+};
+
 /// A scalar power spectrum function with binning with a linear spline.
 class LinearSplinePowerSpectrum : public Math::RealFunction
 {

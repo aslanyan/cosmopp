@@ -334,6 +334,27 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
             exc.set(exceptionStr.str());
             throw exc;
         }
+
+        if(includeTensors_)
+        {
+            const int iMdIndex = pt_->index_md_tensors;
+            for(int i = 0; i < pm_->lnk_size; ++i)
+            {
+                const double lnK = pm_->lnk[i];
+                const double k = std::exp(lnK);
+                const double pk = params.powerSpectrumTensor().evaluate(k);
+                const double lnPk = std::log(pk);
+                pm_->lnpk[iMdIndex][i * pm_->ic_ic_size[iMdIndex] + pt_->index_ic_ad] = lnPk;
+            }
+
+            if(array_spline_table_lines(pm_->lnk, pm_->lnk_size, pm_->lnpk[iMdIndex], pm_->ic_ic_size[iMdIndex], pm_->ddlnpk[iMdIndex], _SPLINE_EST_DERIV_, pm_->error_message) == _FAILURE_)
+            {
+                std::stringstream exceptionStr;
+                exceptionStr << "CLASS: array_spline_table_lines failed!" << std::endl << pm_->error_message;
+                exc.set(exceptionStr.str());
+                throw exc;
+            }
+        }
     }
 
     if(transfer_init(pr_, br_, th_, pt_, tr_) == _FAILURE_)

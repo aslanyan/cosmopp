@@ -15,20 +15,16 @@ int main(int argc, char *argv[])
     try {
         StandardException exc;
 
-        //const double h = 0.6704;
-        const double h = 0.611339792294414707818361875979;
-        const double omBH2 = 0.0210097173927527372527812588032;
-        //const double omBH2 = 0.022032;
-        const double omCH2 = 0.135967162847122902125107657412;
-        //const double omCH2 = 0.12038;
-        const double tau = 0.0366800252574301238750464904115;
-        //const double tau = 0.0925;
+        const double h = 0.6704;
+        const double omBH2 = 0.022032;
+        const double omCH2 = 0.12038;
+        const double tau = 0.0925;
         const double ns = 0.9619;
         const double as = 2.2154e-9;
         const double pivot = 0.05;
 
-        const double r = 0.1;
-        const double nt = 0.0;
+        const double r = 1e-10;
+        const double nt = 0;
 
         const double nEff = 3.046; 
         const int nMassive = 1;
@@ -44,7 +40,8 @@ int main(int argc, char *argv[])
 
         //LinearSplineParams params(omBH2, omCH2, h, tau, kVals, amplitudes);
         //LCDMWithDegenerateNeutrinosParams params(omBH2, omCH2, h, tau, ns, as, pivot, nEff, nMassive, sumMNu);
-        LambdaCDMParams params(omBH2, omCH2, h, tau, ns, as, pivot);
+        //LambdaCDMParams params(omBH2, omCH2, h, tau, ns, as, pivot);
+        LCDMWithTensorParams params(omBH2, omCH2, h, tau, ns, as, pivot, r, nt); 
 
         ScaleFactorFunctionClass scaleFactor;
         scaleFactor.initialize(params);
@@ -59,7 +56,7 @@ int main(int argc, char *argv[])
         CMB cmb;
 
         output_screen("Pre-initializing CLASS..." << std::endl);
-        cmb.preInitialize(lMax, false, true, false, lMax);
+        cmb.preInitialize(lMax, false, false, true, lMax);
         output_screen("OK" << std::endl);
 
         output_screen("Initializing CLASS..." << std::endl);
