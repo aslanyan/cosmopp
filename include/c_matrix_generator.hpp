@@ -44,8 +44,7 @@ public:
     /// Creates a covariance matrix from C_l values read from a text file.
     
     /// This function creates a CMatrix from given values of C_l.
-    /// The input C_l is in units of muK, the CMatrix generated has units mK.
-    /// \param cl A vector with values of C_l, the index is l. The format is the same as CAMB output (see camb.info/readme.html). l_max = size of cl - 1.
+    /// \param cl A vector with values of C_l, the index is l. l_max = size of cl - 1.
     /// \param nSide NSide of the output matrix.
     /// \param fwhm The full width at half maximum of the gaussian beam.
     /// \param goodPixels A pointer to a vector containing the indices of unmasked pixels, NULL to use them all.
@@ -56,8 +55,7 @@ public:
     /// Creates a covariance matrix from C_l values read from a text file.
     
     /// This function creates a CMatrix from values of C_l read from a file.
-    /// The input file has C_l in units of muK, the CMatrix generated has units mK.
-    /// \param clFileName The name of the file to read the C_l values from. The format is the same as CAMB output (see camb.info/readme.html).
+    /// \param clFileName The name of the file to read the C_l values from.
     /// \param nSide NSide of the output matrix.
     /// \param lMax Values of l up to this (starting from 2) are included in C_l.
     /// \param fwhm The full width at half maximum of the gaussian beam.
@@ -78,46 +76,58 @@ public:
     
     /// Convert temperature-temperature WholeMatrix to CMatrix.
     
-    /// This function converts a given WholeMatrix to CMatrix, also including a beam function. The units are converted from muK to mK.
+    /// This function converts a given WholeMatrix to CMatrix, also including a beam function.
     /// It also rotates passively the coordinate frame by given three Euler angles. 
     /// The rotation is done as follows. First rotate counterclockwise by angle phi, then rotate counterclockwise around the new x axis by angle theta, 
     /// then rotate counterclockwise around the new z axis by angle psi.
-    /// \param wholeMatrix The WholeMatrix to be converted. The units are muK.
+    /// \param wholeMatrix The WholeMatrix to be converted.
     /// \param nSide The NSide of the pixel space to convert to.
     /// \param fwhm Full width at half maximum of the gaussian beam, in degrees.
     /// \param phi Euler angle phi.
     /// \param theta Euler angle theta.
     /// \param psi Euler angle psi.
-    /// \return A pointer to the generated CMatrix. The units are mK. It must be deleted after using.
+    /// \return A pointer to the generated CMatrix. It must be deleted after using.
     static CMatrix* wholeMatrixToCMatrix(const WholeMatrix& wholeMatrix, long nSide, double fwhm, double phi = 0, double theta = 0, double psi = 0);
     
     /// Convert polarization E-E WholeMatrix to CMatrix.
     
-    /// This function converts a given WholeMatrix to CMatrix, also including a beam function. The units are converted from muK to mK. 
+    /// This function converts a given WholeMatrix to CMatrix, also including a beam function. 
     /// It also rotates passively the coordinate frame by given three Euler angles. 
     /// The rotation is done as follows. First rotate counterclockwise by angle phi, then rotate counterclockwise around the new x axis by angle theta, 
     /// then rotate counterclockwise around the new z axis by angle psi.
-    /// \param ee The WholeMatrix E-E to be converted. The units are muK.
+    /// \param ee The WholeMatrix E-E to be converted.
     /// \param nSide The NSide of the pixel space to convert to.
     /// \param fwhm Full width at half maximum of the gaussian beam, in degrees.
     /// \param phi Euler angle phi.
     /// \param theta Euler angle theta.
     /// \param psi Euler angle psi.
-    /// \return A pointer to the generated CMatrix. The units are mK. This CMatrix has twice the number of pixels, the first half correspond to Q, the second half to U. It must be deleted after using.
+    /// \return A pointer to the generated CMatrix. This CMatrix has twice the number of pixels, the first half correspond to Q, the second half to U. It must be deleted after using.
     static CMatrix* polarizationEEWholeMatrixToCMatrix(const WholeMatrix& ee, long nSide, double fwhm, double phi = 0, double theta = 0, double psi = 0);
     
-    /// Creates a fiducial matrix from C_l values read from a text file.
+    /// Creates a fiducial matrix from given C_l values.
     
     /// A fiducial matrix serves two purposes. Firstly, it marginalizes over the monopole and the dipole term by having large variance terms for those. Secondly, it includes terms above a given lMax
     /// up to 4*NSide. If one is testing a model with off-diagonal elements up to a given lMax, the fiducial matrix needs to be added which will include the standard terms above that lMax.
-    /// The input file has C_l in units of muk, the CMatrix generated has units mK.
-    /// \param clFileName The name of the file to read the C_l values from. The format is the same as CAMB output (see camb.info/readme.html).
+    /// \param cl A vector containing the C_l values, starting from l = 0. 
     /// \param nSide NSide of the output matrix.
     /// \param lMax Values of l GREATER THAN this are included in the fiducial matrix.
     /// \param fwhm The full width at half maximum of the gaussian beam.
     /// \param goodPixels A pointer to a vector containing the indices of unmasked pixels, NULL to use them all.
     /// \param lp A pointer to a container of Legendre polynomials, NULL makes it calculate them by itself.
-    /// \return A pointer to the generated fiducial matrix. The units are mK. It must be deleted after using.
+    /// \return A pointer to the generated fiducial matrix. It must be deleted after using.
+    static CMatrix* getFiducialMatrix(const std::vector<double>& cl, long nSide, int lMax, double fwhm, const std::vector<int>* goodPixels = NULL, const LegendrePolynomialContainer* lp = NULL);
+
+    /// Creates a fiducial matrix from C_l values read from a text file.
+    
+    /// A fiducial matrix serves two purposes. Firstly, it marginalizes over the monopole and the dipole term by having large variance terms for those. Secondly, it includes terms above a given lMax
+    /// up to 4*NSide. If one is testing a model with off-diagonal elements up to a given lMax, the fiducial matrix needs to be added which will include the standard terms above that lMax.
+    /// \param clFileName The name of the file to read the C_l values from. The file should contain one C_l value on each line and nothing else, starting from l = 0.
+    /// \param nSide NSide of the output matrix.
+    /// \param lMax Values of l GREATER THAN this are included in the fiducial matrix.
+    /// \param fwhm The full width at half maximum of the gaussian beam.
+    /// \param goodPixels A pointer to a vector containing the indices of unmasked pixels, NULL to use them all.
+    /// \param lp A pointer to a container of Legendre polynomials, NULL makes it calculate them by itself.
+    /// \return A pointer to the generated fiducial matrix. It must be deleted after using.
     static CMatrix* getFiducialMatrix(const char* clFileName, long nSide, int lMax, double fwhm, const std::vector<int>* goodPixels = NULL, const LegendrePolynomialContainer* lp = NULL);
     
     /// Creates a covariance matrix corresponding to white noise.

@@ -191,7 +191,7 @@ CMatrixGenerator::clToCMatrix(const std::vector<double>& cl, long nSide, double 
     
     for(int l = 2; l <= lMax; ++l)
     {
-        clCopy[l] = cl[l] * 1e-6 * (2 * l + 1) / (2 * l * (l + 1));
+        clCopy[l] = cl[l] * (2 * l + 1) / (4 * Math::pi);
     }
     
     ProgressMeter meter(nPix * (nPix + 1) / 2);
@@ -235,36 +235,8 @@ CMatrixGenerator::clToCMatrix(const std::vector<double>& cl, long nSide, double 
 CMatrix*
 CMatrixGenerator::clToCMatrix(const char* clFileName, long nSide, int lMax, double fwhm, const std::vector<int>* goodPixels, const LegendrePolynomialContainer* lp)
 {
-    std::vector<double> cl(lMax + 1);
-    
-    std::ifstream inCl(clFileName);
-    if(!inCl)
-    {
-        StandardException exc;
-        std::stringstream exceptionStr;
-        exceptionStr << "Cannot read the file " << clFileName << ".";
-        exc.set(exceptionStr.str());
-        throw exc;
-    }
-    
-    for(int l = 2; l <= lMax; ++l)
-    {
-        int dummyL;
-        double c, dummy1, dummy2;
-        inCl >> dummyL >> c >> dummy1 >> dummy2;
-        if(dummyL != l)
-        {
-            StandardException exc;
-            std::stringstream exceptionStr;
-            exceptionStr << "Invalid format of file " << clFileName << ". Expected to read l = " << l << " but reading " << dummyL << " instead.";
-            exc.set(exceptionStr.str());
-            throw exc;
-        }
-        
-        cl[l] = c;
-    }
-    inCl.close();
-    
+    std::vector<double> cl;
+    Utils::readClFromFile(clFileName, cl);
     return clToCMatrix(cl, nSide, fwhm, goodPixels, lp);
 }
 
@@ -472,8 +444,8 @@ CMatrixGenerator::wholeMatrixToCMatrix(const WholeMatrix& wholeMatrix, long nSid
     {
         for(int i = 0; i <= j; ++i)
         {
-            mat->element(i, j) = rePixMap[i][j] * 1e-6;
-            mat->element(j, i) = rePixMap[i][j] * 1e-6;
+            mat->element(i, j) = rePixMap[i][j];
+            mat->element(j, i) = rePixMap[i][j];
             check(Math::areEqual(imPixMap[i][j], 0.0, 1e-15), "");
         }
     }
@@ -674,10 +646,10 @@ CMatrixGenerator::polarizationEEWholeMatrixToCMatrix(const WholeMatrix& ee, long
     {
         for(int i = 0; i < nPix; ++i)
         {
-            mat->element(i, j) = reQQPixMap[i][j] * 1e-6;
-            mat->element(i, nPix + j) = reQUPixMap[i][j] * 1e-6;
-            mat->element(nPix + i, j) = reUQPixMap[i][j] * 1e-6;
-            mat->element(nPix + i, nPix + j) = reUUPixMap[i][j] * 1e-6;
+            mat->element(i, j) = reQQPixMap[i][j];
+            mat->element(i, nPix + j) = reQUPixMap[i][j];
+            mat->element(nPix + i, j) = reUQPixMap[i][j];
+            mat->element(nPix + i, nPix + j) = reUUPixMap[i][j];
             
             check(Math::areEqual(reQQPixMap[i][j], reQQPixMap[j][i], 1e-7), reQQPixMap[i][j] << ' ' << reQQPixMap[j][i]);
             check(Math::areEqual(reQUPixMap[i][j], reUQPixMap[j][i], 1e-7), "");
@@ -696,7 +668,16 @@ CMatrixGenerator::polarizationEEWholeMatrixToCMatrix(const WholeMatrix& ee, long
 CMatrix*
 CMatrixGenerator::getFiducialMatrix(const char* clFileName, long nSide, int lMax, double fwhm, const std::vector<int>* goodPixels, const LegendrePolynomialContainer* lp)
 {
+    std::vector<double> cl;
+    Utils::readClFromFile(clFileName, cl);
+    return getFiducialMatrix(cl, nSide, lMax, fwhm, goodPixels, lp);
+}
+
+CMatrix*
+CMatrixGenerator::getFiducialMatrix(const std::vector<double>& cl, long nSide, int lMax, double fwhm, const std::vector<int>* goodPixels, const LegendrePolynomialContainer* lp)
+{
     const int lMaxMax = 4 * nSide;
+    check(cl.size() >= lMaxMax + 1, "");
     
     const int nPix = (goodPixels ? goodPixels->size() : (int)nside2npix(nSide));
     
@@ -716,39 +697,6 @@ CMatrixGenerator::getFiducialMatrix(const char* clFileName, long nSide, int lMax
     
     CMatrix* fiducialMat = new CMatrix(nPix);
     fiducialMat->comment() = "fiducial matrix";
-    
-    std::vector<double> cl(lMaxMax + 1);
-    
-    std::ifstream inCl(clFileName);
-    if(!inCl)
-    {
-        StandardException exc;
-        std::stringstream exceptionStr;
-        exceptionStr << "Cannot read the file " << clFileName << ".";
-        exc.set(exceptionStr.str());
-        throw exc;
-    }
-    
-    for(int l = 2; l <= lMaxMax; ++l)
-    {
-        std::string s;
-        std::getline(inCl, s);
-        std::stringstream str(s);
-        int dummyL;
-        double c;
-        str >> dummyL >> c;
-        if(dummyL != l)
-        {
-            StandardException exc;
-            std::stringstream exceptionStr;
-            exceptionStr << "Invalid format of file " << clFileName << ". Expected to read l = " << l << " but reading " << dummyL << " instead.";
-            exc.set(exceptionStr.str());
-            throw exc;
-        }
-        
-        cl[l] = c * 1e-6 * (2 * l + 1) / (2 * l * (l + 1));
-    }
-    inCl.close();
     
     ProgressMeter meter(nPix * (nPix + 1) / 2);
     
@@ -778,7 +726,7 @@ CMatrixGenerator::getFiducialMatrix(const char* clFileName, long nSide, int lMax
             for(int l = lMax + 1; l <= lMaxMax; ++l)
             {
                 const double leg = (lp ? lp->value(l, j, i) : boost::math::legendre_p(l, dot));
-                element += cl[l] * leg * beam[l] * beam[l];
+                element += cl[l] * ((2 * l + 1) / (4 * Math::pi)) * leg * beam[l] * beam[l];
             }
             
             //marginalize monopole and dipole

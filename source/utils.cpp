@@ -165,3 +165,50 @@ Utils::readPixelWindowFunction(std::vector<double>& f, long nSide, int lMax, dou
 	if(status)
 		fits_report_error(stderr, status);
 }
+
+void
+Utils::readClFromFile(const char* fileName, std::vector<double>& cl, bool hasL, bool isDl)
+{
+    StandardException exc;
+    std::ifstream in(fileName);
+    if(!in)
+    {
+        std::stringstream exceptionStr;
+        exceptionStr << "Cannot open the input file " << fileName << ".";
+        exc.set(exceptionStr.str());
+        throw exc;
+    }
+
+    cl.clear();
+    int l = 0;
+    while(!in.eof())
+    {
+        std::string s;
+        std::getline(in, s);
+        if(s == "")
+            break;
+
+        std::stringstream str(s);
+
+        int dummyL;
+        double val;
+        if(hasL)
+        {
+            str >> dummyL;
+            if(dummyL != l)
+            {
+                std::stringstream exceptionStr;
+                exceptionStr << "Invalid format of the input file " << fileName << ". Expected to read l = " << l << " but found l = " << dummyL << ".";
+                exc.set(exceptionStr.str());
+                throw exc;
+            }
+        }
+
+        str >> val;
+        if(isDl && l)
+            val *= (2 * Math::pi / (l * (l + 1)));
+
+        cl.push_back(val);
+    }
+    in.close();
+}

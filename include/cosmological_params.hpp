@@ -223,6 +223,13 @@ private:
 
 class LinearSplineParams : public CosmologicalParams
 {
+    class DummyPS : public Math::RealFunction
+    {
+    public:
+        DummyPS() { }
+        double evaluate(double x) const { return 0.0; }
+    };
+
 public:
     LinearSplineParams(double omBH2, double omCH2, double h, double tau, const std::vector<double>& kVals, const std::vector<double>& amplitudes) : CosmologicalParams(), omBH2_(omBH2), omCH2_(omCH2), h_(h), tau_(tau), ps_(kVals, amplitudes) {}
     ~LinearSplineParams() {}
@@ -246,6 +253,7 @@ public:
     virtual double getNt() const { return 0.0; }
 
     virtual const Math::RealFunction& powerSpectrum() const { return ps_; }
+    virtual const Math::RealFunction& powerSpectrumTensor() const { return psTensor_; }
 
 private:
     double omBH2_;
@@ -253,6 +261,7 @@ private:
     double h_;
     double tau_;
     LinearSplinePowerSpectrum ps_;
+    DummyPS psTensor_;
 };
 
 class LinSplWithDegenerateNeutrinosParams : public LinearSplineParams
@@ -291,6 +300,13 @@ private:
 
 class CubicSplineParams : public CosmologicalParams
 {
+    class DummyPS : public Math::RealFunction
+    {
+    public:
+        DummyPS() { }
+        double evaluate(double x) const { return 0.0; }
+    };
+
 public:
     CubicSplineParams(double omBH2, double omCH2, double h, double tau, const std::vector<double>& kVals, const std::vector<double>& amplitudes) : CosmologicalParams(), omBH2_(omBH2), omCH2_(omCH2), h_(h), tau_(tau), ps_(kVals, amplitudes) {}
     ~CubicSplineParams() {}
@@ -314,6 +330,7 @@ public:
     virtual double getNt() const { return 0.0; }
 
     virtual const Math::RealFunction& powerSpectrum() const { return ps_; }
+    virtual const Math::RealFunction& powerSpectrumTensor() const { return psTensor_; }
 
 private:
     double omBH2_;
@@ -321,6 +338,7 @@ private:
     double h_;
     double tau_;
     CubicSplinePowerSpectrum ps_;
+    DummyPS psTensor_;
 };
 
 class CubSplWithDegenerateNeutrinosParams : public CubicSplineParams

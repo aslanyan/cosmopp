@@ -34,6 +34,15 @@ public:
     /// \param fwhm The full width at half maximum of the gaussian beam in degrees. 0 means no beam.
     /// \param polarization Specifies if polarization pixel window function should be read instead of temperature (false by default).
     static void readPixelWindowFunction(std::vector<double>& f, long nSide, int lMax, double fwhm = 0, bool polarization = false);
+
+    /// Reads the values of cl-s from a text file.
+
+    /// Reads the values of cl-s from a text file. Each line should contain one value, starting from l = 0. The l values can proceed the cl values, in this case this should be indicated by the parameter hasL.
+    /// \param fileName The name of the file.
+    /// \param cl The vector where the cl values will be written.
+    /// \param hasL Indicates if the l values proceed the cl values, false by default.
+    /// \param isDl Indicates if the cl-s include a factor of l(l+1)/2pi. If so, this will be corrected for in the output (false by default).
+    static void readClFromFile(const char* fileName, std::vector<double>& cl, bool hasL = false, bool isDl = false);
 };
 
 #endif
