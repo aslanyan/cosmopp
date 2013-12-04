@@ -24,7 +24,11 @@ Optional libraries (you may choose to not include them in which case some of the
 7. MULTINEST: Please download from http://ccpforge.cse.rl.ac.uk/gf/project/multinest/ then compile and install.
 8. PLANCK likelihood code and data files: Please download from http://pla.esac.esa.int/pla/aio/planckProducts.html then compile and install the likelihood code.
 
-You need to create a file make.inc and give the references to the directories of the libraries described above. The optional libraries may be left empty. An example file is included, make_template.inc. No changes to the Makefile should be required. Just run “make” in the main directory. The gcc compiler is needed.
+You need to create a file make.inc and give the references to the directories of the libraries described above. The optional libraries may be left empty. An example file is included, make_template.inc. If the Planck likelihood is included, you need to specify the location of a directory containing all of the Planck likelihood files you are planning to use. Please define this in PLANCKDATADIR in make.inc before compiling the library.
+
+No changes to the Makefile should be required. Just run “make” in the main directory.
+
+The gcc compiler is needed.
 
 |-------|
 | USAGE |
