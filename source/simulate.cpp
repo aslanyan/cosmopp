@@ -267,3 +267,15 @@ Simulate::diagonalizeMatrix(const LaGenMatDouble& matrix, LaVectorDouble& eigenv
     //output_screen("OK" << std::endl);
 #endif
 }
+
+void
+Simulate::simulateWhiteNoise(Healpix_Map<double>& map, double noiseVal, time_t seed)
+{
+    if(seed == 0)
+        seed = std::time(0);
+
+    boost::variate_generator<boost::mt19937, boost::normal_distribution<> > generator(boost::mt19937(seed), boost::normal_distribution<>(0, noiseVal));
+    for(long i = 0; i < map.Npix(); ++i)
+        map[i] = generator();
+}
+

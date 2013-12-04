@@ -96,18 +96,27 @@ CMB_HPP = include/cmb.hpp $(TABLE_FUNCTION_HPP) $(COSMOLOGICAL_PARAMS_HPP)
 PLANCK_LIKE_HPP = include/planck_like.hpp $(LIKELIHOOD_FUNCTION_HPP) $(CMB_HPP)
 SCALE_FACTOR_HPP = include/scale_factor.hpp $(MACROS_HPP) $(TABLE_FUNCTION_HPP) $(COSMOLOGICAL_PARAMS_HPP)
 CMG_GIBBS_HPP = include/cmb_gibbs.hpp
+MASK_APODIZER_HPP = include/mask_apodizer.hpp
 
 
-all: lib/libcosmocpp.a bin/sort_chain bin/test $(PLANCK_TARGET) $(PLANCK_AND_MULTINEST_TARGET)
+all: lib/libcosmocpp.a bin/sort_chain bin/test bin/generate_white_noise bin/apodize_mask $(PLANCK_TARGET) $(PLANCK_AND_MULTINEST_TARGET)
 
 
-OBJ_LIBRARY = obj/whole_matrix.o obj/utils.o obj/c_matrix.o obj/c_matrix_generator.o obj/simulate.o obj/likelihood.o obj/master.o obj/mode_directions.o obj/scale_factor.o obj/cmb.o obj/cmb_gibbs.o $(MULTINEST_OBJ) $(PLANCK_OBJ) 
+OBJ_LIBRARY = obj/whole_matrix.o obj/utils.o obj/c_matrix.o obj/c_matrix_generator.o obj/simulate.o obj/likelihood.o obj/master.o obj/mode_directions.o obj/scale_factor.o obj/cmb.o obj/cmb_gibbs.o obj/mask_apodizer.o $(MULTINEST_OBJ) $(PLANCK_OBJ) 
 lib/libcosmocpp.a: $(OBJ_LIBRARY)
 	ar rcs $@ $(OBJ_LIBRARY)
 
 OBJ_TEST = obj/test.o obj/scale_factor.o obj/cmb.o
 bin/test: $(OBJ_TEST)
 	$(CC) $(LFLAGS1) -o $@ $(OBJ_TEST) $(LFLAGS2)
+
+OBJ_GENERATE_WHITE_NOISE = obj/generate_white_noise.o obj/simulate.o obj/whole_matrix.o
+bin/generate_white_noise: $(OBJ_GENERATE_WHITE_NOISE)
+	$(CC) $(LFLAGS1) -o $@ $(OBJ_GENERATE_WHITE_NOISE) $(LFLAGS2)
+
+OBJ_APODIZE_MASK = obj/apodize_mask.o obj/mask_apodizer.o
+bin/apodize_mask: $(OBJ_APODIZE_MASK)
+	$(CC) $(LFLAGS1) -o $@ $(OBJ_APODIZE_MASK) $(LFLAGS2)
 
 ifdef PLANCKDIR
 OBJ_TEST_PLANCK = obj/test_planck.o obj/planck_like.o obj/cmb.o
@@ -185,6 +194,15 @@ obj/whole_matrix.o: source/whole_matrix.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HP
 
 obj/cmb_gibbs.o: source/cmb_gibbs.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(MATH_CONSTANTS_HPP) $(PROGRESS_METER_HPP) $(UTILS_HPP) $(CONJUGATE_GRADIENT_HPP) $(NUMERICS_HPP) $(CMB_GIBBS_HPP)
 	$(CC) $(CFLAGS) source/cmb_gibbs.cpp -o $@
+
+obj/generate_white_noise.o: source/generate_white_noise.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(SIMULATE_HPP)
+	$(CC) $(CFLAGS) source/generate_white_noise.cpp -o $@
+
+obj/mask_apodizer.o: source/mask_apodizer.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(PROGRESS_METER_HPP) $(THREE_VECTOR_HPP) $(MATH_CONSTANTS_HPP) $(MASK_APODIZER_HPP)
+	$(CC) $(CFLAGS) source/mask_apodizer.cpp -o $@
+
+obj/apodize_mask.o: source/apodize_mask.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(MASK_APODIZER_HPP)
+	$(CC) $(CFLAGS) source/apodize_mask.cpp -o $@
 
 clean:
 	rm obj/* bin/* lib/*

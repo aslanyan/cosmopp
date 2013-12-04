@@ -38,7 +38,7 @@ public:
     /// \param x The argument of the function.
     /// \return The value of the function.
     virtual double evaluate(double x) const = 0;
-private:
+protected:
     std::vector<double> params_;
 };
     

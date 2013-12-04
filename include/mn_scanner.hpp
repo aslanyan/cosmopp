@@ -35,9 +35,10 @@ public:
     /// \param sigma The sigma of the prior
     void setParamGauss(int i, const std::string& name, double mean, double sigma);
 
-    /// Run the scan.
+    /// Run the scan. Should be called after all of the other necessary functions have been called to set all of the necessary settings.
     void run();
 
+public:
     void logLike(double *Cube, int &ndim, int &npars, double &lnew);
     void dumper(int &nSamples, int &nlive, int &nPar, double **physLive, double **posterior, double **paramConstr, double &maxLogLike, double &logZ, double &logZerr);
 

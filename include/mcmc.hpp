@@ -22,25 +22,54 @@
 namespace Math
 {
 
+/// An abstract class for a prior function, used in the MetropolisHastings class.
 class PriorFunctionBase
 {
 public:
+    /// Calculate the prior.
+    /// \param params The parameters vector (passed as a pointer to the first element).
+    /// \param nPar The number of parameters.
+    /// \return The prior distribution value.
     virtual double calculate(double* params, int nPar) = 0;
 };
 
+/// An abstract class for a proposal distribution, used in the MetropolisHastings class.
 class ProposalFunctionBase
 {
 public:
+    /// Generate the next set of parameters.
+    /// \param params A vector of all of the parameters of the PREVIOUS sample (passed as a pointer to the first element).
+    /// \param nPar The total number of parameters.
+    /// \param blockParams A vector to contain the PROPOSED parameters of a given block (passed as a pointer to the first element).
+    /// \param i The index of the block to be generated.
     virtual void generate(double* params, int nPar, double* blockParams, int i) = 0;
+
+    /// Calculate the proposal distribution value.
+    /// \param params A vector of all of the parameters of the PREVIOUS sample (passed as a pointer to the first element).
+    /// \param nPar The total number of parameters.
+    /// \param blockParams A vector containing the block of PROPOSED parameters (passed as a pointer to the first element).
+    /// \param i The index of the block.
+    /// \return The value of the proposal distribution.
     virtual double calculate(double* params, int nPar, double* blockParams, int i) = 0;
+    
+    /// Tells if the proposal distribution is symmetric for the given block.
+    /// \param i The index of the block.
+    /// \return true if the proposal distribution is symmetric for block i.
     virtual bool isSymmetric(int i) = 0;
 };
 
+/// A Metropolis-Hastings scanner.
 class MetropolisHastings
 {
 private:
     enum PRIOR_MODE { UNIFORM_PRIOR = 0, GAUSSIAN_PRIOR, PRIOR_MODE_MAX };
 public:
+
+    /// Constructor.
+    /// \param nPar The number of parameters.
+    /// \param like The likelihood function.
+    /// \param fileRoot The root for filenames produced by Multinest.
+    /// \param seed A random seed. If set to 0 (the default value), it will be determined from the current time.
     MetropolisHastings(int nPar, LikelihoodFunction& like, std::string fileRoot, time_t seed = 0) : n_(nPar), like_(like), fileRoot_(fileRoot), paramNames_(nPar), param1_(nPar, 0), param2_(nPar, 0), starting_(nPar, std::numeric_limits<double>::max()), current_(nPar), prev_(nPar), samplingWidth_(nPar, 0), accuracy_(nPar, 0), paramSum_(nPar, 0), paramSquaredSum_(nPar, 0), corSum_(nPar, 0), priorMods_(nPar, PRIOR_MODE_MAX), externalPrior_(NULL), externalProposal_(NULL), resumeCode_(123456)
     {
         check(nPar > 0, "");
@@ -60,15 +89,46 @@ public:
         resumeFileName_ = resFileName.str();
     }
 
+    /// Destructor.
     ~MetropolisHastings() { delete generator_; }
 
+    /// Define a given parameter to have a uniform prior. One of the parameter setting functions must be called for each parameter before the run.
+    /// \param i The index of the parameter, 0 <= i < number of parameters.
+    /// \param name The name of the parameter.
+    /// \param min The minimum value of the parameter (the lower bound for the prior).
+    /// \param max The maximum value of the parameter (the upper bound for the prior).
+    /// \param starting The starting value of the parameter. If not set, it will be set to the midpoint of the range by default.
+    /// \param samplingWidth The sampling width of the parameter (the width of the Gaussian proposal distribution). If not set, by default it will be set to 1/100-th of the width of the range.
+    /// \param accuracy The accuracy with which the parameter needs to be determined (used to choose the stopping time). If not set, by default it will be set to 1/10-th of the sampling width.
     inline void setParam(int i, const std::string& name, double min, double max, double starting = std::numeric_limits<double>::max(), double samplingWidth = 0.0, double accuracy = 0.0);
+
+    /// Define a given parameter to have a gaussian prior. One of the parameter setting functions must be called for each parameter before the run.
+    /// \param i The index of the parameter, 0 <= i < number of parameters.
+    /// \param name The name of the parameter.
+    /// \param mean The mean of the prior
+    /// \param sigma The sigma of the prior
+    /// \param starting The starting value of the parameter. If not set, it will be set to the midpoint of the range by default.
+    /// \param samplingWidth The sampling width of the parameter (the width of the Gaussian proposal distribution). If not set, by default it will be set to 1/100-th of the width of the range.
+    /// \param accuracy The accuracy with which the parameter needs to be determined (used to choose the stopping time). If not set, by default it will be set to 1/10-th of the sampling width.
     inline void setParamGauss(int i, const std::string& name, double mean, double sigma, double starting = std::numeric_limits<double>::max(), double samplingWidth = 0.0, double accuracy = 0.0);
 
+    /// Set the blocks in which the parameters are varied. If this function is not called, each paramter will be assigned to a separate block, by default.
+    /// \param blocks A vector defining the indices of the parameters in each block. Each element of the vector is the index following the end of the corresponding block. There are as many elements as there are blocks. For example, if all of the parameters are to belong to one block, the vector should contain one element with value equal to the number of the parameters.
     inline void specifyParameterBlocks(const std::vector<int>& blocks);
+
+    /// Set an external prior function for all of the parameters. The values set by setParam or setParamGauss will then be ignored. 
+    /// One of these functions still needs to be called for each parameter to set their names, starting values, sampling widths, and accuracies.
+    /// \param prior A pointer to the external prior function.
     void useExternalPrior(PriorFunctionBase* prior) { externalPrior_ = prior; }
 
+    /// Set an external proposal distribution for all of the parameters. The sampling width value set by setParam or setParamGauss will then be ignored.
+    /// One of these functions still needs to be called for each parameter to set their names, priors, starting values, and accuracies.
+    /// \param proposal A pointer to the external proposal distribution.
     void useExternalProposal(ProposalFunctionBase* proposal) { externalProposal_ = proposal; }
+
+    /// Run the scan. Should be called after all of the other necessary functions have been called to set all of the necessary settings.
+    /// \param maxChainLength The maximum length of the chain (1000000 by default). The scan will stop when the chain reaches that length, even if the required accuracy for the parameters has not been achieved. If the accuracies are achieved earlier the scan will stop earlier.
+    /// \param writeResumeInformation Defines if resume information should be written in a file, allowing to resume (true by default). The default setting of true is recommended in most cases. However, if the likelihood calculation is very fast, so that the likelihood computing time is faster or comparable to writing out a small binary file, this parameter should be set to false. The reason is that it will slow down the scan significantly, and the chance of the resume file being corrupt and useless will be very high (this will happen if the code is stopped during writing out the resume file).
     inline void run(unsigned long maxChainLength = 1000000, bool writeResumeInformation = true);
 
 private:

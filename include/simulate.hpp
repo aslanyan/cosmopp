@@ -9,8 +9,9 @@
 #include <gmd.h>
 #include <lavd.h>
 
-#include "alm.h"
-#include "xcomplex.h"
+#include <alm.h>
+#include <xcomplex.h>
+#include <healpix_map.h>
 
 /// Simulation functions.
 
@@ -47,6 +48,14 @@ public:
     /// \param eigenvalsIm The vector to write the imaginary parts of eigenvalues in.
     /// \param vecs The matrix to write the eigenvectors in.
     static void diagonalizeMatrix(const LaGenMatDouble& matrix, LaVectorDouble& eigenvalsRe, LaVectorDouble& eigenvalsIm, LaGenMatDouble& vecs);
+
+    /// White noise map generator.
+    
+    /// This function simulates a white noise map.
+    /// \param map The map in which the simulated white noise will be written. The map's n_side or ordering scheme is not changed.
+    /// \param noiseVal The value of the noise (default = 1.0).
+    /// \param seed A random seed. If 0 then the current time (in seconds) is taken as the seed.
+    static void simulateWhiteNoise(Healpix_Map<double>& map, double noiseVal = 1.0, time_t seed = 0);
 };
 
 #endif

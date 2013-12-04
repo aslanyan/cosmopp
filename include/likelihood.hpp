@@ -145,11 +145,12 @@ public:
     /// Constructor.
     
     /// Constructs a polarization likelihood calculator.
+    /// The consructor needs to read the inverse noise matrix from the text file n_inv.txt. The file must have double the number of the pixels in rows and columns, the first half for Q, second half for U.
     /// \param cMatrix The covariance matrix which must include both Q and U maps. This matrix is already rotated.
     /// \param nSide Healpix NSide for Q and U maps.
     /// \param goodPixels A vector containing the unmasked pixels.
     /// \param lMax Maximum l to include in the calculation.
-    /// \param etttInverse The whole matrix for ET(TT)^(-1), this must be unrotated.
+    /// \param etttInverse The whole matrix for ET(TT)^(-1), this must be UNROTATED.
     /// \param phi Euler angle phi of the rotation. This is needed because etttInverse is not rotated.
     /// \param theta Euler angle theta of the rotation. This is needed because etttInverse in not rotated.
     /// \param psi Euler angle psi of the rotation. This is needed because etttInverse is not rotated.
@@ -158,7 +159,7 @@ public:
     /// Calculates the likelihood.
     
     /// This function is used to calculate the likelihood from maps that have already been read.
-    /// \param v A vector that contains the Q and U maps. Can be read using the function readMaps.
+    /// \param v A vector that contains the Q and U maps. Can be read using the function readMaps. IMPORTANT: The Q and U maps are not the original maps, they need to have the inverse noise matrix applied to them, i.e. they are N^(-1)*(Q, U).
     /// \param alm The Alm-s for TT, can be read using the function readMaps.
     /// \param chi2 The chi squared value to be returned.
     /// \param logDet The logarithm of the determinant of the covariance matrix to be returned.
@@ -168,8 +169,8 @@ public:
     /// Calculates the likelihood.
     
     /// This function is used to calculate the likelihood from Q and U maps.
-    /// \param qMap The Q map filename (fits format).
-    /// \param uMap The U map filename (fits format).
+    /// \param qMap The Q map filename (fits format). IMPORTANT: The Q and U maps are not the original maps, they need to have the inverse noise matrix applied to them, i.e. they are N^(-1)*(Q, U).
+    /// \param uMap The U map filename (fits format). IMPORTANT: The Q and U maps are not the original maps, they need to have the inverse noise matrix applied to them, i.e. they are N^(-1)*(Q, U).
     /// \param almTTFileName The filename where the TT Alm-s are written (text format). Complex numbers written in format (re, im) starting from l=0, m=0. It should include only m>=0 values.
     /// \param chi2 The chi squared value to be returned.
     /// \param logDet The logarithm of the determinant of the covariance matrix to be returned.
@@ -254,7 +255,7 @@ public:
     /// Constructor.
     /// \param cl Data Cl-s in muK^2. The index of the vector is l.
     /// \param nl Noise Cl-s in muK^2. The index of the vector is l.
-    /// \param couplingKernelFileName The name of the file containig the coupling kernel for the mask. This is produces when running Master.
+    /// \param couplingKernelFileName The name of the file containig the coupling kernel for the mask. This is produced when running Master.
     /// \param lMin The minimum value of l to include in the calculation.
     /// \param lMax The maximum value of l to include in the calculation.
     LikelihoodHigh(const std::vector<double>& cl, const std::vector<double>& nl, const char* couplingKernelFileName, int lMin, int lMax);
