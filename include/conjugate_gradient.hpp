@@ -17,11 +17,23 @@ void preconditioner(const std::vector<double>& original, std::vector<double>& re
 };
 */
 
+/// A preconditioned conjugate gradient solver.
+
+/// This class can be used to solve large systems of linear equations using the (preconditioned) conjugate gradient method.
 template <class CGTreats>
 class ConjugateGradient
 {
 public:
+    /// Constructor.
+    /// \param n The number of variables.
+    /// \param treats A pointer to an instance of the template treats class. This is used for matrix multiplication and preconditioning. It needs to have a function multiplyByMatrix(const std::vector<double>& original, std::vector<double>& result) for matrix multiplication and preconditioner(const std::vector<double>& original, std::vector<double>& result) for preconditioning. See BasicCGTreats as an example.
+    /// \param b The vector b (the system to be solved has the form Ax = b).
     ConjugateGradient(int n, CGTreats* treats, const std::vector<double>& b) : n_(n), treats_(treats), b_(b), r_(n), z_(n), p_(n), x_(n, 0) { check(n_ > 0, ""); check(b_.size() == n_, ""); }
+    
+    /// The main solver function.
+    /// \param precision The precision for solutions.
+    /// \param iterations A pointer to an integer where the number of iterations will be written. Ignored if set to NULL (default value).
+    /// \return A vector containing the solution.
     const std::vector<double>& solve(double precision = 1e-7, int* iterations = NULL);
 
 private:
@@ -89,9 +101,13 @@ ConjugateGradient<CGTreats>::solve(double precision, int* iterations)
     return x_;
 }
 
+/// A simple treats class that can be used as the template parameter of ConjugateGradient.
+/// The matrix elements and the preconditioner need to be known and set in advance.
 class BasicCGTreats
 {
 public:
+    /// Constructor. Sets the matrix and the preconditioner to a unit matrix.
+    /// \param n The number of variables.
     BasicCGTreats(int n) : n_(n), a_(n), p_(n)
     {
         check(n > 0, "");
@@ -100,10 +116,15 @@ public:
             a_[i].resize(n, 0);
             p_[i].resize(n, 0);
 
+            a_[i][i] = 1;
             p_[i][i] = 1;
         }
     }
 
+    /// Set the matrix element.
+    /// \param i The row (between 0 and n - 1).
+    /// \param j The column (between 0 and n - 1).
+    /// \param val The value of the element.
     void setMatrix(int i, int j, double val)
     {
         check(i >= 0 && i < n_, "invalid index i = " << i);
@@ -111,6 +132,10 @@ public:
         a_[i][j] = val;
     }
 
+    /// Set the matrix element.
+    /// \param i The row (between 0 and n - 1).
+    /// \param j The column (between 0 and n - 1).
+    /// \param val The value of the element.
     void setPreconditioner(int i, int j, double val)
     {
         check(i >= 0 && i < n_, "invalid index i = " << i);
@@ -118,6 +143,9 @@ public:
         p_[i][j] = val;
     }
 
+    /// Multiply a given vector by the matrix.
+    /// \param x The original vector.
+    /// \param y The resulting vector.
     void multiplyByMatrix(const std::vector<double>& x, std::vector<double>& y) const
     {
         check(x.size() == n_, "");
@@ -131,6 +159,9 @@ public:
         }
     }
 
+    /// Apply the preconditioner to a given vector.
+    /// \param x The original vector.
+    /// \param y The resulting vector.
     void preconditioner(const std::vector<double>& x, std::vector<double>& y) const
     {
         check(x.size() == n_, "");
