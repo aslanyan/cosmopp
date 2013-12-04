@@ -64,7 +64,7 @@ public:
     /// \param x A vector containing the x coordinates of the data points.
     /// \param y A vector containing the y coordinates of the data points. Must have the same size as x.
     /// \param starting A vector containing the starting values of the parameters.
-    /// \param errer A vector containing the errors of the parameters.
+    /// \param error A vector containing the errors of the parameters.
     /// \param min A vector containing the lower limits for the ranges of the parameters. Provide an empty vector to allow unlimited ranges.
     /// \param max A vector containing the upper limits for the ranges of the parameters.
     Fit(ParametricFunction<N>& f, const std::vector<double>& x, const::std::vector<double>& y, const std::vector<double>& starting, const std::vector<double>& error, const std::vector<double>& min, const std::vector<double>& max) : f_(f)

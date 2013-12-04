@@ -56,7 +56,7 @@ public:
     /// \param fiducialMatrix The fiducial covariance matrix.
     /// \param noiseMatrix The noise covariance matrix.
     /// \param goodPixels A vector containing the indices of the unmasked pixels.
-    /// \param foregroundFileName A vector containing the foreground map. This can be read by the function readForeground. If it's empty foreground marginalization is not done.
+    /// \param foreground A vector containing the foreground map. This can be read by the function readForeground. If it's empty foreground marginalization is not done.
     Likelihood(const CMatrix& cMatrix, const CMatrix& fiducialMatrix, const CMatrix& noiseMatrix, const std::vector<int>& goodPixels, const LaVectorDouble& foreground);
     
     /// Calculate likelihood for a single map.
@@ -207,8 +207,8 @@ public:
     /// Read polarization maps and TT Alm-s.
     
     /// This function reads polarization maps and TT Alm-s.
-    /// \param qMap The Q map filename (fits format).
-    /// \param uMap The U map filename (fits format).
+    /// \param qMapName The Q map filename (fits format).
+    /// \param uMapName The U map filename (fits format).
     /// \param almTTFileName The filename where the TT Alm-s are written (text format). Complex numbers written in format (re, im) starting from l=0, m=0. It should include only m>=0 values.
     /// \param lMax Maximum value of l to be used in likelihood calculation.
     /// \param goodPixels A vector containing the unmasked pixels.
@@ -274,7 +274,7 @@ public:
     double calculate(const std::vector<double>& cl) const;
 
     /// Calculate the likelihood for given Cl-s.
-    /// \param cl The name of the file containing model Cl-s in muK^2. Each row should contain just the Cl, starting from l = 0.
+    /// \param clFileName The name of the file containing model Cl-s in muK^2. Each row should contain just the Cl, starting from l = 0.
     /// \return -2ln(likelihood).
     double calculate(const char* clFileName) const;
 

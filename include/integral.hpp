@@ -17,7 +17,7 @@ namespace Math
 /// \param f The function to integrate.
 /// \param xMin The lower limit of the interval.
 /// \param xMax The upper limit of the interval.
-/// \param numnberOfPoints The number of points to split the interval into.
+/// \param numberOfPoints The number of points to split the interval into.
 /// \return The value of the integral.
 inline
 double realIntegral1D(const RealFunction& f, double xMin, double xMax, int numberOfPoints = 1000)

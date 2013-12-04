@@ -31,13 +31,13 @@ public:
     CMBGibbsSampler(const char* mapName, const char* noiseMapName, const char* maskName, double pixelNoise, int lMax, double fwhm, const char* startingClFileName, time_t seed = 0);
 
     /// Constructor.
-    /// \param mape The map to be sampled.
+    /// \param map The map to be sampled.
     /// \param noiseMap The map to be added to the data map (a 0 map should be passed here if the noise is already in the data).
-    /// \param maskName The mask.
+    /// \param mask The mask.
     /// \param pixelNoise The uniform noise per pixel.
     /// \param lMax The maximum value of l for sampling.
     /// \param fwhm The full width at half maximum of the beam function of the map (in degrees).
-    /// \param startingClFileName A vector containing the C_l values for starting the sampling, starting from l = 0.
+    /// \param startingCl A vector containing the C_l values for starting the sampling, starting from l = 0.
     /// \param seed A random seed for scanning. If the value is 0 (which it is by default) the seed will be chosen from the current time.
     CMBGibbsSampler(const Healpix_Map<double>& map, const Healpix_Map<double>& noiseMap, const Healpix_Map<double>& mask, double pixelNoise, int lMax, double fwhm, const std::vector<double>& startingCl, time_t seed = 0);
 
