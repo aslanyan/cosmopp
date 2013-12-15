@@ -1,5 +1,5 @@
-#ifndef COSMO_CPP_TABLE_FUNCTION_HPP
-#define COSMO_CPP_TABLE_FUNCTION_HPP
+#ifndef COSMO_PP_TABLE_FUNCTION_HPP
+#define COSMO_PP_TABLE_FUNCTION_HPP
 
 #include <istream>
 #include <map>

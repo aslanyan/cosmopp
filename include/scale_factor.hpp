@@ -1,5 +1,5 @@
-#ifndef COSMO_CPP_SCALE_FACTOR_HPP
-#define COSMO_CPP_SCALE_FACTOR_HPP
+#ifndef COSMO_PP_SCALE_FACTOR_HPP
+#define COSMO_PP_SCALE_FACTOR_HPP
 
 #include <macros.hpp>
 #include <table_function.hpp>

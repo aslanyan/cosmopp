@@ -1,5 +1,5 @@
-#ifndef COSMO_CPP_PLANCK_LIKE_HPP
-#define COSMO_CPP_PLANCK_LIKE_HPP
+#ifndef COSMO_PP_PLANCK_LIKE_HPP
+#define COSMO_PP_PLANCK_LIKE_HPP
 
 #include <vector>
 #include <string>

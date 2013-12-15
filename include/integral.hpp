@@ -1,5 +1,5 @@
-#ifndef COSMO_CPP_INTEGRAL_HPP
-#define COSMO_CPP_INTEGRAL_HPP
+#ifndef COSMO_PP_INTEGRAL_HPP
+#define COSMO_PP_INTEGRAL_HPP
 
 #include <algorithm>
 

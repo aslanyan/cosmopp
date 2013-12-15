@@ -1,5 +1,5 @@
-#ifndef COSMO_CPP_C_MATRIX_HPP
-#define COSMO_CPP_C_MATRIX_HPP
+#ifndef COSMO_PP_C_MATRIX_HPP
+#define COSMO_PP_C_MATRIX_HPP
 
 #include <vector>
 #include <string>

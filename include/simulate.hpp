@@ -1,5 +1,5 @@
-#ifndef COSMO_CPP_SIMULATE_HPP
-#define COSMO_CPP_SIMULATE_HPP
+#ifndef COSMO_PP_SIMULATE_HPP
+#define COSMO_PP_SIMULATE_HPP
 
 #include <ctime>
 #include <vector>

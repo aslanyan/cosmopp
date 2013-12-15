@@ -1,5 +1,5 @@
-#ifndef COSMO_CPP_RANDOM_HPP
-#define COSMO_CPP_RANDOM_HPP
+#ifndef COSMO_PP_RANDOM_HPP
+#define COSMO_PP_RANDOM_HPP
 
 #include <numeric>
 

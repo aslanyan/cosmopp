@@ -1,5 +1,5 @@
-#ifndef COSMO_CPP_HISTOGRAM_HPP
-#define COSMO_CPP_HISTOGRAM_HPP
+#ifndef COSMO_PP_HISTOGRAM_HPP
+#define COSMO_PP_HISTOGRAM_HPP
 
 #include <vector>
 #include <map>

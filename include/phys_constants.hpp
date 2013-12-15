@@ -1,5 +1,5 @@
-#ifndef COSMO_CPP_PHYS_CONSTANTS_HPP
-#define COSMO_CPP_PHYS_CONSTANTS_HPP
+#ifndef COSMO_PP_PHYS_CONSTANTS_HPP
+#define COSMO_PP_PHYS_CONSTANTS_HPP
 
 #include <math_constants.hpp>
 

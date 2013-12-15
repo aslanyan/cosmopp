@@ -1,5 +1,5 @@
-#ifndef COSMO_CPP_FUNCTION_HPP
-#define COSMO_CPP_FUNCTION_HPP
+#ifndef COSMO_PP_FUNCTION_HPP
+#define COSMO_PP_FUNCTION_HPP
 
 namespace Math
 {

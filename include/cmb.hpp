@@ -1,5 +1,5 @@
-#ifndef COSMO_CPP_CMB_HPP
-#define COSMO_CPP_CMB_HPP
+#ifndef COSMO_PP_CMB_HPP
+#define COSMO_PP_CMB_HPP
 
 #include <vector>
 

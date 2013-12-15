@@ -1,5 +1,5 @@
-#ifndef COSMO_CPP_LIKELIHOOD_HPP
-#define COSMO_CPP_LIKELIHOOD_HPP
+#ifndef COSMO_PP_LIKELIHOOD_HPP
+#define COSMO_PP_LIKELIHOOD_HPP
 
 #include <vector>
 #include <string>

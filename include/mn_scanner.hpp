@@ -1,5 +1,5 @@
-#ifndef COSMO_CPP_MN_SCANNER_HPP
-#define COSMO_CPP_MN_SCANNER_HPP
+#ifndef COSMO_PP_MN_SCANNER_HPP
+#define COSMO_PP_MN_SCANNER_HPP
 
 #include <vector>
 #include <string>

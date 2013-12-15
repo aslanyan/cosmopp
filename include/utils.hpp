@@ -1,5 +1,5 @@
-#ifndef COSMO_CPP_UTILS_HPP
-#define COSMO_CPP_UTILS_HPP
+#ifndef COSMO_PP_UTILS_HPP
+#define COSMO_PP_UTILS_HPP
 
 #include <vector>
 

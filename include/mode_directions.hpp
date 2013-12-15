@@ -1,5 +1,5 @@
-#ifndef COSMO_CPP_MODE_DIRECTIONS_HPP
-#define COSMO_CPP_MODE_DIRECTIONS_HPP
+#ifndef COSMO_PP_MODE_DIRECTIONS_HPP
+#define COSMO_PP_MODE_DIRECTIONS_HPP
 
 #include <alm.h>
 #include <xcomplex.h>

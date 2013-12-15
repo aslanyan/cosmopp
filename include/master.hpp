@@ -1,5 +1,5 @@
-#ifndef COSMO_CPP_MASTER_HPP
-#define COSMO_CPP_MASTER_HPP
+#ifndef COSMO_PP_MASTER_HPP
+#define COSMO_PP_MASTER_HPP
 
 #include <vector>
 #include <map>

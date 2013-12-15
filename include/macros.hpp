@@ -1,5 +1,5 @@
-#ifndef COSMO_CPP_MACROS_HPP
-#define COSMO_CPP_MACROS_HPP
+#ifndef COSMO_PP_MACROS_HPP
+#define COSMO_PP_MACROS_HPP
 
 // Possible pre-defined macros from the compiler (e.g. gcc -D MACRO)
 // CHECKS_ON - turn on the checks (assertions)

@@ -1,5 +1,5 @@
-#ifndef COSMO_CPP_THREE_ROTATION_HPP
-#define COSMO_CPP_THREE_ROTATION_HPP
+#ifndef COSMO_PP_THREE_ROTATION_HPP
+#define COSMO_PP_THREE_ROTATION_HPP
 
 #include <cmath>
 #include <vector>

@@ -1,5 +1,5 @@
-#ifndef COSMO_CPP_FIT_HPP
-#define COSMO_CPP_FIT_HPP
+#ifndef COSMO_PP_FIT_HPP
+#define COSMO_PP_FIT_HPP
 
 #include <vector>
 #include <sstream>

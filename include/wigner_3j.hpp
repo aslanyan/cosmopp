@@ -1,5 +1,5 @@
-#ifndef COSMO_CPP_WIGNER_3J_HPP
-#define COSMO_CPP_WIGNER_3J_HPP
+#ifndef COSMO_PP_WIGNER_3J_HPP
+#define COSMO_PP_WIGNER_3J_HPP
 
 #include <cmath>
 #include <set>

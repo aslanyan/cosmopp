@@ -1,5 +1,5 @@
-#ifndef COSMO_CPP_MASK_APODIZER_HPP
-#define COSMO_CPP_MASK_APODIZER_HPP
+#ifndef COSMO_PP_MASK_APODIZER_HPP
+#define COSMO_PP_MASK_APODIZER_HPP
 
 #include <healpix_map.h>
 

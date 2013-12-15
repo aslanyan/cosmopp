@@ -1,5 +1,5 @@
-#ifndef COSMO_CPP_CUBIC_SPLINE_HPP
-#define COSMO_CPP_CUBIC_SPLINE_HPP
+#ifndef COSMO_PP_CUBIC_SPLINE_HPP
+#define COSMO_PP_CUBIC_SPLINE_HPP
 
 #include <vector>
 #include <set>

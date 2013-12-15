@@ -1,5 +1,5 @@
-#ifndef COSMO_CPP_NUMERICS_HPP
-#define COSMO_CPP_NUMERICS_HPP
+#ifndef COSMO_PP_NUMERICS_HPP
+#define COSMO_PP_NUMERICS_HPP
 
 #include <cmath>
 

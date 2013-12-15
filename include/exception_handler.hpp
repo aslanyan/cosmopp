@@ -1,5 +1,5 @@
-#ifndef COSMO_CPP_EXCEPTION_HANDLER_HPP
-#define COSMO_CPP_EXCEPTION_HANDLER_HPP
+#ifndef COSMO_PP_EXCEPTION_HANDLER_HPP
+#define COSMO_PP_EXCEPTION_HANDLER_HPP
 
 #include <exception>
 #include <string>

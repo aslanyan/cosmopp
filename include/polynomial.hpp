@@ -1,5 +1,5 @@
-#ifndef COSMO_CPP_POLYNOMIAL_HPP
-#define COSMO_CPP_POLYNOMIAL_HPP
+#ifndef COSMO_PP_POLYNOMIAL_HPP
+#define COSMO_PP_POLYNOMIAL_HPP
 
 #include <parametric_function.hpp>
 

@@ -1,5 +1,5 @@
-#ifndef COSMO_CPP_CONJUGATE_GRADIENT
-#define COSMO_CPP_CONJUGATE_GRADIENT
+#ifndef COSMO_PP_CONJUGATE_GRADIENT
+#define COSMO_PP_CONJUGATE_GRADIENT
 
 #include <vector>
 #include <cmath>

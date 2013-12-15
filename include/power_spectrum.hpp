@@ -1,5 +1,5 @@
-#ifndef COSMO_CPP_POWER_SPECTRUM_HPP
-#define COSMO_CPP_POWER_SPECTRUM_HPP
+#ifndef COSMO_PP_POWER_SPECTRUM_HPP
+#define COSMO_PP_POWER_SPECTRUM_HPP
 
 #include <vector>
 #include <cmath>

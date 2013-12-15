@@ -99,11 +99,11 @@ CMG_GIBBS_HPP = include/cmb_gibbs.hpp
 MASK_APODIZER_HPP = include/mask_apodizer.hpp
 
 
-all: lib/libcosmocpp.a bin/sort_chain bin/test bin/generate_white_noise bin/apodize_mask $(PLANCK_TARGET) $(PLANCK_AND_MULTINEST_TARGET)
+all: lib/libcosmopp.a bin/sort_chain bin/test bin/generate_white_noise bin/apodize_mask $(PLANCK_TARGET) $(PLANCK_AND_MULTINEST_TARGET)
 
 
 OBJ_LIBRARY = obj/whole_matrix.o obj/utils.o obj/c_matrix.o obj/c_matrix_generator.o obj/simulate.o obj/likelihood.o obj/master.o obj/mode_directions.o obj/scale_factor.o obj/cmb.o obj/cmb_gibbs.o obj/mask_apodizer.o $(MULTINEST_OBJ) $(PLANCK_OBJ) 
-lib/libcosmocpp.a: $(OBJ_LIBRARY)
+lib/libcosmopp.a: $(OBJ_LIBRARY)
 	ar rcs $@ $(OBJ_LIBRARY)
 
 OBJ_TEST = obj/test.o obj/scale_factor.o obj/cmb.o

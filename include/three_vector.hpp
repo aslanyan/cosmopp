@@ -1,5 +1,5 @@
-#ifndef COSMO_CPP_THREE_VECTOR_HPP
-#define COSMO_CPP_THREE_VECTOR_HPP
+#ifndef COSMO_PP_THREE_VECTOR_HPP
+#define COSMO_PP_THREE_VECTOR_HPP
 
 #include <cmath>
 
