@@ -126,7 +126,7 @@ public:
     /// \param proposal A pointer to the external proposal distribution.
     void useExternalProposal(ProposalFunctionBase* proposal) { externalProposal_ = proposal; }
 
-    /// Run the scan. Should be called after all of the other necessary functions have been called to set all of the necessary settings.
+    /// Run the scan. Should be called after all of the other necessary functions have been called to set all of the necessary settings. The resulting chain is written in the file (fileRoot).txt. The first column is the number of repetitions of the element, the second column is -2ln(likelihood), the following columns are the values of all of the parameters.
     /// \param maxChainLength The maximum length of the chain (1000000 by default). The scan will stop when the chain reaches that length, even if the required accuracy for the parameters has not been achieved. If the accuracies are achieved earlier the scan will stop earlier.
     /// \param writeResumeInformation Defines if resume information should be written in a file, allowing to resume (true by default). The default setting of true is recommended in most cases. However, if the likelihood calculation is very fast, so that the likelihood computing time is faster or comparable to writing out a small binary file, this parameter should be set to false. The reason is that it will slow down the scan significantly, and the chance of the resume file being corrupt and useless will be very high (this will happen if the code is stopped during writing out the resume file).
     inline void run(unsigned long maxChainLength = 1000000, bool writeResumeInformation = true);

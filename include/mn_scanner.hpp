@@ -35,7 +35,7 @@ public:
     /// \param sigma The sigma of the prior
     void setParamGauss(int i, const std::string& name, double mean, double sigma);
 
-    /// Run the scan. Should be called after all of the other necessary functions have been called to set all of the necessary settings.
+    /// Run the scan. Should be called after all of the other necessary functions have been called to set all of the necessary settings. The resulting chain is written in the file (fileRoot).txt. The first column is the number of repetitions of the element, the second column is -2ln(likelihood), the following columns are the values of all of the parameters.
     void run();
 
 public:
