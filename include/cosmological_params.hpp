@@ -264,40 +264,6 @@ private:
     DummyPS psTensor_;
 };
 
-class LinSplWithDegenerateNeutrinosParams : public LinearSplineParams
-{
-public:
-    LinSplWithDegenerateNeutrinosParams(double omBH2, double omCH2, double h, double tau, const std::vector<double>& kVals, const std::vector<double>& amplitudes,  double nEff, int nMassive, double sumMNu) : LinearSplineParams(omBH2, omCH2, h, tau, kVals, amplitudes), nEff_(nEff), nMassive_(nMassive), sumMNu_(sumMNu)
-    {
-        check(nEff > 0, "invalid nEff = " << nEff);
-        check(sumMNu >= 0, "invalid sumMNu = " << sumMNu);
-        check(nMassive >= 0, "number of massive neutrinos is negative: " << nMassive);
-        check(nEff > nMassive, "nEff needs to be more than the number of massive neutrinos");
-    }
-
-    ~LinSplWithDegenerateNeutrinosParams() {}
-
-    virtual double getNEff() const { return nEff_ - nMassive_; }
-    virtual int getNumNCDM() const { return nMassive_; }
-    virtual double getNCDMParticleMass(int i) const
-    {
-        check(i >= 0 && i < nMassive_, "invalid index = " << i);
-        return sumMNu_ / nMassive_;
-    }
-
-    virtual double getNCDMParticleTemp(int i) const
-    {
-        check(i >= 0 && i < nMassive_, "invalid index = " << i);
-        //return 0.715985;
-        return 0.713765855506013;
-    }
-
-private:
-    double nEff_;
-    int nMassive_;
-    double sumMNu_;
-};
-
 class CubicSplineParams : public CosmologicalParams
 {
     class DummyPS : public Math::RealFunction
@@ -339,40 +305,6 @@ private:
     double tau_;
     CubicSplinePowerSpectrum ps_;
     DummyPS psTensor_;
-};
-
-class CubSplWithDegenerateNeutrinosParams : public CubicSplineParams
-{
-public:
-    CubSplWithDegenerateNeutrinosParams(double omBH2, double omCH2, double h, double tau, const std::vector<double>& kVals, const std::vector<double>& amplitudes,  double nEff, int nMassive, double sumMNu) : CubicSplineParams(omBH2, omCH2, h, tau, kVals, amplitudes), nEff_(nEff), nMassive_(nMassive), sumMNu_(sumMNu)
-    {
-        check(nEff > 0, "invalid nEff = " << nEff);
-        check(sumMNu >= 0, "invalid sumMNu = " << sumMNu);
-        check(nMassive >= 0, "number of massive neutrinos is negative: " << nMassive);
-        check(nEff > nMassive, "nEff needs to be more than the number of massive neutrinos");
-    }
-
-    ~CubSplWithDegenerateNeutrinosParams() {}
-
-    virtual double getNEff() const { return nEff_ - nMassive_; }
-    virtual int getNumNCDM() const { return nMassive_; }
-    virtual double getNCDMParticleMass(int i) const
-    {
-        check(i >= 0 && i < nMassive_, "invalid index = " << i);
-        return sumMNu_ / nMassive_;
-    }
-
-    virtual double getNCDMParticleTemp(int i) const
-    {
-        check(i >= 0 && i < nMassive_, "invalid index = " << i);
-        //return 0.715985;
-        return 0.713765855506013;
-    }
-
-private:
-    double nEff_;
-    int nMassive_;
-    double sumMNu_;
 };
 
 #endif
