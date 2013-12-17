@@ -236,7 +236,7 @@ private:
     void writeChainElement()
     {
         check(out_, "");
-        out_ << 1 << "   " << currentLike_ / 2.0;
+        out_ << 1 << "   " << currentLike_;
         for(int i = 0; i < n_; ++i)
             out_ << "   " << current_[i];
         out_ << std::endl;
