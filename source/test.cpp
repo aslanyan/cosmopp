@@ -7,7 +7,7 @@
 #include <phys_constants.hpp>
 
 #include <cosmological_params.hpp>
-#include <scale_factor.hpp>
+//#include <scale_factor.hpp>
 #include <cmb.hpp>
 
 int main(int argc, char *argv[])
@@ -30,29 +30,21 @@ int main(int argc, char *argv[])
         const int nMassive = 1;
         const double sumMNu = 0.5;
 
-        std::vector<double> kVals, amplitudes;
-        kVals.push_back(1e-6);
-        amplitudes.push_back(3e-9);
-        kVals.push_back(0.001);
-        amplitudes.push_back(1e-9);
-        kVals.push_back(3);
-        amplitudes.push_back(1e-8);
-
         //LinearSplineParams params(omBH2, omCH2, h, tau, kVals, amplitudes);
         //LCDMWithDegenerateNeutrinosParams params(omBH2, omCH2, h, tau, ns, as, pivot, nEff, nMassive, sumMNu);
         //LambdaCDMParams params(omBH2, omCH2, h, tau, ns, as, pivot);
         LCDMWithTensorParams params(omBH2, omCH2, h, tau, ns, as, pivot, r, nt); 
 
-        ScaleFactorFunctionClass scaleFactor;
-        scaleFactor.initialize(params);
+        //ScaleFactorFunctionClass scaleFactor;
+        //scaleFactor.initialize(params);
 
-        output_screen("The age of the universe is " << Phys::secToYear(Phys::unitlessToSec(scaleFactor.age())) << " years." << std::endl);
-        output_screen("Z_eq = " << params.getOmM() / params.getOmR() - 1 << std::endl);
+        //output_screen("The age of the universe is " << Phys::secToYear(Phys::unitlessToSec(scaleFactor.age())) << " years." << std::endl);
+        //output_screen("Z_eq = " << params.getOmM() / params.getOmR() - 1 << std::endl);
 
         int lMax = 3000;
         std::vector<double> clTT, clEE, clTE, clPP, clTP, clEP, clBB, clLensedTT, clLensedEE, clLensedTE, clLensedBB;
 
-        output_screen("Trying out CLASS..." << std::endl);
+        //output_screen("Trying out CLASS..." << std::endl);
         CMB cmb;
 
         output_screen("Pre-initializing CLASS..." << std::endl);
