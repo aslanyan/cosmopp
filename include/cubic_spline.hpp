@@ -24,6 +24,9 @@ public:
 
     /// A function that evaluates the spline for any given x. The argument x has to be between the smallest and biggest values of x of all of the spline points.
     inline virtual double evaluate(double x) const;
+
+    /// Get the parameters of the spline at a given point x. The spline is defined by a + b * (x - x0) + c * (x - x0)^2 + d * (x - x0)^3
+    inline void getSplineParams(double x, double& x0, double& a, double& b, double& c, double& d) const;
 private:
     struct SplineData
     {
@@ -156,6 +159,30 @@ CubicSpline::evaluate(double x) const
 
     const SplineData& sp = *((*it).data);
     return sp.a + sp.b * deltaX + sp.c * deltaX2 + sp.d * deltaX3;
+}
+
+void
+CubicSpline::getSplineParams(double x, double& x0, double& a, double& b, double& c, double& d) const
+{
+    check(splineDataSet_.size() >= 2, "not properly initialized");
+    SplinePoints xx;
+    xx.x = x;
+    SplineDataSet::const_iterator it = splineDataSet_.lower_bound(xx);
+    check(it != splineDataSet_.end(), "element is outside the range");
+    if(it == splineDataSet_.begin())
+    {
+        check((*it).x == x, "element is outside the range");
+    }
+    else
+        --it;
+
+    check(x >= (*it).x, "");
+    const SplineData& sp = *((*it).data);
+    x0 = (*it).x;
+    a = sp.a;
+    b = sp.b;
+    c = sp.c;
+    d = sp.d;
 }
 
 } // namespace Math

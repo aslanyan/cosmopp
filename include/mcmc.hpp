@@ -68,7 +68,7 @@ public:
     /// Constructor.
     /// \param nPar The number of parameters.
     /// \param like The likelihood function.
-    /// \param fileRoot The root for filenames produced by Multinest.
+    /// \param fileRoot The root for filenames produced by MetropolisHastings.
     /// \param seed A random seed. If set to 0 (the default value), it will be determined from the current time.
     MetropolisHastings(int nPar, LikelihoodFunction& like, std::string fileRoot, time_t seed = 0) : n_(nPar), like_(like), fileRoot_(fileRoot), paramNames_(nPar), param1_(nPar, 0), param2_(nPar, 0), starting_(nPar, std::numeric_limits<double>::max()), current_(nPar), prev_(nPar), samplingWidth_(nPar, 0), accuracy_(nPar, 0), paramSum_(nPar, 0), paramSquaredSum_(nPar, 0), corSum_(nPar, 0), priorMods_(nPar, PRIOR_MODE_MAX), externalPrior_(NULL), externalProposal_(NULL), resumeCode_(123456)
     {
