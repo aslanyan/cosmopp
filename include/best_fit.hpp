@@ -5,6 +5,7 @@
 #include <string>
 #include <sstream>
 #include <fstream>
+#include <limits>
 
 #include <macros.hpp>
 #include <exception_handler.hpp>
@@ -22,54 +23,73 @@ namespace Math
 class BestFitMinuitCalculator : public ROOT::Minuit2::FCNBase
 {
 public:
-    BestFitMinuitCalculator(int nPar, LikelihoodFunction& like, std::string fileRoot) : nPar_(nPar), like_(like), calls_(0)
+    BestFitMinuitCalculator(int nPar, LikelihoodFunction& like, std::string fileRoot, unsigned long* calls = NULL) : nPar_(nPar), like_(like), calls_(calls), fileRoot_(fileRoot)
     {
         check(nPar > 0, "Invalid number of parameters " << nPar << ". Must be positive.");
+
         std::stringstream fileName;
-        fileName << fileRoot << ".txt";
-        out_.open(fileName.str().c_str());
+        fileName << fileRoot_ << ".txt";
+        std::ofstream out(fileName.str().c_str());
         StandardException exc;
-        if(!out_)
+        if(!out)
         {
             std::stringstream exceptionStr;
             exceptionStr << "Cannot write into file " << fileName.str() << ".";
             exc.set(exceptionStr.str());
             throw exc;
         }
+        out.close();
     }
 
     ~BestFitMinuitCalculator()
     {
-        out_.close();
     }
 
     virtual double operator()(const std::vector<double>& par) const
     {
         check(par.size() == nPar_, "the number of parameters must be " << nPar_ << ", however " << par.size() << " provided");
-        const double res = like_.calculate(&(par[0]), nPar_);
-        out_ << "1 " << res;
+        std::vector<double> parCopy(par);
+
+        std::stringstream fileName;
+        fileName << fileRoot_ << ".txt";
+        std::ofstream out(fileName.str().c_str(), std::ios::app);
+        StandardException exc;
+        if(!out)
+        {
+            std::stringstream exceptionStr;
+            exceptionStr << "Cannot write into file " << fileName.str() << ".";
+            exc.set(exceptionStr.str());
+            throw exc;
+        }
+
+        const double res = like_.calculate(&(parCopy[0]), nPar_);
+        out << "1 " << res;
         for(int i = 0; i < nPar_; ++i)
-            out_ << ' ' << par[i];
-        out_ << std::endl;
-        ++calls_;
+            out << ' ' << par[i];
+        out << std::endl;
+        out.close();
+
+        if(calls_)
+            ++(*calls_);
+
         return res;
     }
 
-    unsigned long calls() const { return calls_; }
+    unsigned long calls() const { return (calls_ ? *calls_ : 0); }
 
     double Up() const {return 1.;}
 
 private:
     int nPar_;
     Math::LikelihoodFunction& like_;
-    std::ofstream out_;
-    unsigned long calls_;
+    unsigned long *calls_;
+    std::string fileRoot_;
 };
 
 class BestFit
 {
 public:
-    BestFit(int nPar, LikelihoodFunction& like, std::string fileRoot) calculator_(nPar, like, fileRoot), fileRoot_(fileRoot), paramNames_(nPar), starting_(nPar, 0.0), min_(nPar, 0.0), max_(nPar, 1.0), error_(nPar, 0.01)
+    BestFit(int nPar, LikelihoodFunction& like, std::string fileRoot) : calculator_(nPar, like, fileRoot, &calls_), calls_(0), nPar_(nPar), fileRoot_(fileRoot), paramNames_(nPar), starting_(nPar, 0.0), min_(nPar, 0.0), max_(nPar, 1.0), error_(nPar, 0.01)
     {
         check(nPar > 0, "Invalid number of parameters " << nPar << ". Must be positive.");
 
@@ -77,7 +97,7 @@ public:
         {
             std::stringstream name;
             name << "Parameter_" << i;
-            paramNames[i] = name.str();
+            paramNames_[i] = name.str();
         }
     }
 
@@ -89,9 +109,14 @@ public:
         min_[i] = min;
         max_[i] = max;
         starting_[i] = (starting == std::numeric_limits<double>::max() ? (max + min) / 2.0 : starting);
-        check(starting[i] >= min && starting[i] <= max, "invalid starting value " << starting);
+        check(starting_[i] >= min && starting_[i] <= max, "invalid starting value " << starting);
         error_[i] = (accuracy == 0.0 ? (max - min) / 100 : accuracy);
         check(error_[i] > 0, "invalid accuracy " << accuracy);
+    }
+    
+    void setParamGauss(int i, const std::string& name, double mean, double sigma, double starting = std::numeric_limits<double>::max(), double accuracy = 0.0)
+    {
+        setParam(i, name, mean - 5 * sigma, mean + 5 * sigma, starting, accuracy);
     }
 
     void run()
@@ -100,12 +125,12 @@ public:
         for(int i = 0; i < nPar_; ++i)
             upar.Add(paramNames_[i].c_str(), starting_[i], error_[i], min_[i], max_[i]);
 
-        ROOT::Minuit2::MnMigrad migrad(*calculator_, upar);
+        ROOT::Minuit2::MnMigrad migrad(calculator_, upar);
         ROOT::Minuit2::FunctionMinimum minRes = migrad();
         ROOT::Minuit2::MnUserParameters result = minRes.UserParameters();
 
         std::stringstream fileName;
-        fileName << fileRoot_ << "_best_fit.txt";
+        fileName << fileRoot_ << "best_fit.txt";
         std::ofstream out(fileName.str().c_str());
         if(!out)
         {
@@ -128,8 +153,10 @@ public:
     }
 
 private:
+    unsigned long calls_;
     BestFitMinuitCalculator calculator_;
-    std::string fileRoot_;
+    const int nPar_;
+    const std::string fileRoot_;
     std::vector<std::string> paramNames_;
     std::vector<double> starting_, min_, max_, error_;
 };

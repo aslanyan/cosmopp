@@ -10,7 +10,7 @@
 
 #include <clik.h>
 
-PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useLensing, bool usePol, bool useActSpt) : commander_(NULL), camspec_(NULL), lens_(NULL), pol_(NULL), actspt_(NULL), spectraNames_(6)
+PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useLensing, bool usePol, bool useActSpt, bool includeTensors) : commander_(NULL), camspec_(NULL), lens_(NULL), pol_(NULL), actspt_(NULL), spectraNames_(6)
 {
     check(useCommander || useCamspec || useLensing || usePol, "at least one likelihood must be specified");
 
@@ -188,7 +188,7 @@ PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useL
     }
 
     output_screen("Total l_max = " << lMax_ << std::endl);
-    cmb_.preInitialize(lMax_ + 1000);
+    cmb_.preInitialize(lMax_ + 1000, false, true, includeTensors, lMax_ + 1000);
 }
 
 void

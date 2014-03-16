@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
         //LinearSplineParams params(omBH2, omCH2, h, tau, kVals, amplitudes);
         //LCDMWithDegenerateNeutrinosParams params(omBH2, omCH2, h, tau, ns, as, pivot, nEff, nMassive, sumMNu);
         //LambdaCDMParams params(omBH2, omCH2, h, tau, ns, as, pivot);
-        LCDMWithTensorParams params(omBH2, omCH2, h, tau, ns, as, pivot, r, nt); 
+        LCDMWithTensorParams params(omBH2, omCH2, h, tau, ns, as, pivot, r, nt, pivot); 
 
         //ScaleFactorFunctionClass scaleFactor;
         //scaleFactor.initialize(params);

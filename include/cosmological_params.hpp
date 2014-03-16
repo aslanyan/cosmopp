@@ -168,10 +168,10 @@ private:
 class LCDMWithTensorParams : public LambdaCDMParams
 {
 public:
-    LCDMWithTensorParams(double omBH2, double omCH2, double h, double tau, double ns, double as, double pivot, double r, double nt) : LambdaCDMParams(omBH2, omCH2, h, tau, ns, as, pivot), r_(r), nt_(nt)
+    LCDMWithTensorParams(double omBH2, double omCH2, double h, double tau, double ns, double as, double pivot, double r, double nt, double pivotTensor) : LambdaCDMParams(omBH2, omCH2, h, tau, ns, as, pivot), r_(r), nt_(nt)
     {
-        psT_ = new StandardPowerSpectrumTensor(powerSpectrum(), r, nt, pivot);
-        check(r_ > 0, "invalid r");
+        psT_ = new StandardPowerSpectrumTensor(powerSpectrum(), r, nt, pivotTensor);
+        check(r_ >= 0, "invalid r");
     }
 
     ~LCDMWithTensorParams() { delete psT_; }
@@ -219,6 +219,51 @@ private:
     double nEff_;
     int nMassive_;
     double sumMNu_;
+};
+
+class LCDMWithTensorAndDegenerateNeutrinosParams : public LambdaCDMParams
+{
+public:
+    LCDMWithTensorAndDegenerateNeutrinosParams(double omBH2, double omCH2, double h, double tau, double ns, double as, double pivot, double r, double nt, double pivotTensor, double nEff, int nMassive, double sumMNu) : LambdaCDMParams(omBH2, omCH2, h, tau, ns, as, pivot), r_(r), nt_(nt), nEff_(nEff), nMassive_(nMassive), sumMNu_(sumMNu)
+    {
+        check(nEff > 0, "invalid nEff = " << nEff);
+        check(sumMNu >= 0, "invalid sumMNu = " << sumMNu);
+        check(nMassive >= 0, "number of massive neutrinos is negative: " << nMassive);
+        check(nEff > nMassive, "nEff needs to be more than the number of massive neutrinos");
+        
+        psT_ = new StandardPowerSpectrumTensor(powerSpectrum(), r, nt, pivotTensor);
+        check(r_ >= 0, "invalid r");
+    }
+
+    ~LCDMWithTensorAndDegenerateNeutrinosParams() { delete psT_; }
+
+    virtual double getR() const { return r_; }
+    virtual double getNt() const { return nt_; }
+
+    virtual const Math::RealFunction& powerSpectrumTensor() const { return *psT_; }
+
+    virtual double getNEff() const { return nEff_ - nMassive_; }
+    virtual int getNumNCDM() const { return nMassive_; }
+    virtual double getNCDMParticleMass(int i) const
+    {
+        check(i >= 0 && i < nMassive_, "invalid index = " << i);
+        return sumMNu_ / nMassive_;
+    }
+
+    virtual double getNCDMParticleTemp(int i) const
+    {
+        check(i >= 0 && i < nMassive_, "invalid index = " << i);
+        //return 0.715985;
+        return 0.713765855506013;
+    }
+
+private:
+    double nEff_;
+    int nMassive_;
+    double sumMNu_;
+    double r_;
+    double nt_;
+    StandardPowerSpectrumTensor* psT_;
 };
 
 class LinearSplineParams : public CosmologicalParams

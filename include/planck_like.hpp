@@ -17,7 +17,8 @@ public:
     /// \param useLensing Defines if lensing likelihood should be included (true by default).
     /// \param usePolarization Defines if polarization likelihood should be included (false by default).
     /// \param useActSpt Defines if high-l likelihood (ACT and SPT) should be included (false by default).
-    PlanckLikelihood(bool useCommander = true, bool useCamspec = true, bool useLensing = true, bool usePolarization = false, bool useActSpt = false);
+    /// \param includeTensors Defines if tensor modes should be taken into account during calculations (false by default).
+    PlanckLikelihood(bool useCommander = true, bool useCamspec = true, bool useLensing = true, bool usePolarization = false, bool useActSpt = false, bool includeTensors = false);
 
     /// Destructor.
     ~PlanckLikelihood();
