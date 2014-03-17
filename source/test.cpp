@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
         const int nMassive = 1;
         const double sumMNu = 0.0;
 
-        const double kCut = 0.0001;
+        const double kCut = 0.001;
 
         //LinearSplineParams params(omBH2, omCH2, h, tau, kVals, amplitudes);
         //LCDMWithDegenerateNeutrinosParams params(omBH2, omCH2, h, tau, ns, as, pivot, nEff, nMassive, sumMNu);

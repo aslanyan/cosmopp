@@ -65,6 +65,54 @@ MnScanner::setParamGauss(int i, const std::string& name, double mean, double sig
     paramPriors_[i][1 + epsilon] = xMax;
 }
 
+void
+MnScanner::setParamGeneral(int i, const std::string& name, double min, double max, const Math::RealFunction& distrib)
+{
+    check(i >= 0 && i < n_, "invalid index " << i);
+    check(max > min, "");
+
+    paramNames_[i] = name;
+    paramPriors_[i].clear();
+    const int N = 100000;
+
+    const double epsilon = 1e-7; // for numerics
+    paramPriors_[i][0 - epsilon] = min;
+    double xPrev = min;
+    double yPrev = 0;
+    double res = 0;
+    const double delta = (max - min) / N;
+
+    for(int j = 1; j <= N; ++j)
+    {
+        const double x = min + j * delta;
+        const double y = distrib.evaluate(x);
+
+        res += (x - xPrev) * (y + yPrev) / 2.0;
+        
+        xPrev = x;
+        yPrev = y;
+    }
+
+    const double norm = 1.0 / res;
+    xPrev = min;
+    yPrev = 0;
+    res = 0;
+    for(int j = 1; j <= N; ++j)
+    {
+        const double x = min + j * delta;
+        const double y = norm * distrib.evaluate(x);
+
+        res += (x - xPrev) * (y + yPrev) / 2.0;
+        check(res <= 1.0, "");
+
+        paramPriors_[i][res] = x;
+        xPrev = x;
+        yPrev = y;
+    }
+
+    paramPriors_[i][1 + epsilon] = max;
+}
+
 void myLogLike(double *cube, int &ndim, int &npars, double &lnew, void *context)
 {
     MnScanner* scanner = (MnScanner*) context;
