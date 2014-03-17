@@ -20,13 +20,25 @@ int main(int argc, char *argv[])
         const double as = 2.2154e-9;
         const double pivot = 0.05;
 
-        LambdaCDMParams params(omBH2, omCH2, h, tau, ns, as, pivot);
+        const double r = 0.2;
+        const double nt = 0;
 
-        PlanckLikelihood planck(true, true, true, true);
+        const double nEff = 3.046; 
+        const int nMassive = 1;
+        const double sumMNu = 0.0;
+
+        const double kCut = 0.0001;
+
+
+        //LambdaCDMParams params(omBH2, omCH2, h, tau, ns, as, pivot);
+        //LCDMWithTensorParams params(omBH2, omCH2, h, tau, ns, as, pivot, r, nt, pivot); 
+        LCDMWithCutoffTensorDegenerateNeutrinosParams params(omBH2, omCH2, h, tau, kCut, ns, as, pivot, r, nt, pivot, nEff, nMassive, sumMNu);
+
+        PlanckLikelihood planck(true, true, true, true, false, true);
         planck.setCosmoParams(params);
 
         planck.setCamspecExtraParams(153, 54.9, 55.8, 4, 55.5, 4, 0.91, 0.63, 0.6, 1, 1, 0.1, 1, 0.3);
-        planck.setActSptExtraParams(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        //planck.setActSptExtraParams(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
         planck.calculateCls();
 

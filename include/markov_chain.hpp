@@ -95,10 +95,13 @@ public:
     Posterior1D* posterior(int paramIndex, Posterior1D::SmoothingMethod method = Posterior1D::GAUSSIAN_SMOOTHING, double scale = 0) const;
     Posterior2D* posterior(int paramIndex1, int paramIndex2, double scale1 = 0, double scale2 = 0) const;
 
+    double maxLike() const { return minLike_; }
+
     void getRange(std::vector<Element*>& container, double pUpper = 0.683, double pLower = 0) const;
 private:
     std::vector<Element*> chain_;
     int nParams_;
+    double minLike_;
 };
 
 #endif

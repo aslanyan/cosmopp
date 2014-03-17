@@ -51,6 +51,25 @@ private:
     double run_;
 };
 
+class CutoffPowerSpectrum : public StandardPowerSpectrum
+{
+public:
+    CutoffPowerSpectrum(double kCut, double as, double ns, double pivot, double run = 0) : StandardPowerSpectrum(as, ns, pivot, run), kCut_(kCut) { check(kCut >= 0, "invalid kCut"); }
+
+    double getKCut() const { return kCut_; }
+
+    virtual double evaluate(double k) const
+    {
+        if(k < kCut_)
+            return 1e-100;
+
+        return StandardPowerSpectrum::evaluate(k);
+    }
+
+private:
+    double kCut_;
+};
+
 /// A standard amplitude-tilt tensor power spectrum class.
 class StandardPowerSpectrumTensor : public Math::RealFunction
 {

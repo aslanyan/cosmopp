@@ -23,17 +23,20 @@ int main(int argc, char *argv[])
         const double as = 2.2154e-9;
         const double pivot = 0.05;
 
-        const double r = 1e-10;
+        const double r = 0.00001;
         const double nt = 0;
 
         const double nEff = 3.046; 
         const int nMassive = 1;
-        const double sumMNu = 0.5;
+        const double sumMNu = 0.0;
+
+        const double kCut = 0.0001;
 
         //LinearSplineParams params(omBH2, omCH2, h, tau, kVals, amplitudes);
         //LCDMWithDegenerateNeutrinosParams params(omBH2, omCH2, h, tau, ns, as, pivot, nEff, nMassive, sumMNu);
         //LambdaCDMParams params(omBH2, omCH2, h, tau, ns, as, pivot);
-        LCDMWithTensorParams params(omBH2, omCH2, h, tau, ns, as, pivot, r, nt, pivot); 
+        //LCDMWithTensorParams params(omBH2, omCH2, h, tau, ns, as, pivot, r, nt, pivot); 
+        LCDMWithCutoffTensorDegenerateNeutrinosParams params(omBH2, omCH2, h, tau, kCut, ns, as, pivot, r, nt, pivot, nEff, nMassive, sumMNu);
 
         //ScaleFactorFunctionClass scaleFactor;
         //scaleFactor.initialize(params);
@@ -48,7 +51,7 @@ int main(int argc, char *argv[])
         CMB cmb;
 
         output_screen("Pre-initializing CLASS..." << std::endl);
-        cmb.preInitialize(lMax, false, false, true, lMax);
+        cmb.preInitialize(lMax, false, true, true, lMax);
         output_screen("OK" << std::endl);
 
         output_screen("Initializing CLASS..." << std::endl);

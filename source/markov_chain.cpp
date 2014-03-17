@@ -301,6 +301,8 @@ MarkovChain::MarkovChain(const char* fileName)
     unsigned long line = 0;
     double maxP = std::numeric_limits<double>::min();
     std::vector<Element*> bigChain;
+
+    minLike_ = std::numeric_limits<double>::max();
     while(!in.eof())
     {
         std::string s;
@@ -314,6 +316,9 @@ MarkovChain::MarkovChain(const char* fileName)
 
         if(elem->prob > maxP)
             maxP = elem->prob;
+
+        if(elem->like < minLike_)
+            minLike_ = elem->like;
 
         while(!str.eof())
         {

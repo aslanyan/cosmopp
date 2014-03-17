@@ -266,6 +266,24 @@ private:
     StandardPowerSpectrumTensor* psT_;
 };
 
+class LCDMWithCutoffTensorDegenerateNeutrinosParams : public LCDMWithTensorAndDegenerateNeutrinosParams
+{
+public:
+    LCDMWithCutoffTensorDegenerateNeutrinosParams(double omBH2, double omCH2, double h, double tau, double kCut, double ns, double as, double pivot, double r, double nt, double pivotTensor, double nEff, int nMassive, double sumMNu) : LCDMWithTensorAndDegenerateNeutrinosParams(omBH2, omCH2, h, tau, ns, as, pivot, r, nt, pivotTensor, nEff, nMassive, sumMNu), psC_(kCut, as, ns, pivot)
+    {
+    }
+
+    ~LCDMWithCutoffTensorDegenerateNeutrinosParams() {}
+
+    virtual const Math::RealFunction& powerSpectrum() const { return psC_; }
+    virtual double getNs() const { return psC_.getNs(); }
+    virtual double getAs() const { return psC_.getAs(); }
+    virtual double getPivot() const { return psC_.getPivot(); }
+
+private:
+    CutoffPowerSpectrum psC_;
+};
+
 class LinearSplineParams : public CosmologicalParams
 {
     class DummyPS : public Math::RealFunction
