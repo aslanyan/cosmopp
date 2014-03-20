@@ -20,7 +20,7 @@ int main(int argc, char *argv[])
         const double omCH2 = 0.12038;
         const double tau = 0.0925;
         const double ns = 0.9619;
-        const double as = 2.2154e-9;
+        const double as = 2.21536e-9;
         const double pivot = 0.05;
 
         const double r = 0.00001;
@@ -30,13 +30,13 @@ int main(int argc, char *argv[])
         const int nMassive = 1;
         const double sumMNu = 0.0;
 
-        const double kCut = 0.001;
+        const double kCut = 0.002;
 
         //LinearSplineParams params(omBH2, omCH2, h, tau, kVals, amplitudes);
         //LCDMWithDegenerateNeutrinosParams params(omBH2, omCH2, h, tau, ns, as, pivot, nEff, nMassive, sumMNu);
         //LambdaCDMParams params(omBH2, omCH2, h, tau, ns, as, pivot);
-        //LCDMWithTensorParams params(omBH2, omCH2, h, tau, ns, as, pivot, r, nt, pivot); 
-        LCDMWithCutoffTensorDegenerateNeutrinosParams params(omBH2, omCH2, h, tau, kCut, ns, as, pivot, r, nt, pivot, nEff, nMassive, sumMNu);
+        LCDMWithTensorParams params(omBH2, omCH2, h, tau, ns, as, pivot, r, nt, pivot); 
+        //LCDMWithCutoffTensorDegenerateNeutrinosParams params(omBH2, omCH2, h, tau, kCut, ns, as, pivot, r, nt, pivot, nEff, nMassive, sumMNu);
 
         //ScaleFactorFunctionClass scaleFactor;
         //scaleFactor.initialize(params);
@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
         output_screen("OK" << std::endl);
 
         output_screen("Initializing CLASS..." << std::endl);
-        cmb.initialize(params, true, true, true);
+        cmb.initialize(params, true, true, true, true);
         output_screen("OK" << std::endl);
 
         cmb.getCl(&clTT, &clEE, &clTE, &clPP, &clTP, &clEP, &clBB);
@@ -74,6 +74,29 @@ int main(int argc, char *argv[])
 
         outLensed.close();
         out.close();
+
+        Math::TableFunction<double, double> matterPs;
+        cmb.getMatterPs(0, &matterPs);
+
+        out.open("matter_pk.txt");
+        for(Math::TableFunction<double, double>::const_iterator it = matterPs.begin(); it != matterPs.end(); ++it)
+        {
+            out << (*it).first << '\t' << (*it).second << std::endl;
+        }
+        out.close();
+
+        Math::TableFunction<double, double> matterTk;
+        cmb.getMatterTransfer(0, &matterTk);
+
+        out.open("matter_tk.txt");
+        for(Math::TableFunction<double, double>::const_iterator it = matterTk.begin(); it != matterTk.end(); ++it)
+        {
+            out << (*it).first << '\t' << (*it).second << std::endl;
+        }
+        out.close();
+
+        output_screen("Sigma8 = " << cmb.sigma8() << std::endl);
+
     } catch (std::exception& e)
     {
         output_screen("EXCEPTION CAUGHT!!! " << std::endl << e.what() << std::endl);

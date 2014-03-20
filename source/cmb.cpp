@@ -2,9 +2,11 @@
 #include <sstream>
 #include <iomanip>
 #include <fstream>
+#include <cmath>
 
 #include <macros.hpp>
 #include <exception_handler.hpp>
+#include <math_constants.hpp>
 #include <cmb.hpp>
 
 #include <class.h>
@@ -102,14 +104,19 @@ CMB::preInitialize(int lMax, bool wantAllL, bool primordialInitialize, bool incl
 }
 
 void
-CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool wantLensing)
+CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool wantLensing, bool wantMatterPs, double zMaxPk)
 {
     StandardException exc;
 
     check(preInit_, "need to preInitialize first");
 
+    params_ = &params;
+
     if(init_)
         clean();
+
+    pr_->k_per_decade_for_pk = 100;
+    pr_->k_per_decade_for_bao = 100;
 
     br_->H0 = params.getH() * 1e5 / _c_;
     br_->h = params.getH();
@@ -248,6 +255,18 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
         background_init(pr_, br_);
     }
 
+    if(wantMatterPs)
+    {
+        check(zMaxPk >= 0, "invalid zMaxPk = " << zMaxPk);
+        pt_->has_pk_matter = true;
+        pt_->has_density_transfers = true;
+        sp_->z_max_pk = zMaxPk;
+        //nl_->method = nl_halofit;
+        //pr_->halofit_dz = 0.1;
+        //pr_->halofit_min_k_nonlinear = 0.0035;
+        //pr_->halofit_sigma_precision = 0.05;
+    }
+
     pt_->has_scalars = true;
     pt_->has_vectors = false;
     pt_->has_tensors = includeTensors_;
@@ -286,12 +305,67 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
         outLog << "Omega0_g = " << br_->Omega0_g << std::endl;
         outLog << "Omega0_ur = " << br_->Omega0_ur << std::endl;
         outLog << "tau = " << th_->tau_reio << std::endl;
+        outLog << "Message: " << pt_->error_message;
         outLog.close();
 
         thermodynamics_free(th_);
         background_free(br_);
         br_->h += 1e-5;
         br_->H0 = br_->h * 1e5 / _c_;
+
+        if(ncdm != 0)
+        {
+            br_->N_ncdm = ncdm;
+
+            br_->T_ncdm = (double*) malloc(ncdm * sizeof(double));
+            br_->ksi_ncdm = (double*) malloc(ncdm * sizeof(double));
+            br_->deg_ncdm = (double*) malloc(ncdm * sizeof(double));
+            br_->M_ncdm = (double*) malloc(ncdm * sizeof(double));
+            br_->Omega0_ncdm = (double*) malloc(ncdm * sizeof(double));
+            br_->m_ncdm_in_eV = (double*) malloc(ncdm * sizeof(double));
+
+            br_->got_files = (int*) malloc(ncdm * sizeof(int));
+
+            br_->ncdm_psd_files = NULL;
+            br_->ncdm_psd_parameters = NULL;
+
+            for(int i = 0; i < ncdm; ++i)
+            {
+                br_->T_ncdm[i] = params.getNCDMParticleTemp(i);
+                br_->ksi_ncdm[i] = br_->ksi_ncdm_default;
+                br_->deg_ncdm[i] = br_->deg_ncdm_default;
+                br_->M_ncdm[i] = 0.0;
+                br_->Omega0_ncdm[i] = 0.0;
+                br_->m_ncdm_in_eV[i] = params.getNCDMParticleMass(i);
+
+                br_->got_files[i] = 0;
+            }
+
+            if(background_ncdm_init(pr_, br_) == _FAILURE_)
+            {
+                std::stringstream exceptionStr;
+                exceptionStr << "CLASS: background_ncdm_init failed!" << std::endl << br_->error_message;
+                exc.set(exceptionStr.str());
+                throw exc;
+            }
+
+            for(int i = 0; i < ncdm; ++i)
+            {
+                double rhoNCDM;
+                br_->M_ncdm[i] = br_->m_ncdm_in_eV[i] * Phys::eCharge / Phys::kB / (br_->T_ncdm[i] * br_->T_cmb);
+                if(background_ncdm_momenta(br_->q_ncdm_bg[i], br_->w_ncdm_bg[i], br_->q_size_ncdm_bg[i], br_->M_ncdm[i], br_->factor_ncdm[i], 0.0, NULL, &rhoNCDM, NULL, NULL, NULL) == _FAILURE_)
+                {
+                    std::stringstream exceptionStr;
+                    exceptionStr << "CLASS: background_ncdm_momenta failed!" << std::endl << br_->error_message;
+                    exc.set(exceptionStr.str());
+                    throw exc;
+                }
+                br_->Omega0_ncdm[i] = rhoNCDM / (br_->H0 * br_->H0);
+                br_->Omega0_ncdm_tot += br_->Omega0_ncdm[i];
+            }
+        }
+
+
         background_init(pr_, br_);
         thermodynamics_init(pr_, br_, th_);
 
@@ -364,6 +438,7 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
         exc.set(exceptionStr.str());
         throw exc;
     }
+
 
     sp_->has_tt = wantT;
     sp_->has_ee = wantPol;
@@ -766,6 +841,122 @@ CMB::getTransfer(int l, Math::TableFunction<double, double>* t, Math::TableFunct
     }
 }
 
+void
+CMB::getMatterPs(double z, Math::TableFunction<double, double>* ps)
+{
+    StandardException exc;
+    check(init_, "need to initialize first");
+    check(pt_->has_pk_matter, "matter ps not requested");
+    check(z >= 0 && z <= sp_->z_max_pk, "invalid z = " << z);
+    const int kSize = sp_->ln_k_size;
+    check(kSize > 0, "");
+
+    // To be done better
+    check(kSize < 10000, "");
+    double outTot[100000];
+    double outIc[100000];
+
+    if(spectra_pk_at_z(br_, sp_, linear, z, outTot, outIc) == _FAILURE_)
+    {
+        std::stringstream exceptionStr;
+        exceptionStr << "CLASS: spectra_pk_at_z failed!" << std::endl << sp_->error_message;
+        exc.set(exceptionStr.str());
+        throw exc;
+    }
+
+    ps->clear();
+
+    for(int i = 0; i < kSize; ++i)
+    {
+        const double k = std::exp(sp_->ln_k[i]);
+        (*ps)[k] = outTot[i];
+    }
+}
+
+void
+CMB::getMatterTransfer(double z, Math::TableFunction<double, double>* tk)
+{
+    StandardException exc;
+    check(init_, "need to initialize first");
+    check(pt_->has_density_transfers, "matter ps not requested");
+    check(z >= 0 && z <= sp_->z_max_pk, "invalid z = " << z);
+    const int kSize = sp_->ln_k_size;
+    check(kSize > 0, "");
+
+    // To be done better
+    check(kSize < 10000, "");
+    double out[100000];
+
+    tk->clear();
+
+    for(int i = 0; i < kSize; ++i)
+    {
+        const double k = std::exp(sp_->ln_k[i]);
+        if(spectra_tk_at_k_and_z(br_, sp_, k, z, out) == _FAILURE_)
+        {
+            std::stringstream exceptionStr;
+            exceptionStr << "CLASS: spectra_tk_at_k_and_z failed!" << std::endl << sp_->error_message;
+            exc.set(exceptionStr.str());
+            throw exc;
+        }
+        (*tk)[k] = out[sp_->index_tr_delta_tot];
+    }
+}
+
+double
+CMB::sigma8()
+{
+    StandardException exc;
+    check(init_, "need to initialize first");
+    check(pt_->has_density_transfers, "matter ps not requested");
+
+    // from CLASS
+    /*
+    double sigma;
+    if(spectra_sigma(br_, pm_, sp_, 8.0 / params_->getH(), 0.0, &sigma) == _FAILURE_)
+    {
+        std::stringstream exceptionStr;
+        exceptionStr << "CLASS: spectra_sigma failed!" << std::endl << sp_->error_message;
+        exc.set(exceptionStr.str());
+        throw exc;
+    }
+    return sigma;
+    */
+
+    Math::TableFunction<double, double> pk;
+    getMatterPs(0.0, &pk);
+    check(!pk.empty(), "");
+
+    double res = 0;
+    int N = 10000;
+    double logKMin, logKMax;
+    Math::TableFunction<double, double>:: const_iterator it = pk.begin();
+    logKMin = std::log((*it).first);
+    it = pk.end();
+    --it;
+    logKMax = std::log((*it).first);
+    check(logKMax > logKMin, "");
+    const double logKDelta = (logKMax - logKMin) / N;
+    double yPrev = 0;
+    for(int i = 1; i <= N; ++i)
+    {
+        const double x = logKMin + i * logKDelta;
+        double k = std::exp(x);
+        if(i == N)
+            k = (*it).first;
+
+        const double v = 8 * k / (params_->getH());
+        check(v > 0, "");
+        const double w = 3 * (std::sin(v) - v * std::cos(v)) / (v * v * v);
+
+        const double p = pk.evaluate(k);
+        const double y = k * k * k * w * w * p / (2 * Math::pi * Math::pi);
+        res += (y + yPrev) * logKDelta / 2;
+        yPrev = y;
+    }
+
+    return std::sqrt(res);
+}
 
 
 /*

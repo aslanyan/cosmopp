@@ -131,7 +131,7 @@ class LambdaCDMParams : public CosmologicalParams
     };
 
 public:
-    LambdaCDMParams(double omBH2, double omCH2, double h, double tau, double ns, double as, double pivot) : CosmologicalParams(), omBH2_(omBH2), omCH2_(omCH2), h_(h), tau_(tau), ps_(as, ns, pivot) {}
+    LambdaCDMParams(double omBH2, double omCH2, double h, double tau, double ns, double as, double pivot, double run = 0.0) : CosmologicalParams(), omBH2_(omBH2), omCH2_(omCH2), h_(h), tau_(tau), ps_(as, ns, pivot, run) {}
     ~LambdaCDMParams() {}
 
     virtual double getOmBH2() const { return omBH2_; }
@@ -224,7 +224,7 @@ private:
 class LCDMWithTensorAndDegenerateNeutrinosParams : public LambdaCDMParams
 {
 public:
-    LCDMWithTensorAndDegenerateNeutrinosParams(double omBH2, double omCH2, double h, double tau, double ns, double as, double pivot, double r, double nt, double pivotTensor, double nEff, int nMassive, double sumMNu) : LambdaCDMParams(omBH2, omCH2, h, tau, ns, as, pivot), r_(r), nt_(nt), nEff_(nEff), nMassive_(nMassive), sumMNu_(sumMNu)
+    LCDMWithTensorAndDegenerateNeutrinosParams(double omBH2, double omCH2, double h, double tau, double ns, double as, double pivot, double r, double nt, double pivotTensor, double nEff, int nMassive, double sumMNu, double run = 0.0) : LambdaCDMParams(omBH2, omCH2, h, tau, ns, as, pivot, run), r_(r), nt_(nt), nEff_(nEff), nMassive_(nMassive), sumMNu_(sumMNu)
     {
         check(nEff > 0, "invalid nEff = " << nEff);
         check(sumMNu >= 0, "invalid sumMNu = " << sumMNu);

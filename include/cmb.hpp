@@ -44,7 +44,7 @@ public:
     /// \param wantT A flag specifying if the T mode (temperature) should be calculated.
     /// \param wantPol A flag specifying if polarization modes (E and B) should be calculated.
     /// \param wantLensing A flag specifying if lensing potential and lensed Cl-s should be calculated.
-    void initialize(const CosmologicalParams& params, bool wantT = true, bool wantPol = false, bool wantLensing = false);
+    void initialize(const CosmologicalParams& params, bool wantT = true, bool wantPol = false, bool wantLensing = false, bool wantMatterPs = false, double zMaxPk = 0);
 
     /// Retrieves the values of the calculated CMB power spectra.
     /// \param clTT A pointer to a vector where TT power spectra should be stored. Give NULL if not wanted. NOTE: Can only be requested if T modes have been calculated during initialization.
@@ -70,6 +70,12 @@ public:
     /// \param p A pointer to a map where the the lensing potential transfer function should be stored. Give NULL if not wanted. NOTE: Can only be requested if lensing has been calculated during initialization.
     void getTransfer(int l, Math::TableFunction<double, double>* t, Math::TableFunction<double, double>* e = NULL, Math::TableFunction<double, double>* p = NULL);
 
+    void getMatterPs(double z, Math::TableFunction<double, double>* ps);
+
+    void getMatterTransfer(double z, Math::TableFunction<double, double>* tk);
+
+    double sigma8();
+
 private:
     void preClean();
     void clean();
@@ -78,6 +84,8 @@ private:
     void deAllocate();
 
 private:
+    const CosmologicalParams* params_;
+
     precision* pr_;
     background* br_;
     thermo* th_;
