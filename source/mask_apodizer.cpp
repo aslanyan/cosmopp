@@ -29,17 +29,17 @@ double
 MaskApodizer::cosApodization(double sigma, double x) const
 {
    if(x > sigma)
-       return 0;
-   return std::cos(Math::pi * x / (2 * sigma));
+       return 1;
+   return 1 - std::cos(Math::pi * x / (2 * sigma));
 }
 
 double
 MaskApodizer::gaussApodization(double sigma, double x) const
 {
    if(x > sigma)
-       return 0;
+       return 1;
     check(sigma > 0, "invalid sigma = " << sigma);
-    return std::exp(- 9 * x * x / (2 * sigma * sigma));
+    return 1 - std::exp(- 9 * x * x / (2 * sigma * sigma));
 }
 
 void
@@ -64,7 +64,7 @@ MaskApodizer::apodize(ApodizationType type, double angle, Healpix_Map<double>& r
     ProgressMeter meter(nPix);
     for(long i = 0; i < nPix; ++i)
     {
-        if(result[i] != 0)
+        if(result[i] == 0)
         {
             meter.advance();
             continue;
@@ -74,16 +74,16 @@ MaskApodizer::apodize(ApodizationType type, double angle, Healpix_Map<double>& r
         result.Scheme() == NEST ? pix2ang_nest(result.Nside(), i, &theta, &phi) : pix2ang_ring(result.Nside(), i, &theta, &phi);
         long index;
         result.Scheme() == NEST ? ang2pix_nest(result.Nside(), correctTheta(theta + pixSize), phi, &index) : ang2pix_nest(result.Nside(), correctTheta(theta + pixSize), phi, &index);
-        if(result[index] == 1)
+        if(result[index] == 0)
             isOnEdge = true;
         result.Scheme() == NEST ? ang2pix_nest(result.Nside(), correctTheta(theta - pixSize), phi, &index) : ang2pix_nest(result.Nside(), correctTheta(theta - pixSize), phi, &index);
-        if(result[index] == 1)
+        if(result[index] == 0)
             isOnEdge = true;
         result.Scheme() == NEST ? ang2pix_nest(result.Nside(), theta, phi + pixSize, &index) : ang2pix_nest(result.Nside(), theta, phi + pixSize, &index);
-        if(result[index] == 1)
+        if(result[index] == 0)
             isOnEdge = true;
         result.Scheme() == NEST ? ang2pix_nest(result.Nside(), theta, phi - pixSize, &index) : ang2pix_nest(result.Nside(), theta, phi - pixSize, &index);
-        if(result[index] == 1)
+        if(result[index] == 0)
             isOnEdge = true;
         if(isOnEdge)
         {
@@ -104,7 +104,7 @@ MaskApodizer::apodize(ApodizationType type, double angle, Healpix_Map<double>& r
 #pragma omp parallel for default(shared)
     for(long i = 0; i < nPix; ++i)
     {
-        if(result[i] != 0)
+        if(result[i] == 0)
         {
             omp_set_lock(&lock);
             meter1.advance();
