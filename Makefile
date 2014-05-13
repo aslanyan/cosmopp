@@ -56,6 +56,8 @@ CFLAGS=$(MYFLAGS) -c -g -O2 -fpic -I include -I $(CFITSIO)/include -I $(HEALPIX)
 MACROS_HPP = include/macros.hpp
 EXCEPTION_HANDLER_HPP = include/exception_handler.hpp
 PROGRESS_METER_HPP = include/progress_meter.hpp $(MACROS_HPP)
+NUMERICS_HPP = include/numerics.hpp
+TEST_FRAMEWORK_HPP = include/test_framework.hpp
 
 ANGULAR_COORDINATES_HPP = include/angular_coordinates.hpp
 COMPLEX_TYPES_HPP = include/complex_types.hpp
@@ -66,7 +68,6 @@ FUNCTION_HPP = include/function.hpp
 HISTOGRAM_HPP = include/histogram.hpp
 INT_OPERATION_HPP = include/int_operations.hpp
 LIKELIHOOD_FUNCTION_HPP = include/likelihood_function.hpp
-NUMERICS_HPP = include/numerics.hpp
 INTEGRAL_HPP = include/integral.hpp $(MACROS_HPP) $(FUNCTION_HPP)
 PARAMETRIC_FUNCTION_HPP = include/parametric_function.hpp $(MACROS_HPP) $(FUNCTION_HPP)
 FIT_HPP = include/fit.hpp $(MACROS_HPP) $(PARAMETRIC_FUNCTION_HPP)
@@ -76,7 +77,7 @@ CUBIC_SPLINE_HPP = include/cubic_spline.hpp $(MACROS_HPP) $(FUNCTION_HPP)
 GAUSS_SMOOTH_HPP = include/gauss_smooth.hpp $(MACROS_HPP) $(FUNCTION_HPP)
 THREE_VECTOR_HPP = include/three_vector.hpp $(ANGULAR_COORDINATES_HPP) $(MATH_CONSTANTS_HPP)
 THREE_ROTATION_HPP = include/three_rotation.hpp $(MACROS_HPP) $(THREE_VECTOR_HPP) $(NUMERICS_HPP)
-MCMC_HPP = include/mcmc.hpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(MATH_CONSTANTS_HPP) $(LIKELIHOOD_FUNCTION_HPP)
+MCMC_HPP = include/mcmc.hpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(MATH_CONSTANTS_HPP) $(LIKELIHOOD_FUNCTION_HPP) $(RANDOM_HPP)
 MN_SCANNER_HPP = include/mn_scanner.hpp $(LIKELIHOOD_FUNCTION_HPP) $(TABLE_FUNCTION_HPP)
 WIGNER_3J_HPP = include/wigner_3j.hpp $(MACROS_HPP)
 RANDOM_HPP = include/random.hpp
@@ -97,18 +98,21 @@ COSMOLOGICAL_PARAMS_HPP = include/cosmological_params.hpp $(MACROS_HPP) $(PHYS_C
 CMB_HPP = include/cmb.hpp $(TABLE_FUNCTION_HPP) $(COSMOLOGICAL_PARAMS_HPP)
 PLANCK_LIKE_HPP = include/planck_like.hpp $(LIKELIHOOD_FUNCTION_HPP) $(CMB_HPP)
 SCALE_FACTOR_HPP = include/scale_factor.hpp $(MACROS_HPP) $(TABLE_FUNCTION_HPP) $(COSMOLOGICAL_PARAMS_HPP)
-CMG_GIBBS_HPP = include/cmb_gibbs.hpp
+CMB_GIBBS_HPP = include/cmb_gibbs.hpp $(RANDOM_HPP)
 MASK_APODIZER_HPP = include/mask_apodizer.hpp
 
+TEST_UNIT_CONVERSIONS_HPP = include/test_unit_conversions.hpp $(TEST_FRAMEWORK_HPP)
+TEST_INT_OPERATIONS_HPP = include/test_int_operations.hpp $(TEST_FRAMEWORK_HPP)
+TEST_INTEGRAL_HPP = include/test_integral.hpp $(TEST_FRAMEWORK_HPP)
+TEST_CONJUGATE_GRADIENT_HPP = include/test_conjugate_gradient.hpp $(TEST_FRAMEWORK_HPP)
 
 all: lib/libcosmopp.a bin/analyze_chain bin/sort_chain bin/contour_plot bin/test bin/generate_white_noise bin/apodize_mask $(PLANCK_TARGET) $(PLANCK_AND_MULTINEST_TARGET)
-
 
 OBJ_LIBRARY = obj/whole_matrix.o obj/utils.o obj/c_matrix.o obj/c_matrix_generator.o obj/simulate.o obj/likelihood.o obj/master.o obj/mode_directions.o obj/scale_factor.o obj/cmb.o obj/cmb_gibbs.o obj/mask_apodizer.o obj/markov_chain.o $(MULTINEST_OBJ) $(PLANCK_OBJ) 
 lib/libcosmopp.a: $(OBJ_LIBRARY)
 	ar rcs $@ $(OBJ_LIBRARY)
 
-OBJ_TEST = obj/test.o obj/scale_factor.o obj/cmb.o
+OBJ_TEST = obj/test.o obj/test_unit_conversions.o obj/test_int_operations.o obj/test_integral.o obj/test_conjugate_gradient.o
 bin/test: $(OBJ_TEST)
 	$(CC) $(LFLAGS1) -o $@ $(OBJ_TEST) $(LFLAGS2)
 
@@ -149,7 +153,7 @@ bin/contour_plot: $(OBJ_CONTOUR_PLOT)
 obj/c_matrix.o: source/c_matrix.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(UTILS_HPP) $(C_MATRIX_HPP)
 	$(CC) $(CFLAGS) source/c_matrix.cpp -o $@
 
-obj/c_matrix_generator.o: source/c_matrix_generator.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(NUMERICS_HPP) $(ANGULAR_COORDINATES_HPP) $(THREE_ROTATION_HPP) $(PROGRESS_METER_HPP) $(C_MATRIX_GENERATOR_HPP) $(UTILS_HPP)
+obj/c_matrix_generator.o: source/c_matrix_generator.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(NUMERICS_HPP) $(ANGULAR_COORDINATES_HPP) $(THREE_ROTATION_HPP) $(PROGRESS_METER_HPP) $(C_MATRIX_GENERATOR_HPP) $(UTILS_HPP) $(RANDOM_HPP)
 	$(CC) $(CFLAGS) source/c_matrix_generator.cpp -o $@
 
 obj/cmb.o: source/cmb.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(MATH_CONSTANTS_HPP) $(CMB_HPP)
@@ -182,7 +186,7 @@ endif
 obj/scale_factor.o: source/scale_factor.cpp $(UNIT_CONVERSIONS_HPP) $(TABLE_FUNCTION_HPP) $(SCALE_FACTOR_HPP)
 	$(CC) $(CFLAGS) source/scale_factor.cpp -o $@
 
-obj/simulate.o: source/simulate.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(NUMERICS_HPP) $(WHOLE_MATRIX_HPP) $(SIMULATE_HPP)
+obj/simulate.o: source/simulate.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(NUMERICS_HPP) $(WHOLE_MATRIX_HPP) $(RANDOM_HPP) $(SIMULATE_HPP)
 	$(CC) $(CFLAGS) source/simulate.cpp -o $@
 
 obj/sort_chain.o: source/sort_chain.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP)
@@ -194,7 +198,7 @@ obj/analyze_chain.o: source/analyze_chain.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_
 obj/contour_plot.o: source/contour_plot.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP)
 	$(CC) $(CFLAGS) source/contour_plot.cpp -o $@
 
-obj/test.o: source/test.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(PHYS_CONSTANTS_HPP) $(SCALE_FACTOR_HPP) $(COSMOLOGICAL_PARAMS_HPP) $(CMB_HPP)
+obj/test.o: source/test.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(TEST_FRAMEWORK_HPP) $(TEST_UNIT_CONVERSIONS_HPP) $(TEST_INT_OPERATIONS_HPP) $(TEST_INTEGRAL_HPP) $(TEST_CONJUGATE_GRADIENT_HPP)
 	$(CC) $(CFLAGS) source/test.cpp -o $@
 
 ifdef PLANCKDIR
@@ -222,6 +226,18 @@ obj/apodize_mask.o: source/apodize_mask.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HP
 
 obj/markov_chain.o: source/markov_chain.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(CUBIC_SPLINE_HPP) $(GAUSS_SMOOTH_HPP) $(PROGRESS_METER_HPP) $(MARKOV_CHAIN_HPP)
 	$(CC) $(CFLAGS) source/markov_chain.cpp -o $@
+
+obj/test_unit_conversions.o: source/test_unit_conversions.cpp $(TEST_UNIT_CONVERSIONS_HPP) $(UNIT_CONVERSIONS_HPP)
+	$(CC) $(CFLAGS) source/test_unit_conversions.cpp -o $@
+
+obj/test_int_operations.o: source/test_int_operations.cpp $(TEST_INT_OPERATIONS_HPP) $(INT_OPERATIONS_HPP)
+	$(CC) $(CFLAGS) source/test_int_operations.cpp -o $@
+
+obj/test_integral.o: source/test_integral.cpp $(TEST_INTEGRAL_HPP) $(INTEGRAL_HPP)
+	$(CC) $(CFLAGS) source/test_integral.cpp -o $@
+
+obj/test_conjugate_gradient.o: source/test_conjugate_gradient.cpp $(TEST_CONJUGATE_GRADIENT_HPP) $(CONJUGATE_GRADIENT_HPP)
+	$(CC) $(CFLAGS) source/test_conjugate_gradient.cpp -o $@
 
 clean:
 	rm obj/* bin/* lib/*

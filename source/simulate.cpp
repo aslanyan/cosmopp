@@ -9,11 +9,8 @@
 #include <exception_handler.hpp>
 #include <numerics.hpp>
 #include <whole_matrix.hpp>
+#include <random.hpp>
 #include <simulate.hpp>
-
-#include <boost/random/normal_distribution.hpp>
-#include <boost/random/mersenne_twister.hpp>
-#include <boost/random/variate_generator.hpp>
 
 #include <gmd.h>
 #include <lavd.h>
@@ -78,15 +75,15 @@ Simulate::simulateAlm(const WholeMatrix& wholeMatrix, Alm<xcomplex<double> >& al
     diagonalizeMatrix(imMatrix, imEigenvalsRe, imEigenvalsIm, imVecs);
     
     //output_screen("Simulating with seed " << seed << "..." << std::endl)
-    boost::variate_generator<boost::mt19937, boost::normal_distribution<> > generator(boost::mt19937(seed), boost::normal_distribution<>(0, 1));
+    Math::GaussianGenerator generator(seed, 0, 1);
     
     const xcomplex<double> zero(0, 0);
     LaVectorDouble re(matrixSize), im(matrixSize), reRot(matrixSize), imRot(matrixSize);
         
     for(int i = 0; i < matrixSize; ++i)
     {
-        re(i) = generator() * std::sqrt(reEigenvalsRe(i));
-        im(i) = generator() * std::sqrt(imEigenvalsRe(i));
+        re(i) = generator.generate() * std::sqrt(reEigenvalsRe(i));
+        im(i) = generator.generate() * std::sqrt(imEigenvalsRe(i));
     }
     
     Blas_Mat_Vec_Mult(reVecs, re, reRot);
@@ -186,16 +183,16 @@ Simulate::simulateAlm(const std::vector<double>& cl, Alm<xcomplex<double> >& alm
     const int lMin = 0;
     
     //output_screen("Simulating with seed " << seed << "..." << std::endl)
-    boost::variate_generator<boost::mt19937, boost::normal_distribution<> > generator(boost::mt19937(seed), boost::normal_distribution<>(0, 1));
+    Math::GaussianGenerator generator(seed, 0, 1);
     
     alm.Set(lMax, lMax);
     for(int l = 0; l <= lMax; ++l)
     {
-        alm(l, 0) = xcomplex<double>(generator() * std::sqrt(cl[l]), 0.0);
+        alm(l, 0) = xcomplex<double>(generator.generate() * std::sqrt(cl[l]), 0.0);
         for(int m = 1; m <= l; ++m)
         {
-            const double re = generator() * std::sqrt(cl[l] / 2);
-            const double im = generator() * std::sqrt(cl[l] / 2);
+            const double re = generator.generate() * std::sqrt(cl[l] / 2);
+            const double im = generator.generate() * std::sqrt(cl[l] / 2);
             alm(l, m) = xcomplex<double>(re, im);
         }
     }
@@ -274,8 +271,8 @@ Simulate::simulateWhiteNoise(Healpix_Map<double>& map, double noiseVal, time_t s
     if(seed == 0)
         seed = std::time(0);
 
-    boost::variate_generator<boost::mt19937, boost::normal_distribution<> > generator(boost::mt19937(seed), boost::normal_distribution<>(0, noiseVal));
+    Math::GaussianGenerator generator(seed, 0, noiseVal);
     for(long i = 0; i < map.Npix(); ++i)
-        map[i] = generator();
+        map[i] = generator.generate();
 }
 

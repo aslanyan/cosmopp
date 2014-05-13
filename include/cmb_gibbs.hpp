@@ -3,9 +3,7 @@
 
 #include <vector>
 
-#include <boost/random/normal_distribution.hpp>
-#include <boost/random/mersenne_twister.hpp>
-#include <boost/random/variate_generator.hpp>
+#include <random.hpp>
 
 #include <healpix_map.h>
 #include <alm.h>
@@ -103,7 +101,7 @@ private:
     double a00_, a1m1_, a10_, a11_; // monopole and dipole coefficients
     Healpix_Map<double> y00_, y1m1_, y10_, y11_;
 
-    boost::variate_generator<boost::mt19937, boost::normal_distribution<> >* generator_;
+    Math::GaussianGenerator* generator_;
 };
 
 #endif

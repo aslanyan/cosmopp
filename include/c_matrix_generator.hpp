@@ -3,8 +3,8 @@
 
 #include <vector>
 
-#include "c_matrix.hpp"
-#include "whole_matrix.hpp"
+#include <c_matrix.hpp>
+#include <whole_matrix.hpp>
 
 /// A container for Legendre Polynomials calculated between pixels. Can be used in the CMatrixGenerator class to speed up calculations.
 class LegendrePolynomialContainer

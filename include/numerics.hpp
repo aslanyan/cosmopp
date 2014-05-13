@@ -12,12 +12,15 @@ namespace Math
 /// \param a The first number.
 /// \param b The second number.
 /// \param precision The precision with which to check the numbers equality.
-/// \return true if b is equal to a with the given precision.
+/// \return true if b is equal to a with the given precision. If one of the numbers is 0 the other should be less than the precision in absolute value for true.
 template<typename T>
 bool areEqual(T a, T b, T precision = 1E-7)
 {
-	if(std::abs(a) < precision)
+	if(a == 0)
 		return std::abs(b) < precision;
+    if(b == 0)
+        return std::abs(a) < precision;
+
 	return std::abs(a - b) / std::abs(a) < precision;
 }
 	

@@ -1,102 +1,153 @@
 #include <fstream>
-#include <vector>
+#include <set>
 #include <sstream>
 
 #include <macros.hpp>
 #include <exception_handler.hpp>
-#include <phys_constants.hpp>
 
-#include <cosmological_params.hpp>
-//#include <scale_factor.hpp>
-#include <cmb.hpp>
+#include <test_framework.hpp>
+#include <test_unit_conversions.hpp>
+#include <test_int_operations.hpp>
+#include <test_integral.hpp>
+#include <test_conjugate_gradient.hpp>
+
+TestFramework* createTest(const std::string& name)
+{
+    TestFramework* test = NULL;
+
+    if(name == "unit_conversions")
+        test = new TestUnitConversions;
+    else if(name == "int_operations")
+        test = new TestIntOperations;
+    else if(name == "integral")
+        test = new TestIntegral;
+    else if(name == "conjugate_gradient")
+        test = new TestConjugateGradient;
+
+    return test;
+}
+
+bool runTest(const std::string& name)
+{
+    TestFramework* test = createTest(name);
+    check(test, "The test name was not found");
+    unsigned int pass, fail;
+    bool res = test->run(pass, fail);
+    delete test;
+    return res;
+}
 
 int main(int argc, char *argv[])
 {
     try {
         StandardException exc;
+        
+        unsigned int total = 0, pass = 0, fail = 0;
 
-        const double h = 0.6704;
-        const double omBH2 = 0.022032;
-        const double omCH2 = 0.12038;
-        const double tau = 0.0925;
-        const double ns = 0.9619;
-        const double as = 2.21536e-9;
-        const double pivot = 0.05;
-
-        const double r = 0.00001;
-        const double nt = 0;
-
-        const double nEff = 3.046; 
-        const int nMassive = 1;
-        const double sumMNu = 0.0;
-
-        const double kCut = 0.002;
-
-        //LinearSplineParams params(omBH2, omCH2, h, tau, kVals, amplitudes);
-        //LCDMWithDegenerateNeutrinosParams params(omBH2, omCH2, h, tau, ns, as, pivot, nEff, nMassive, sumMNu);
-        //LambdaCDMParams params(omBH2, omCH2, h, tau, ns, as, pivot);
-        LCDMWithTensorParams params(omBH2, omCH2, h, tau, ns, as, pivot, r, nt, pivot); 
-        //LCDMWithCutoffTensorDegenerateNeutrinosParams params(omBH2, omCH2, h, tau, kCut, ns, as, pivot, r, nt, pivot, nEff, nMassive, sumMNu);
-
-        //ScaleFactorFunctionClass scaleFactor;
-        //scaleFactor.initialize(params);
-
-        //output_screen("The age of the universe is " << Phys::secToYear(Phys::unitlessToSec(scaleFactor.age())) << " years." << std::endl);
-        //output_screen("Z_eq = " << params.getOmM() / params.getOmR() - 1 << std::endl);
-
-        int lMax = 3000;
-        std::vector<double> clTT, clEE, clTE, clPP, clTP, clEP, clBB, clLensedTT, clLensedEE, clLensedTE, clLensedBB;
-
-        //output_screen("Trying out CLASS..." << std::endl);
-        CMB cmb;
-
-        output_screen("Pre-initializing CLASS..." << std::endl);
-        cmb.preInitialize(lMax, false, true, true, lMax);
-        output_screen("OK" << std::endl);
-
-        output_screen("Initializing CLASS..." << std::endl);
-        cmb.initialize(params, true, true, true, true);
-        output_screen("OK" << std::endl);
-
-        cmb.getCl(&clTT, &clEE, &clTE, &clPP, &clTP, &clEP, &clBB);
-        cmb.getLensedCl(&clLensedTT, &clLensedEE, &clLensedTE, &clLensedBB);
-
-        std::ofstream out("test_cl.txt");
-        std::ofstream outLensed("test_cl_lensed.txt");
-
-        for(int l = 0; l <= lMax; ++l)
+        if(argc < 2)
         {
-            out << l  << ' ' << clTT[l] << ' ' << clEE[l] << ' ' << clTE[l] << ' ' << clPP[l] << ' ' << clTP[l] << ' ' << clEP[l] << ' ' << clBB[l] << std::endl;
+            std::string exceptionStr = "The name of the test must be specified. Other options are 'all' to run all of the tests, 'fast' to run only the fast tests, 'slow' to run all of the slow tests, and 'list' to get a list of all the tests.";
+            exc.set(exceptionStr);
+            throw exc;
         }
 
-        for(int l = 0; l < clLensedTT.size(); ++l)
-            outLensed << l << ' ' << clLensedTT[l]  << ' ' << clLensedEE[l] << ' ' << clLensedTE[l] << ' ' << clLensedBB[l] << std::endl;
+        std::string argument(argv[1]);
+        std::set<std::string> fastTests, slowTests;
 
-        outLensed.close();
-        out.close();
+        fastTests.insert("unit_conversions");
+        fastTests.insert("int_operations");
+        fastTests.insert("integral");
+        fastTests.insert("conjugate_gradient");
 
-        Math::TableFunction<double, double> matterPs;
-        cmb.getMatterPs(0, &matterPs);
-
-        out.open("matter_pk.txt");
-        for(Math::TableFunction<double, double>::const_iterator it = matterPs.begin(); it != matterPs.end(); ++it)
+        if(argument == "all")
         {
-            out << (*it).first << '\t' << (*it).second << std::endl;
+            for(std::set<std::string>::const_iterator it = fastTests.begin(); it != fastTests.end(); ++it)
+            {
+                ++total;
+                if(runTest(*it))
+                    ++pass;
+                else
+                    ++fail;
+            }
+            for(std::set<std::string>::const_iterator it = slowTests.begin(); it != slowTests.end(); ++it)
+            {
+                ++total;
+                if(runTest(*it))
+                    ++pass;
+                else
+                    ++fail;
+            }
         }
-        out.close();
-
-        Math::TableFunction<double, double> matterTk;
-        cmb.getMatterTransfer(0, &matterTk);
-
-        out.open("matter_tk.txt");
-        for(Math::TableFunction<double, double>::const_iterator it = matterTk.begin(); it != matterTk.end(); ++it)
+        else if(argument == "fast")
         {
-            out << (*it).first << '\t' << (*it).second << std::endl;
+            for(std::set<std::string>::const_iterator it = fastTests.begin(); it != fastTests.end(); ++it)
+            {
+                ++total;
+                if(runTest(*it))
+                    ++pass;
+                else
+                    ++fail;
+            }
         }
-        out.close();
+        else if(argument == "slow")
+        {
+            for(std::set<std::string>::const_iterator it = slowTests.begin(); it != slowTests.end(); ++it)
+            {
+                ++total;
+                if(runTest(*it))
+                    ++pass;
+                else
+                    ++fail;
+            }
+        }
+        else if(argument == "list")
+        {
+            std::cout << std::endl << "FAST TESTS:" << std::endl;
+            for(std::set<std::string>::const_iterator it = fastTests.begin(); it != fastTests.end(); ++it)
+                std::cout << "   " << *it << std::endl;
 
-        output_screen("Sigma8 = " << cmb.sigma8() << std::endl);
+            std::cout << std::endl << "SLOW TESTS:" << std::endl;
+            for(std::set<std::string>::const_iterator it = slowTests.begin(); it != slowTests.end(); ++it)
+                std::cout << "   " << *it << std::endl;
+            std::cout << std::endl;
+            return 0;
+        }
+        else
+        {
+            bool found = false;
+            std::set<std::string>::const_iterator it = fastTests.find(argument);
+            if(it != fastTests.end())
+                found = true;
+            if(!found)
+            {
+                std::set<std::string>::const_iterator it = slowTests.find(argument);
+                if(it != slowTests.end())
+                    found = true;
+            }
 
+            if(!found)
+            {
+                std::cout << "The test name " << argument << " was not found!" << std::endl;
+                std::cout << "Try 'all' to run all of the tests, 'fast' to run only the fast tests, 'slow' to run all of the slow tests, and 'list' to get a list of all the tests." << std::endl;
+                return -1;
+            }
+
+            ++total;
+            if(runTest(argument))
+                ++pass;
+            else
+                ++fail;
+        }
+
+        std::cout << std::endl << "TOTAL NUMBER OF TESTS RUN: " << total << std::endl;
+        std::cout << "PASSES: " << pass << std::endl;
+        std::cout << "FAILURES: " << fail << std::endl;
+
+        if(fail == 0)
+            std::cout << std::endl << "\033[1;32mSUCCESS\033[0m" << std::endl << std::endl;
+        else
+            std::cout << std::endl << "\033[1;31mFAIL\033[0m" << std::endl << std::endl;
+        
     } catch (std::exception& e)
     {
         output_screen("EXCEPTION CAUGHT!!! " << std::endl << e.what() << std::endl);

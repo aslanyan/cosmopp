@@ -14,12 +14,10 @@
 #include <three_rotation.hpp>
 #include <progress_meter.hpp>
 #include <utils.hpp>
+#include <random.hpp>
 #include <c_matrix_generator.hpp>
 
 #include <boost/math/special_functions/legendre.hpp>
-#include <boost/random/normal_distribution.hpp>
-#include <boost/random/mersenne_twister.hpp>
-#include <boost/random/variate_generator.hpp>
 
 #include "healpix_base.h"
 #include "alm.h"
@@ -811,7 +809,7 @@ CMatrixGenerator::calculateNoiseMatrix(const char* maskFileName, const char* noi
     for(int i = 0; i < 2 * nSideOriginal; ++i)
         weight[i] = 1;
     
-    boost::variate_generator<boost::mt19937, boost::normal_distribution<> > generator(boost::mt19937(std::time(0)), boost::normal_distribution<>(0, 1));
+    Math::GaussianGenerator generator(std::time(0), 0, 1);
     
     const int lMax = 2 * nSide;
     output_screen("Reading the pixel window functions..." << std::endl);
@@ -829,7 +827,7 @@ CMatrixGenerator::calculateNoiseMatrix(const char* maskFileName, const char* noi
         noiseSim.SetNside(nSideOriginal, NEST);
         for(int j = 0; j < nPixOriginal; ++j)
         {
-            noiseSim[j] = generator() * noiseMap[j];
+            noiseSim[j] = generator.generate() * noiseMap[j];
         }
         noiseSim.swap_scheme();
         Alm<xcomplex<double> > alm(lMax, lMax);

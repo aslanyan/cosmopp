@@ -13,11 +13,7 @@
 #include <exception_handler.hpp>
 #include <math_constants.hpp>
 #include <likelihood_function.hpp>
-
-#include <boost/random/normal_distribution.hpp>
-#include <boost/random/mersenne_twister.hpp>
-#include <boost/random/variate_generator.hpp>
-#include <boost/math/distributions/normal.hpp>
+#include <random.hpp>
 
 namespace Math
 {
@@ -82,7 +78,7 @@ public:
             seed_ = seed;
 
         std::srand((unsigned) seed_);
-        generator_ = new boost::variate_generator<boost::mt19937, boost::normal_distribution<> >(boost::mt19937(seed_), boost::normal_distribution<>(0, 1));
+        generator_ = new GaussianGenerator(seed_, 0, 1);
 
         std::stringstream resFileName;
         resFileName << fileRoot_ << "resume.dat";
@@ -205,7 +201,7 @@ private:
 
     double generateNewPoint(int i) const
     {
-        return current_[i] + (*generator_)() * samplingWidth_[i];
+        return current_[i] + generator_->generate() * samplingWidth_[i];
     }
 
     void openOut(bool append)
@@ -317,7 +313,7 @@ private:
     std::vector<int> blocks_;
 
     time_t seed_;
-    boost::variate_generator<boost::mt19937, boost::normal_distribution<> >* generator_;
+    Math::GaussianGenerator* generator_;
 
     std::vector<double> prev_, current_;
     unsigned long maxChainLength_;

@@ -13,10 +13,6 @@
 #include <numerics.hpp>
 #include <cmb_gibbs.hpp>
 
-#include <boost/random/normal_distribution.hpp>
-#include <boost/random/mersenne_twister.hpp>
-#include <boost/random/variate_generator.hpp>
-
 #include <chealpix.h>
 #include <healpix_base.h>
 #include <alm.h>
@@ -170,7 +166,7 @@ CMBGibbsSampler::CMBGibbsSampler(const Healpix_Map<double>& map, const Healpix_M
     if(seed == 0)
         seed = std::time(0);
 
-    generator_ = new boost::variate_generator<boost::mt19937, boost::normal_distribution<> >(boost::mt19937(seed), boost::normal_distribution<>(0, 1));
+    generator_ = new Math::GaussianGenerator(seed, 0, 1);
 }
 
 CMBGibbsSampler::~CMBGibbsSampler()
@@ -188,7 +184,7 @@ CMBGibbsSampler::generateCl()
         double rho = 0;
         for(int i = 0; i < 2 * l - 1; ++i)
         {
-            const double rand = (*generator_)();
+            const double rand = generator_->generate();
             rho += rand * rand;
         }
 
@@ -263,10 +259,10 @@ CMBGibbsSampler::generateW()
     for(long i = 0; i < map.Npix(); ++i)
     {
         map[i] = map_[i] - map[i];
-        omega0[i] = (*generator_)();
-        omega1[i] = (*generator_)();
-        omega2[i] = (*generator_)();
-        omega3[i] = (*generator_)();
+        omega0[i] = generator_->generate();
+        omega1[i] = generator_->generate();
+        omega2[i] = generator_->generate();
+        omega3[i] = generator_->generate();
 
         if(mask_[i] > 0.5)
         {
@@ -448,8 +444,8 @@ CMBGibbsSampler::generateSignal()
 
     for(long i = 0; i < map_.Npix(); ++i)
     {
-        omega0[i] = (*generator_)();
-        omega1[i] = (*generator_)();
+        omega0[i] = generator_->generate();
+        omega1[i] = generator_->generate();
         map[i] = map_[i] - a00_ * y00_[i] - a1m1_ * y1m1_[i] - a10_ * y10_[i] - a11_ * y11_[i];
 
         if(mask_[i] > 0.5)

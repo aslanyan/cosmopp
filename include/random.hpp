@@ -23,7 +23,7 @@ public:
     GaussianGenerator(int seed, double mean, double sigma) : generator_(boost::mt19937(seed), boost::normal_distribution<>(mean, sigma)) {}
 
     /// Destructor.
-    ~GaussianGenerator()
+    ~GaussianGenerator() {}
 
     /// A function to generate a random number from the distribution.
     /// \return A random number from the Gaussian distribution.
