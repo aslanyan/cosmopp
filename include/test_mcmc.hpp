@@ -1,12 +1,12 @@
-#ifndef COSMO_PP_TEST_CONJUGATE_GRADIENT_HPP
-#define COSMO_PP_TEST_CONJUGATE_GRADIENT_HPP
+#ifndef COSMO_PP_TEST_MCMC_HPP
+#define COSMO_PP_TEST_MCMC_HPP
 
 #include <test_framework.hpp>
 
-class TestConjugateGradient : public TestFramework
+class TestMCMCFast : public TestFramework
 {
 public:
-    ~TestConjugateGradient() {}
+    ~TestMCMCFast() {}
 
 protected:
     std::string name() const;

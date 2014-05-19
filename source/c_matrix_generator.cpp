@@ -15,9 +15,8 @@
 #include <progress_meter.hpp>
 #include <utils.hpp>
 #include <random.hpp>
+#include <legendre.hpp>
 #include <c_matrix_generator.hpp>
-
-#include <boost/math/special_functions/legendre.hpp>
 
 #include "healpix_base.h"
 #include "alm.h"
@@ -45,6 +44,7 @@ LegendrePolynomialContainer::LegendrePolynomialContainer(int lMax, long nSide, c
         pixels.push_back(pix);
     }
     
+    Math::Legendre legendre;
     ProgressMeter meter((lMax + 1) * nPix * (nPix + 1) / 2);
     
     for(int l = 0; l <= lMax; ++l)
@@ -67,7 +67,7 @@ LegendrePolynomialContainer::LegendrePolynomialContainer(int lMax, long nSide, c
                     dot = -1;
                 }
                 
-                data_[l][j][i] = boost::math::legendre_p(l, dot);
+                data_[l][j][i] = legendre.get(l).evaluate(dot);
                 
                 meter.advance();
             }
@@ -192,6 +192,7 @@ CMatrixGenerator::clToCMatrix(const std::vector<double>& cl, long nSide, double 
         clCopy[l] = cl[l] * (2 * l + 1) / (4 * Math::pi);
     }
     
+    Math::Legendre legendre;
     ProgressMeter meter(nPix * (nPix + 1) / 2);
     
     for(int j = 0; j < nPix; ++j)
@@ -217,7 +218,7 @@ CMatrixGenerator::clToCMatrix(const std::vector<double>& cl, long nSide, double 
             double element = 0;
             for(int l = 2; l <= lMax; ++l)
             {
-                const double leg = (lp ? lp->value(l, j, i) : boost::math::legendre_p(l, dot));
+                const double leg = (lp ? lp->value(l, j, i) : legendre.get(l).evaluate(dot));
                 element += clCopy[l] * leg * beam[l] * beam[l];
             }
             
@@ -696,6 +697,7 @@ CMatrixGenerator::getFiducialMatrix(const std::vector<double>& cl, long nSide, i
     CMatrix* fiducialMat = new CMatrix(nPix);
     fiducialMat->comment() = "fiducial matrix";
     
+    Math::Legendre legendre;
     ProgressMeter meter(nPix * (nPix + 1) / 2);
     
     for(int j = 0; j < nPix; ++j)
@@ -723,7 +725,7 @@ CMatrixGenerator::getFiducialMatrix(const std::vector<double>& cl, long nSide, i
             double element = 0;
             for(int l = lMax + 1; l <= lMaxMax; ++l)
             {
-                const double leg = (lp ? lp->value(l, j, i) : boost::math::legendre_p(l, dot));
+                const double leg = (lp ? lp->value(l, j, i) : legendre.get(l).evaluate(dot));
                 element += cl[l] * ((2 * l + 1) / (4 * Math::pi)) * leg * beam[l] * beam[l];
             }
             

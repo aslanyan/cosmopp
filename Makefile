@@ -50,7 +50,7 @@ LFLAGS2 = -lstdc++ -lchealpix -lhealpix_cxx -lcxxsupport -lfftpack -lc_utils -lc
 
 MYFLAGS = $(MY_COMPILE_FLAGS) -D HEALPIX_DATA_DIR=$(HEALPIX)/data $(PLANCK_COMPILE_FLAGS)
 
-CFLAGS=$(MYFLAGS) -c -g -O2 -fpic -I include -I $(CFITSIO)/include -I $(HEALPIX)/include -I $(HEALPIXPP)/include -I $(BOOSTDIR) -I $(LAPACKPPINCDIR) -I $(CLASSDIR)/include $(MINUIT_INCLUDE_FLAGS) $(MULTINEST_INCLUDE_FLAGS) $(PLANCK_INCLUDE_FLAGS) -fopenmp
+CFLAGS=$(MYFLAGS) -c -g -fpic -I include -I $(CFITSIO)/include -I $(HEALPIX)/include -I $(HEALPIXPP)/include -I $(BOOSTDIR) -I $(LAPACKPPINCDIR) -I $(CLASSDIR)/include $(MINUIT_INCLUDE_FLAGS) $(MULTINEST_INCLUDE_FLAGS) $(PLANCK_INCLUDE_FLAGS) -fopenmp
 
 #Header file tree
 MACROS_HPP = include/macros.hpp
@@ -72,6 +72,7 @@ INTEGRAL_HPP = include/integral.hpp $(MACROS_HPP) $(FUNCTION_HPP)
 PARAMETRIC_FUNCTION_HPP = include/parametric_function.hpp $(MACROS_HPP) $(FUNCTION_HPP)
 FIT_HPP = include/fit.hpp $(MACROS_HPP) $(PARAMETRIC_FUNCTION_HPP)
 POLYNOMIAL_HPP = include/polynomial.hpp $(PARAMETRIC_FUNCTION_HPP)
+LEGENDRE_HPP = include/legendre.hpp $(POLYNOMIAL_HPP)
 TABLE_FUNCTION_HPP = include/table_function.hpp $(MACROS_HPP) $(FUNCTION_HPP)
 CUBIC_SPLINE_HPP = include/cubic_spline.hpp $(MACROS_HPP) $(FUNCTION_HPP)
 GAUSS_SMOOTH_HPP = include/gauss_smooth.hpp $(MACROS_HPP) $(FUNCTION_HPP)
@@ -105,6 +106,9 @@ TEST_UNIT_CONVERSIONS_HPP = include/test_unit_conversions.hpp $(TEST_FRAMEWORK_H
 TEST_INT_OPERATIONS_HPP = include/test_int_operations.hpp $(TEST_FRAMEWORK_HPP)
 TEST_INTEGRAL_HPP = include/test_integral.hpp $(TEST_FRAMEWORK_HPP)
 TEST_CONJUGATE_GRADIENT_HPP = include/test_conjugate_gradient.hpp $(TEST_FRAMEWORK_HPP)
+TEST_POLYNOMIAL_HPP = include/test_polynomial.hpp $(TEST_FRAMEWORK_HPP)
+TEST_LEGENDRE_HPP = include/test_legendre.hpp $(TEST_FRAMEWORK_HPP)
+TEST_MCMC_HPP = include/test_mcmc.hpp $(TEST_FRAMEWORK_HPP)
 
 all: lib/libcosmopp.a bin/analyze_chain bin/sort_chain bin/contour_plot bin/test bin/generate_white_noise bin/apodize_mask $(PLANCK_TARGET) $(PLANCK_AND_MULTINEST_TARGET)
 
@@ -112,7 +116,7 @@ OBJ_LIBRARY = obj/whole_matrix.o obj/utils.o obj/c_matrix.o obj/c_matrix_generat
 lib/libcosmopp.a: $(OBJ_LIBRARY)
 	ar rcs $@ $(OBJ_LIBRARY)
 
-OBJ_TEST = obj/test.o obj/test_unit_conversions.o obj/test_int_operations.o obj/test_integral.o obj/test_conjugate_gradient.o
+OBJ_TEST = obj/test.o obj/test_unit_conversions.o obj/test_int_operations.o obj/test_integral.o obj/test_conjugate_gradient.o obj/test_polynomial.o obj/test_legendre.o obj/test_mcmc.o obj/markov_chain.o
 bin/test: $(OBJ_TEST)
 	$(CC) $(LFLAGS1) -o $@ $(OBJ_TEST) $(LFLAGS2)
 
@@ -153,7 +157,7 @@ bin/contour_plot: $(OBJ_CONTOUR_PLOT)
 obj/c_matrix.o: source/c_matrix.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(UTILS_HPP) $(C_MATRIX_HPP)
 	$(CC) $(CFLAGS) source/c_matrix.cpp -o $@
 
-obj/c_matrix_generator.o: source/c_matrix_generator.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(NUMERICS_HPP) $(ANGULAR_COORDINATES_HPP) $(THREE_ROTATION_HPP) $(PROGRESS_METER_HPP) $(C_MATRIX_GENERATOR_HPP) $(UTILS_HPP) $(RANDOM_HPP)
+obj/c_matrix_generator.o: source/c_matrix_generator.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(NUMERICS_HPP) $(ANGULAR_COORDINATES_HPP) $(THREE_ROTATION_HPP) $(PROGRESS_METER_HPP) $(C_MATRIX_GENERATOR_HPP) $(UTILS_HPP) $(RANDOM_HPP) $(LEGENDRE_HPP)
 	$(CC) $(CFLAGS) source/c_matrix_generator.cpp -o $@
 
 obj/cmb.o: source/cmb.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(MATH_CONSTANTS_HPP) $(CMB_HPP)
@@ -238,6 +242,15 @@ obj/test_integral.o: source/test_integral.cpp $(TEST_INTEGRAL_HPP) $(INTEGRAL_HP
 
 obj/test_conjugate_gradient.o: source/test_conjugate_gradient.cpp $(TEST_CONJUGATE_GRADIENT_HPP) $(CONJUGATE_GRADIENT_HPP)
 	$(CC) $(CFLAGS) source/test_conjugate_gradient.cpp -o $@
+
+obj/test_polynomial.o: source/test_polynomial.cpp $(TEST_POLYNOMIAL_HPP) $(POLYNOMIAL_HPP)
+	$(CC) $(CFLAGS) source/test_polynomial.cpp -o $@
+
+obj/test_legendre.o: source/test_legendre.cpp $(TEST_LEGENDRE_HPP) $(LEGENDRE_HPP)
+	$(CC) $(CFLAGS) source/test_legendre.cpp -o $@
+
+obj/test_mcmc.o: source/test_mcmc.cpp $(TEST_MCMC_HPP) $(MCMC_HPP) $(MARKOV_CHAIN_HPP) $(NUMERICS_HPP)
+	$(CC) $(CFLAGS) source/test_mcmc.cpp -o $@
 
 clean:
 	rm obj/* bin/* lib/*

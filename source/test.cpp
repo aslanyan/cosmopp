@@ -10,6 +10,9 @@
 #include <test_int_operations.hpp>
 #include <test_integral.hpp>
 #include <test_conjugate_gradient.hpp>
+#include <test_polynomial.hpp>
+#include <test_legendre.hpp>
+#include <test_mcmc.hpp>
 
 TestFramework* createTest(const std::string& name)
 {
@@ -23,6 +26,12 @@ TestFramework* createTest(const std::string& name)
         test = new TestIntegral;
     else if(name == "conjugate_gradient")
         test = new TestConjugateGradient;
+    else if(name == "polynomial")
+        test = new TestPolynomial;
+    else if(name == "legendre")
+        test = new TestLegendre;
+    else if(name == "mcmc_fast")
+        test = new TestMCMCFast;
 
     return test;
 }
@@ -58,6 +67,9 @@ int main(int argc, char *argv[])
         fastTests.insert("int_operations");
         fastTests.insert("integral");
         fastTests.insert("conjugate_gradient");
+        fastTests.insert("polynomial");
+        fastTests.insert("legendre");
+        fastTests.insert("mcmc_fast");
 
         if(argument == "all")
         {
