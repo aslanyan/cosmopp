@@ -101,6 +101,7 @@ PLANCK_LIKE_HPP = include/planck_like.hpp $(LIKELIHOOD_FUNCTION_HPP) $(CMB_HPP)
 SCALE_FACTOR_HPP = include/scale_factor.hpp $(MACROS_HPP) $(TABLE_FUNCTION_HPP) $(COSMOLOGICAL_PARAMS_HPP)
 CMB_GIBBS_HPP = include/cmb_gibbs.hpp $(RANDOM_HPP)
 MASK_APODIZER_HPP = include/mask_apodizer.hpp
+INFLATION_HPP = include/inflation.hpp $(FUNCTION_HPP) $(TABLE_FUNCTION_HPP)
 
 TEST_UNIT_CONVERSIONS_HPP = include/test_unit_conversions.hpp $(TEST_FRAMEWORK_HPP)
 TEST_INT_OPERATIONS_HPP = include/test_int_operations.hpp $(TEST_FRAMEWORK_HPP)
@@ -112,7 +113,7 @@ TEST_MCMC_HPP = include/test_mcmc.hpp $(TEST_FRAMEWORK_HPP)
 
 all: lib/libcosmopp.a bin/analyze_chain bin/sort_chain bin/contour_plot bin/test bin/generate_white_noise bin/apodize_mask $(PLANCK_TARGET) $(PLANCK_AND_MULTINEST_TARGET)
 
-OBJ_LIBRARY = obj/whole_matrix.o obj/utils.o obj/c_matrix.o obj/c_matrix_generator.o obj/simulate.o obj/likelihood.o obj/master.o obj/mode_directions.o obj/scale_factor.o obj/cmb.o obj/cmb_gibbs.o obj/mask_apodizer.o obj/markov_chain.o $(MULTINEST_OBJ) $(PLANCK_OBJ) 
+OBJ_LIBRARY = obj/whole_matrix.o obj/utils.o obj/c_matrix.o obj/c_matrix_generator.o obj/simulate.o obj/likelihood.o obj/master.o obj/mode_directions.o obj/scale_factor.o obj/cmb.o obj/cmb_gibbs.o obj/mask_apodizer.o obj/markov_chain.o obj/inflation.o $(MULTINEST_OBJ) $(PLANCK_OBJ) 
 lib/libcosmopp.a: $(OBJ_LIBRARY)
 	ar rcs $@ $(OBJ_LIBRARY)
 
@@ -230,6 +231,9 @@ obj/apodize_mask.o: source/apodize_mask.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HP
 
 obj/markov_chain.o: source/markov_chain.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(CUBIC_SPLINE_HPP) $(GAUSS_SMOOTH_HPP) $(PROGRESS_METER_HPP) $(MARKOV_CHAIN_HPP)
 	$(CC) $(CFLAGS) source/markov_chain.cpp -o $@
+
+obj/inflation.o: source/inflation.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(MATH_CONSTANTS_HPP) $(INFLATION_HPP)
+	$(CC) $(CFLAGS) source/inflation.cpp -o $@
 
 obj/test_unit_conversions.o: source/test_unit_conversions.cpp $(TEST_UNIT_CONVERSIONS_HPP) $(UNIT_CONVERSIONS_HPP)
 	$(CC) $(CFLAGS) source/test_unit_conversions.cpp -o $@
