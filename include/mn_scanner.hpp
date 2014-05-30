@@ -37,8 +37,14 @@ public:
 
     void setParamGeneral(int i, const std::string& name, double min, double max, const Math::RealFunction& distrib);
 
+    /// Get the name of a parameter.
+    /// \param i The index of the parameter.
+    /// \return The name of the parameter.
+    const std::string& getParamName(int i) const { check(i >= 0 && i < n_, "invalid index " << i); return paramNames_[i]; }
+
     /// Run the scan. Should be called after all of the other necessary functions have been called to set all of the necessary settings. The resulting chain is written in the file (fileRoot).txt. The first column is the number of repetitions of the element, the second column is -2ln(likelihood), the following columns are the values of all of the parameters.
-    void run();
+    /// \param resume Resume from previous job or not (true by default).
+    void run(bool resume = true);
 
 public:
     void logLike(double *Cube, int &ndim, int &npars, double &lnew);

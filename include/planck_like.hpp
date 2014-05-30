@@ -23,7 +23,7 @@ public:
     /// Destructor.
     ~PlanckLikelihood();
 
-    /// Set cosmological parameters. Needs to be called before cl calculateCls.
+    /// Set cosmological parameters. Needs to be called before calculateCls.
     /// \param params The cosmological parameters.
     void setCosmoParams(const CosmologicalParams& params);
 

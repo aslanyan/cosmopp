@@ -15,6 +15,15 @@ double MpcToM(double x)
 	return x * MegaParsec;
 }
 	
+/// Convert m to Megaparsec.
+/// \param x Distance in m.
+/// \return Distance in Mpc.
+inline
+double mToMpc(double x)
+{
+	return x / MegaParsec;
+}
+
 /// Convert ev to Kg.
 /// \param x Energy in ev.
 /// \return Energy (or rather mass) in kg.

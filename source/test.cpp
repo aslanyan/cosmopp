@@ -13,6 +13,9 @@
 #include <test_polynomial.hpp>
 #include <test_legendre.hpp>
 #include <test_mcmc.hpp>
+#include <test_multinest.hpp>
+#include <test_mcmc_planck.hpp>
+#include <test_multinest_planck.hpp>
 
 TestFramework* createTest(const std::string& name)
 {
@@ -32,6 +35,12 @@ TestFramework* createTest(const std::string& name)
         test = new TestLegendre;
     else if(name == "mcmc_fast")
         test = new TestMCMCFast;
+    else if(name == "multinest_fast")
+        test = new TestMultinestFast;
+    else if(name == "mcmc_planck")
+        test = new TestMCMCPlanck;
+    else if(name == "multinest_planck")
+        test = new TestMultinestPlanck;
 
     return test;
 }
@@ -70,6 +79,10 @@ int main(int argc, char *argv[])
         fastTests.insert("polynomial");
         fastTests.insert("legendre");
         fastTests.insert("mcmc_fast");
+        fastTests.insert("multinest_fast");
+
+        slowTests.insert("mcmc_planck");
+        slowTests.insert("multinest_planck");
 
         if(argument == "all")
         {

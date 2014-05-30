@@ -50,7 +50,10 @@ LFLAGS2 = -lstdc++ -lchealpix -lhealpix_cxx -lcxxsupport -lfftpack -lc_utils -lc
 
 MYFLAGS = $(MY_COMPILE_FLAGS) -D HEALPIX_DATA_DIR=$(HEALPIX)/data $(PLANCK_COMPILE_FLAGS)
 
-CFLAGS=$(MYFLAGS) -c -g -fpic -I include -I $(CFITSIO)/include -I $(HEALPIX)/include -I $(HEALPIXPP)/include -I $(BOOSTDIR) -I $(LAPACKPPINCDIR) -I $(CLASSDIR)/include $(MINUIT_INCLUDE_FLAGS) $(MULTINEST_INCLUDE_FLAGS) $(PLANCK_INCLUDE_FLAGS) -fopenmp
+INCLUDE_FLAGS = -I include -I $(CFITSIO)/include -I $(HEALPIX)/include -I $(HEALPIXPP)/include -I $(LAPACKPPINCDIR) -I $(CLASSDIR)/include $(MINUIT_INCLUDE_FLAGS) $(MULTINEST_INCLUDE_FLAGS) $(PLANCK_INCLUDE_FLAGS)
+
+CFLAGS = $(MYFLAGS) -c -g -O2 -fpic -Werror -std=c++11 $(INCLUDE_FLAGS) -fopenmp
+CFLAGS_NO11 = $(MYFLAGS) -c -g -O2 -Werror -fpic $(INCLUDE_FLAGS) -fopenmp
 
 #Header file tree
 MACROS_HPP = include/macros.hpp
@@ -66,6 +69,7 @@ PHYS_CONSTANTS_HPP = include/phys_constants.hpp $(MATH_CONSTANTS_HPP)
 UNIT_CONVERSIONS_HPP = include/unit_conversions.hpp $(PHYS_CONSTANTS_HPP)
 FUNCTION_HPP = include/function.hpp
 HISTOGRAM_HPP = include/histogram.hpp
+RANDOM_HPP = include/random.hpp
 INT_OPERATION_HPP = include/int_operations.hpp
 LIKELIHOOD_FUNCTION_HPP = include/likelihood_function.hpp
 INTEGRAL_HPP = include/integral.hpp $(MACROS_HPP) $(FUNCTION_HPP)
@@ -81,7 +85,6 @@ THREE_ROTATION_HPP = include/three_rotation.hpp $(MACROS_HPP) $(THREE_VECTOR_HPP
 MCMC_HPP = include/mcmc.hpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(MATH_CONSTANTS_HPP) $(LIKELIHOOD_FUNCTION_HPP) $(RANDOM_HPP)
 MN_SCANNER_HPP = include/mn_scanner.hpp $(LIKELIHOOD_FUNCTION_HPP) $(TABLE_FUNCTION_HPP)
 WIGNER_3J_HPP = include/wigner_3j.hpp $(MACROS_HPP)
-RANDOM_HPP = include/random.hpp
 SPIN_SPHERICAL_HARMONICS_HPP = include/spin_spherical_harmonics.hpp $(MACROS_HPP) $(ANGULAR_COORDINATES_HPP) $(COMPLEX_TYPES_HPP) $(MATH_CONSTANTS_HPP)
 CONJUGATE_GRADIENT_HPP = include/conjugate_gradient.hpp $(MACROS_HPP)
 MARKOV_CHAIN_HPP = include/markov_chain.hpp $(FUNCTION_HPP) $(TABLE_FUNCTION_HPP)
@@ -110,6 +113,9 @@ TEST_CONJUGATE_GRADIENT_HPP = include/test_conjugate_gradient.hpp $(TEST_FRAMEWO
 TEST_POLYNOMIAL_HPP = include/test_polynomial.hpp $(TEST_FRAMEWORK_HPP)
 TEST_LEGENDRE_HPP = include/test_legendre.hpp $(TEST_FRAMEWORK_HPP)
 TEST_MCMC_HPP = include/test_mcmc.hpp $(TEST_FRAMEWORK_HPP)
+TEST_MULTINEST_HPP = include/test_multinest.hpp $(TEST_FRAMEWORK_HPP)
+TEST_MCMC_PLANCK_HPP = include/test_mcmc_planck.hpp $(TEST_FRAMEWORK_HPP)
+TEST_MULTINEST_PLANCK_HPP = include/test_multinest_planck.hpp $(TEST_FRAMEWORK_HPP)
 
 all: lib/libcosmopp.a bin/analyze_chain bin/sort_chain bin/contour_plot bin/test bin/generate_white_noise bin/apodize_mask $(PLANCK_TARGET) $(PLANCK_AND_MULTINEST_TARGET)
 
@@ -117,7 +123,7 @@ OBJ_LIBRARY = obj/whole_matrix.o obj/utils.o obj/c_matrix.o obj/c_matrix_generat
 lib/libcosmopp.a: $(OBJ_LIBRARY)
 	ar rcs $@ $(OBJ_LIBRARY)
 
-OBJ_TEST = obj/test.o obj/test_unit_conversions.o obj/test_int_operations.o obj/test_integral.o obj/test_conjugate_gradient.o obj/test_polynomial.o obj/test_legendre.o obj/test_mcmc.o obj/markov_chain.o
+OBJ_TEST = obj/test.o obj/test_unit_conversions.o obj/test_int_operations.o obj/test_integral.o obj/test_conjugate_gradient.o obj/test_polynomial.o obj/test_legendre.o obj/test_mcmc.o obj/markov_chain.o obj/test_multinest.o obj/mn_scanner.o obj/test_mcmc_planck.o obj/planck_like.o obj/cmb.o obj/test_multinest_planck.o	
 bin/test: $(OBJ_TEST)
 	$(CC) $(LFLAGS1) -o $@ $(OBJ_TEST) $(LFLAGS2)
 
@@ -154,7 +160,6 @@ bin/contour_plot: $(OBJ_CONTOUR_PLOT)
 	$(CC) $(LFLAGS1) -o $@ $(OBJ_CONTOUR_PLOT) $(LFLAGS2)
 
 
-
 obj/c_matrix.o: source/c_matrix.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(UTILS_HPP) $(C_MATRIX_HPP)
 	$(CC) $(CFLAGS) source/c_matrix.cpp -o $@
 
@@ -185,7 +190,7 @@ obj/mode_directions.o: source/mode_directions.cpp $(MACROS_HPP) $(EXCEPTION_HAND
 
 ifdef PLANCKDIR
 obj/planck_like.o: source/planck_like.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(PLANCK_LIKE_HPP)
-	$(CC) $(CFLAGS) source/planck_like.cpp -o $@
+	$(CC) $(CFLAGS_NO11) source/planck_like.cpp -o $@
 endif
 
 obj/scale_factor.o: source/scale_factor.cpp $(UNIT_CONVERSIONS_HPP) $(TABLE_FUNCTION_HPP) $(SCALE_FACTOR_HPP)
@@ -203,7 +208,7 @@ obj/analyze_chain.o: source/analyze_chain.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_
 obj/contour_plot.o: source/contour_plot.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP)
 	$(CC) $(CFLAGS) source/contour_plot.cpp -o $@
 
-obj/test.o: source/test.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(TEST_FRAMEWORK_HPP) $(TEST_UNIT_CONVERSIONS_HPP) $(TEST_INT_OPERATIONS_HPP) $(TEST_INTEGRAL_HPP) $(TEST_CONJUGATE_GRADIENT_HPP)
+obj/test.o: source/test.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(TEST_FRAMEWORK_HPP) $(TEST_UNIT_CONVERSIONS_HPP) $(TEST_INT_OPERATIONS_HPP) $(TEST_INTEGRAL_HPP) $(TEST_CONJUGATE_GRADIENT_HPP) $(TEST_POLYNOMIAL_HPP) $(TEST_LEGENDRE_HPP) $(TEST_MCMC_HPP) $(TEST_MULTINEST_HPP) $(TEST_MCMC_PLANCK_HPP)
 	$(CC) $(CFLAGS) source/test.cpp -o $@
 
 ifdef PLANCKDIR
@@ -232,7 +237,7 @@ obj/apodize_mask.o: source/apodize_mask.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HP
 obj/markov_chain.o: source/markov_chain.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(CUBIC_SPLINE_HPP) $(GAUSS_SMOOTH_HPP) $(PROGRESS_METER_HPP) $(MARKOV_CHAIN_HPP)
 	$(CC) $(CFLAGS) source/markov_chain.cpp -o $@
 
-obj/inflation.o: source/inflation.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(MATH_CONSTANTS_HPP) $(INFLATION_HPP)
+obj/inflation.o: source/inflation.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(MATH_CONSTANTS_HPP) $(PROGRESS_METER_HPP) $(UNIT_CONVERSIONS_HPP) $(INFLATION_HPP)
 	$(CC) $(CFLAGS) source/inflation.cpp -o $@
 
 obj/test_unit_conversions.o: source/test_unit_conversions.cpp $(TEST_UNIT_CONVERSIONS_HPP) $(UNIT_CONVERSIONS_HPP)
@@ -256,5 +261,17 @@ obj/test_legendre.o: source/test_legendre.cpp $(TEST_LEGENDRE_HPP) $(LEGENDRE_HP
 obj/test_mcmc.o: source/test_mcmc.cpp $(TEST_MCMC_HPP) $(MCMC_HPP) $(MARKOV_CHAIN_HPP) $(NUMERICS_HPP)
 	$(CC) $(CFLAGS) source/test_mcmc.cpp -o $@
 
+obj/test_multinest.o: source/test_multinest.cpp $(TEST_MULTINEST_HPP) $(MN_SCANNER_HPP) $(MARKOV_CHAIN_HPP) $(NUMERICS_HPP)
+	$(CC) $(CFLAGS) source/test_multinest.cpp -o $@
+
+obj/test_mcmc_planck.o: source/test_mcmc_planck.cpp $(TEST_MCMC_PLANCK_HPP) $(MCMC_HPP) $(PLANCK_LIKE_HPP) $(MARKOV_CHAIN_HPP) $(NUMERICS_HPP)
+	$(CC) $(CFLAGS) source/test_mcmc_planck.cpp -o $@
+
+obj/test_multinest_planck.o: source/test_multinest_planck.cpp $(TEST_MULTINEST_PLANCK_HPP) $(MN_SCANNER_HPP) $(PLANCK_LIKE_HPP) $(MARKOV_CHAIN_HPP) $(NUMERICS_HPP)
+	$(CC) $(CFLAGS) source/test_multinest_planck.cpp -o $@
+
 clean:
 	rm obj/* bin/* lib/*
+
+test: all
+	./bin/test fast

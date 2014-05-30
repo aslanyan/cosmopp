@@ -6,15 +6,17 @@
 #include <exception_handler.hpp>
 #include <planck_like.hpp>
 
-#include <boost/preprocessor/stringize.hpp>
-
 #include <clik.h>
+
+#define MY_STRINGIZE1(P) #P
+#define MY_STRINGIZE(P) MY_STRINGIZE1(P)
+#define PLANCK_DATA_DIR_STR MY_STRINGIZE(PLANCK_DATA_DIR)
 
 PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useLensing, bool usePol, bool useActSpt, bool includeTensors) : commander_(NULL), camspec_(NULL), lens_(NULL), pol_(NULL), actspt_(NULL), spectraNames_(6)
 {
     check(useCommander || useCamspec || useLensing || usePol, "at least one likelihood must be specified");
 
-    std::string planckLikeDir = BOOST_PP_STRINGIZE(PLANCK_DATA_DIR);
+    std::string planckLikeDir = PLANCK_DATA_DIR_STR;
 
     output_screen("Planck data dir = " << planckLikeDir << std::endl);
 

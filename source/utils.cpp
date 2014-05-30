@@ -15,9 +15,11 @@
 #include <healpix_map.h>
 #include <healpix_map_fitsio.h>
 
-#include <boost/preprocessor/stringize.hpp>
-
 #include "fitsio.h"
+
+#define MY_STRINGIZE1(P) #P
+#define MY_STRINGIZE(P) MY_STRINGIZE1(P)
+#define HEALPIX_DATA_DIR_STR MY_STRINGIZE(HEALPIX_DATA_DIR)
 
 void
 Utils::readMask(const char* maskFileName, long& nSide, std::vector<int>& goodPixels)
@@ -76,7 +78,7 @@ Utils::readPixelWindowFunction(std::vector<double>& f, long nSide, int lMax, dou
     
     f.resize(lMax + 1);
     
-    std::string healpixDataDir = BOOST_PP_STRINGIZE(HEALPIX_DATA_DIR);
+    std::string healpixDataDir = HEALPIX_DATA_DIR_STR;
 
     std::stringstream pixelWindowFileName;
     pixelWindowFileName << healpixDataDir << "/pixel_window_n";

@@ -218,7 +218,7 @@ MnScanner::dumper(int &nSamples, int &nlive, int &nPar, double **physLive, doubl
 }
 
 void
-MnScanner::run()
+MnScanner::run(bool res)
 {
     StandardException exc;
 
@@ -239,7 +239,7 @@ MnScanner::run()
 	//char root[100] = fileRoot_.c_str();			// root for output files
 	int seed = -1;					// random no. generator seed, if < 0 then take the seed from system clock
 	int fb = 1;					// need feedback on standard output?
-	int resume = 1;					// resume from a previous job?
+	int resume = res;					// resume from a previous job?
 	int outfile = 1;				// write output files?
 	int initMPI = 1;				// initialize MPI routines?, relevant only if compiling with MPI
 							// set it to F if you want your main program to handle MPI initialization

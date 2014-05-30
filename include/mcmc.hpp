@@ -7,7 +7,7 @@
 #include <sstream>
 #include <cmath>
 #include <limits>
-#include <cstdlib>
+#include <ctime>
 
 #include <macros.hpp>
 #include <exception_handler.hpp>
@@ -77,8 +77,8 @@ public:
         else
             seed_ = seed;
 
-        std::srand((unsigned) seed_);
-        generator_ = new GaussianGenerator(seed_, 0, 1);
+        uniformGen_ = new UniformRealGenerator(seed_, 0, 1);
+        generator_ = new GaussianGenerator(int(uniformGen_->generate() * 1000000), 0, 1);
 
         std::stringstream resFileName;
         resFileName << fileRoot_ << "resume.dat";
@@ -86,7 +86,7 @@ public:
     }
 
     /// Destructor.
-    ~MetropolisHastings() { delete generator_; }
+    ~MetropolisHastings() { delete uniformGen_; delete generator_; }
 
     /// Define a given parameter to have a uniform prior. One of the parameter setting functions must be called for each parameter before the run.
     /// \param i The index of the parameter, 0 <= i < number of parameters.
@@ -107,6 +107,11 @@ public:
     /// \param samplingWidth The sampling width of the parameter (the width of the Gaussian proposal distribution). If not set, by default it will be set to 1/100-th of the width of the range.
     /// \param accuracy The accuracy with which the parameter needs to be determined (used to choose the stopping time). If not set, by default it will be set to 1/10-th of the sampling width.
     inline void setParamGauss(int i, const std::string& name, double mean, double sigma, double starting = std::numeric_limits<double>::max(), double samplingWidth = 0.0, double accuracy = 0.0);
+
+    /// Get the name of a parameter.
+    /// \param i The index of the parameter.
+    /// \return The name of the parameter.
+    const std::string& getParamName(int i) const { check(i >= 0 && i < n_, "invalid index " << i); return paramNames_[i]; }
 
     /// Set the blocks in which the parameters are varied. If this function is not called, each paramter will be assigned to a separate block, by default.
     /// \param blocks A vector defining the indices of the parameters in each block. Each element of the vector is the index following the end of the corresponding block. There are as many elements as there are blocks. For example, if all of the parameters are to belong to one block, the vector should contain one element with value equal to the number of the parameters.
@@ -313,6 +318,7 @@ private:
     std::vector<int> blocks_;
 
     time_t seed_;
+    Math::UniformRealGenerator* uniformGen_;
     Math::GaussianGenerator* generator_;
 
     std::vector<double> prev_, current_;
@@ -340,7 +346,10 @@ MetropolisHastings::setParam(int i, const std::string& name, double min, double 
     if(starting == std::numeric_limits<double>::max())
         starting_[i] = (max + min) / 2.0;
     else
+    {
+        check(starting >= min && starting <= max, "invalid starting value " << starting << ", needs to be between " << min << " and " << max);
         starting_[i] = starting;
+    }
 
     check(samplingWidth >= 0, "invalid sampling width " << samplingWidth);
     if(samplingWidth == 0.0)
@@ -494,8 +503,7 @@ MetropolisHastings::run(unsigned long maxChainLength, bool writeResumeInformatio
             if(p > 1)
                 p = 1;
             
-            const int r = std::rand();
-            const double q = ((double)r) / RAND_MAX;
+            const double q = uniformGen_->generate(); 
 
             if(q <= p)
             {
