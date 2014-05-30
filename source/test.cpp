@@ -1,6 +1,7 @@
 #include <fstream>
 #include <set>
 #include <sstream>
+#include <iostream>
 
 #include <macros.hpp>
 #include <exception_handler.hpp>
