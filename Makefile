@@ -52,7 +52,7 @@ MYFLAGS = $(MY_COMPILE_FLAGS) -D HEALPIX_DATA_DIR=$(HEALPIX)/data $(PLANCK_COMPI
 
 INCLUDE_FLAGS = -I include -I $(CFITSIO)/include -I $(HEALPIX)/include -I $(HEALPIXPP)/include -I $(LAPACKPPINCDIR) -I $(CLASSDIR)/include $(MINUIT_INCLUDE_FLAGS) $(MULTINEST_INCLUDE_FLAGS) $(PLANCK_INCLUDE_FLAGS)
 
-CFLAGS = $(MYFLAGS) -c -g -O2 -fpic -Werror -std=c++11 $(INCLUDE_FLAGS) -fopenmp
+CFLAGS = $(MYFLAGS) -c -g -O2 -fpic -Werror -std=c++0x $(INCLUDE_FLAGS) -fopenmp
 CFLAGS_NO11 = $(MYFLAGS) -c -g -O2 -Werror -fpic $(INCLUDE_FLAGS) -fopenmp
 
 #Header file tree
