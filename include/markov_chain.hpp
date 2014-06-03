@@ -88,8 +88,11 @@ public:
     };
 
 public:
-    MarkovChain(const char* fileName);
+    MarkovChain(const char* fileName, unsigned long burnin = 0);
+    MarkovChain(int nChains, const char* fileNameRoot, unsigned long burnin = 0);
     ~MarkovChain();
+
+    void addFile(const char* fileName, unsigned long burnin = 0);
 
     int nParams() const { return nParams_; }
     Posterior1D* posterior(int paramIndex, Posterior1D::SmoothingMethod method = Posterior1D::GAUSSIAN_SMOOTHING, double scale = 0) const;
@@ -98,6 +101,11 @@ public:
     double maxLike() const { return minLike_; }
 
     void getRange(std::vector<Element*>& container, double pUpper = 0.683, double pLower = 0) const;
+
+private:
+    void readFile(const char* fileName, unsigned long burnin, std::vector<Element*>& bigChain, double& maxP);
+    void filterChain(std::vector<Element*>& bigChain, double minP);
+
 private:
     std::vector<Element*> chain_;
     int nParams_;

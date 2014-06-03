@@ -56,13 +56,16 @@ TestMultinestPlanck::runSubTest(unsigned int i, double& res, double& expected, s
 
     mn.run(true);
     
-    MarkovChain chain("slow_test_files/multinest_planck_test.txt");
-
-    const int nPoints = 1000;
-
     subTestName = std::string("standard_param_limits");
     res = 1;
     expected = 1;
+
+    if(!isMaster())
+        return;
+
+    MarkovChain chain("slow_test_files/multinest_planck_test.txt");
+
+    const int nPoints = 1000;
 
     const double expectedMedian[6] = {0.02217, 0.1186, 0.679, 0.089, 0.9635, 3.085};
     const double expectedSigma[6] = {0.00033, 0.0031, 0.015, 0.032, 0.0094, 0.057};

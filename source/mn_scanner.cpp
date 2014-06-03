@@ -10,6 +10,10 @@
 
 #include <multinest.h>
 
+#ifdef COSMO_MPI
+#include <mpi.h>
+#endif
+
 
 MnScanner::MnScanner(int nPar, Math::LikelihoodFunction& like, int nLive, std::string fileRoot, bool accurateEvidence) : n_(nPar), like_(like), nLive_(nLive), paramsStarting_(nPar, 0), paramNames_(nPar), paramsBest_(nPar, 0), paramsMean_(nPar, 0), paramsStd_(nPar, 0), paramsCurrent_(nPar, 0), paramPriors_(nPar), fileRoot_(fileRoot), accurateEvidence_(accurateEvidence)
 {
@@ -241,8 +245,16 @@ MnScanner::run(bool res)
 	int fb = 1;					// need feedback on standard output?
 	int resume = res;					// resume from a previous job?
 	int outfile = 1;				// write output files?
+
 	int initMPI = 1;				// initialize MPI routines?, relevant only if compiling with MPI
 							// set it to F if you want your main program to handle MPI initialization
+#ifdef COSMO_MPI
+    int hasMpiInit;
+    MPI_Initialized(&hasMpiInit);
+    if(hasMpiInit)
+        initMPI = 0;
+#endif
+
 	double logZero = -1E90;				// points with loglike < logZero will be ignored by MultiNest
 	int maxiter = 0;				// max no. of iterations, a non-positive value means infinity. MultiNest will terminate if either it 
 							// has done max no. of iterations or convergence criterion (defined through tol) has been satisfied

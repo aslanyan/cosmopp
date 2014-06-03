@@ -57,6 +57,13 @@ TestMultinestFast::runSubTest(unsigned int i, double& res, double& expected, std
     mn1.setParam(0, "x", xMin, xMax);
     mn1.setParam(1, "y", yMin, yMax);
     mn1.run(false);
+
+    subTestName = std::string("2_param_gauss");
+    res = 1;
+    expected = 1;
+
+    if(!isMaster())
+        return;
     
     MarkovChain chain("test_files/multinest_fast_test.txt");
     Posterior1D* px = chain.posterior(0);
@@ -96,10 +103,6 @@ TestMultinestFast::runSubTest(unsigned int i, double& res, double& expected, std
 
     delete px;
     delete py;
-
-    subTestName = std::string("2_param_gauss");
-    res = 1;
-    expected = 1;
 
     if(!Math::areEqual(5.0, xMedian, 0.4))
     {

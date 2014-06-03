@@ -1,3 +1,6 @@
+#include <string>
+#include <sstream>
+
 #include <test_mcmc.hpp>
 #include <mcmc.hpp>
 #include <markov_chain.hpp>
@@ -54,9 +57,17 @@ TestMCMCFast::runSubTest(unsigned int i, double& res, double& expected, std::str
     const double xMin = -20, xMax = 20, yMin = -20, yMax = 20;
     mh1.setParam(0, "x", xMin, xMax, 0, 2, 0.05);
     mh1.setParam(1, "y", yMin, yMax, 0, 3, 0.05);
-    mh1.run(1000000, false);
-    
-    MarkovChain chain("test_files/mcmc_fast_test.txt");
+    const unsigned long burnin = 100;
+    const int nChains = mh1.run(1000000, 0, burnin);
+
+    subTestName = std::string("2_param_gauss");
+    res = 1;
+    expected = 1;
+
+    if(!isMaster())
+        return;
+
+    MarkovChain chain(nChains, root1.c_str(), burnin);
     Posterior1D* px = chain.posterior(0);
     Posterior1D* py = chain.posterior(1);
 
@@ -94,10 +105,6 @@ TestMCMCFast::runSubTest(unsigned int i, double& res, double& expected, std::str
 
     delete px;
     delete py;
-
-    subTestName = std::string("2_param_gauss");
-    res = 1;
-    expected = 1;
 
     if(!Math::areEqual(xMedian, 5.0, 0.25))
     {

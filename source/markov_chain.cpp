@@ -283,7 +283,63 @@ bool lessMarkovChainElementPointer(MarkovChain::Element* i, MarkovChain::Element
     return (*i) < (*j);
 }
 
-MarkovChain::MarkovChain(const char* fileName)
+MarkovChain::MarkovChain(const char* fileName, unsigned long burnin)
+{
+    minLike_ = std::numeric_limits<double>::max();
+    addFile(fileName, burnin);
+}
+
+MarkovChain::MarkovChain(int nChains, const char* fileNameRoot, unsigned long burnin)
+{
+    check(nChains > 0, "need at least 1 chain");
+
+    minLike_ = std::numeric_limits<double>::max();
+
+    std::vector<Element*> bigChain;
+    double maxP = std::numeric_limits<double>::min();
+    for(int i = 0; i < nChains; ++i)
+    {
+        std::stringstream fileName;
+        fileName << fileNameRoot;
+        if(nChains > 1)
+            fileName << '_' << i;
+        fileName << ".txt";
+        double thisMaxP;
+        readFile(fileName.str().c_str(), burnin, bigChain, thisMaxP);
+        if(thisMaxP > maxP)
+            maxP = thisMaxP;
+    }
+
+    double minP = maxP / bigChain.size() / 1000;
+    filterChain(bigChain, minP);
+
+    output_screen("Sorting the chain..." << std::endl);
+    std::sort(chain_.begin(), chain_.end(), lessMarkovChainElementPointer);
+    output_screen("OK" << std::endl);
+}
+
+MarkovChain::~MarkovChain()
+{
+    for(unsigned long i = 0; i < chain_.size(); ++i)
+        delete chain_[i];
+}
+
+void
+MarkovChain::addFile(const char* fileName, unsigned long burnin)
+{
+    std::vector<Element*> bigChain;
+    double maxP;
+    readFile(fileName, burnin, bigChain, maxP);
+    double minP = maxP / bigChain.size() / 1000;
+    filterChain(bigChain, minP);
+
+    output_screen("Sorting the chain..." << std::endl);
+    std::sort(chain_.begin(), chain_.end(), lessMarkovChainElementPointer);
+    output_screen("OK" << std::endl);
+}
+
+void
+MarkovChain::readFile(const char* fileName, unsigned long burnin, std::vector<Element*>& bigChain, double& maxP)
 {
     StandardException exc;
     std::ifstream in(fileName);
@@ -299,10 +355,8 @@ MarkovChain::MarkovChain(const char* fileName)
     output_screen("Reading the chain from file " << fileName << "..." << std::endl);
     nParams_ = -1;
     unsigned long line = 0;
-    double maxP = std::numeric_limits<double>::min();
-    std::vector<Element*> bigChain;
+    maxP = std::numeric_limits<double>::min();
 
-    minLike_ = std::numeric_limits<double>::max();
     while(!in.eof())
     {
         std::string s;
@@ -341,34 +395,35 @@ MarkovChain::MarkovChain(const char* fileName)
             throw exc;
         }
 
-        bigChain.push_back(elem);
+        if(line >= burnin)
+            bigChain.push_back(elem);
+
         ++line;
     }
     output_screen("OK" << std::endl << "Successfully read the chain. It has " << bigChain.size() << " elements, " << nParams_ << " parameters." << std::endl);
+}
+
+void
+MarkovChain::filterChain(std::vector<Element*>& bigChain, double minP)
+{
     output_screen("Filtering the chain..." << std::endl);
     ProgressMeter meter(bigChain.size());
-    double minP = maxP / bigChain.size() / 1000;
+    unsigned long left = 0;
     for(unsigned long i = 0; i < bigChain.size(); ++i)
     {
         Element* e = bigChain[i];
         if(e->prob < minP)
             delete e;
         else
+        {
             chain_.push_back(e);
+            ++left;
+        }
 
         meter.advance();
     }
     output_screen("OK" << std::endl);
-    output_screen(chain_.size() << " elements left after filtering!" << std::endl);
-    output_screen("Sorting the chain..." << std::endl);
-    std::sort(chain_.begin(), chain_.end(), lessMarkovChainElementPointer);
-    output_screen("OK" << std::endl);
-}
-
-MarkovChain::~MarkovChain()
-{
-    for(unsigned long i = 0; i < chain_.size(); ++i)
-        delete chain_[i];
+    output_screen(left << " elements left after filtering!" << std::endl);
 }
 
 Posterior1D*

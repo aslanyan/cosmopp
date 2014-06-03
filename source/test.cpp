@@ -18,6 +18,10 @@
 #include <test_mcmc_planck.hpp>
 #include <test_multinest_planck.hpp>
 
+#ifdef COSMO_MPI
+#include <mpi.h>
+#endif
+
 TestFramework* createTest(const std::string& name)
 {
     TestFramework* test = NULL;
@@ -60,10 +64,18 @@ int main(int argc, char *argv[])
 {
     try {
         StandardException exc;
+
+        bool isMaster = true;
+#ifdef COSMO_MPI
+        MPI_Init(&argc, &argv);
+        int mpiRank;
+        MPI_Comm_rank(MPI_COMM_WORLD, &mpiRank);
+        isMaster = (mpiRank == 0);
+#endif
         
         unsigned int total = 0, pass = 0, fail = 0;
 
-        if(argc < 2)
+        if(isMaster && argc < 2)
         {
             std::string exceptionStr = "The name of the test must be specified. Other options are 'all' to run all of the tests, 'fast' to run only the fast tests, 'slow' to run all of the slow tests, and 'list' to get a list of all the tests.";
             exc.set(exceptionStr);
@@ -128,14 +140,24 @@ int main(int argc, char *argv[])
         }
         else if(argument == "list")
         {
-            std::cout << std::endl << "FAST TESTS:" << std::endl;
-            for(std::set<std::string>::const_iterator it = fastTests.begin(); it != fastTests.end(); ++it)
-                std::cout << "   " << *it << std::endl;
+            if(isMaster)
+            {
+                std::cout << std::endl << "FAST TESTS:" << std::endl;
+                for(std::set<std::string>::const_iterator it = fastTests.begin(); it != fastTests.end(); ++it)
+                    std::cout << "   " << *it << std::endl;
 
-            std::cout << std::endl << "SLOW TESTS:" << std::endl;
-            for(std::set<std::string>::const_iterator it = slowTests.begin(); it != slowTests.end(); ++it)
-                std::cout << "   " << *it << std::endl;
-            std::cout << std::endl;
+                std::cout << std::endl << "SLOW TESTS:" << std::endl;
+                for(std::set<std::string>::const_iterator it = slowTests.begin(); it != slowTests.end(); ++it)
+                    std::cout << "   " << *it << std::endl;
+                std::cout << std::endl;
+            }
+
+#ifdef COSMO_MPI
+            int hasMpiFinalized;
+            MPI_Finalized(&hasMpiFinalized);
+            if(!hasMpiFinalized)
+                MPI_Finalize();
+#endif
             return 0;
         }
         else
@@ -153,8 +175,17 @@ int main(int argc, char *argv[])
 
             if(!found)
             {
-                std::cout << "The test name " << argument << " was not found!" << std::endl;
-                std::cout << "Try 'all' to run all of the tests, 'fast' to run only the fast tests, 'slow' to run all of the slow tests, and 'list' to get a list of all the tests." << std::endl;
+                if(isMaster)
+                {
+                    std::cout << "The test name " << argument << " was not found!" << std::endl;
+                    std::cout << "Try 'all' to run all of the tests, 'fast' to run only the fast tests, 'slow' to run all of the slow tests, and 'list' to get a list of all the tests." << std::endl;
+                }
+#ifdef COSMO_MPI
+                int hasMpiFinalized;
+                MPI_Finalized(&hasMpiFinalized);
+                if(!hasMpiFinalized)
+                    MPI_Finalize();
+#endif
                 return -1;
             }
 
@@ -165,14 +196,24 @@ int main(int argc, char *argv[])
                 ++fail;
         }
 
-        std::cout << std::endl << "TOTAL NUMBER OF TESTS RUN: " << total << std::endl;
-        std::cout << "PASSES: " << pass << std::endl;
-        std::cout << "FAILURES: " << fail << std::endl;
+        if(isMaster)
+        {
+            std::cout << std::endl << "TOTAL NUMBER OF TESTS RUN: " << total << std::endl;
+            std::cout << "PASSES: " << pass << std::endl;
+            std::cout << "FAILURES: " << fail << std::endl;
 
-        if(fail == 0)
-            std::cout << std::endl << "\033[1;32mSUCCESS\033[0m" << std::endl << std::endl;
-        else
-            std::cout << std::endl << "\033[1;31mFAIL\033[0m" << std::endl << std::endl;
+            if(fail == 0)
+                std::cout << std::endl << "\033[1;32mSUCCESS\033[0m" << std::endl << std::endl;
+            else
+                std::cout << std::endl << "\033[1;31mFAIL\033[0m" << std::endl << std::endl;
+        }
+
+#ifdef COSMO_MPI
+        int hasMpiFinalized;
+        MPI_Finalized(&hasMpiFinalized);
+        if(!hasMpiFinalized)
+            MPI_Finalize();
+#endif
         
     } catch (std::exception& e)
     {
