@@ -1,10 +1,10 @@
-#include <macros.hpp>
-#include <exception_handler.hpp>
-#include <mcmc.hpp>
-
 #ifdef COSMO_MPI
 #include <mpi.h>
 #endif
+
+#include <macros.hpp>
+#include <exception_handler.hpp>
+#include <mcmc.hpp>
 
 namespace Math
 {
