@@ -1,3 +1,7 @@
+#ifdef COSMO_MPI
+#include <mpi.h>
+#endif
+
 #include <fstream>
 #include <sstream>
 #include <cmath>
@@ -9,10 +13,6 @@
 #include <mn_scanner.hpp>
 
 #include <multinest.h>
-
-#ifdef COSMO_MPI
-#include <mpi.h>
-#endif
 
 
 MnScanner::MnScanner(int nPar, Math::LikelihoodFunction& like, int nLive, std::string fileRoot, bool accurateEvidence) : n_(nPar), like_(like), nLive_(nLive), paramsStarting_(nPar, 0), paramNames_(nPar), paramsBest_(nPar, 0), paramsMean_(nPar, 0), paramsStd_(nPar, 0), paramsCurrent_(nPar, 0), paramPriors_(nPar), fileRoot_(fileRoot), accurateEvidence_(accurateEvidence)

@@ -1,3 +1,7 @@
+#ifdef COSMO_MPI
+#include <mpi.h>
+#endif
+
 #include <fstream>
 #include <set>
 #include <sstream>
@@ -17,10 +21,6 @@
 #include <test_multinest.hpp>
 #include <test_mcmc_planck.hpp>
 #include <test_multinest_planck.hpp>
-
-#ifdef COSMO_MPI
-#include <mpi.h>
-#endif
 
 TestFramework* createTest(const std::string& name)
 {
