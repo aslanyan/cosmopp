@@ -1,3 +1,4 @@
+#include <macros.hpp>
 #include <test_int_operations.hpp>
 #include <int_operations.hpp>
 
