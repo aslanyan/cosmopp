@@ -179,6 +179,7 @@ PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useL
         if(actSptLMax_ > lMax_)
             lMax_ = actSptLMax_;
 
+        /*
         int extraParams = clik_get_extra_parameter_names(actspt_, &names, NULL);
         output_screen("ActSpt has " << extraParams << " extra parameters. Their names are as follows:" << std::endl);
         for(int i = 0; i < extraParams; ++i)
@@ -187,6 +188,7 @@ PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useL
         }
         output_screen(std::endl);
         delete names;
+        */
     }
 
     output_screen("Total l_max = " << lMax_ << std::endl);

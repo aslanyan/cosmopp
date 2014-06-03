@@ -1,14 +1,14 @@
 #ifndef COSMO_PP_TEST_FRAMEWORK_HPP
 #define COSMO_PP_TEST_FRAMEWORK_HPP
 
+#ifdef COSMO_MPI
+#include <mpi.h>
+#endif
+
 #include <string>
 
 #include <macros.hpp>
 #include <numerics.hpp>
-
-#ifdef COSMO_MPI
-#include <mpi.h>
-#endif
 
 class TestFramework
 {
