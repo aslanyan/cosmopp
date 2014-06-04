@@ -21,6 +21,7 @@
 #include <test_multinest.hpp>
 #include <test_mcmc_planck.hpp>
 #include <test_multinest_planck.hpp>
+#include <test_cmb.hpp>
 
 TestFramework* createTest(const std::string& name)
 {
@@ -46,6 +47,8 @@ TestFramework* createTest(const std::string& name)
         test = new TestMCMCPlanck;
     else if(name == "multinest_planck")
         test = new TestMultinestPlanck;
+    else if(name == "cmb")
+        test = new TestCMB;
 
     return test;
 }
@@ -93,6 +96,7 @@ int main(int argc, char *argv[])
         fastTests.insert("legendre");
         fastTests.insert("mcmc_fast");
         fastTests.insert("multinest_fast");
+        fastTests.insert("cmb");
 
         slowTests.insert("mcmc_planck");
         slowTests.insert("multinest_planck");

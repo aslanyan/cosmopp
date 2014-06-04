@@ -120,7 +120,9 @@ private:
     inline double uniformPrior(double min, double max, double x) const;
     inline double gaussPrior(double mean, double sigma, double x) const;
     inline double calculatePrior();
+    inline void calculateStoppingData();
     inline bool stop() const;
+    inline bool checkStoppingCrit() const;
     inline double generateNewPoint(int i) const { return current_[i] + generator_->generate() * samplingWidth_[i]; }
     inline void openOut(bool append);
     inline void closeOut() { out_.close(); }
@@ -129,6 +131,10 @@ private:
     inline void writeResumeInfo() const;
     inline bool readResumeInfo();
 
+    inline bool isMaster() const { return currentChainI_ == 0; }
+    void communicate();
+    void sendHaveStopped();
+    
 private:
     int n_;
     LikelihoodFunction& like_;
@@ -151,11 +157,39 @@ private:
     double currentLike_;
     double currentPrior_;
 
+    // first index is chain index, second index is param index;
+    std::vector<std::vector<double> > stdMean_;
+    std::vector<std::vector<double> > stdMeanBuff_;
+    std::vector<double> myStdMean_;
+
     const int resumeCode_;
 
     std::ofstream out_;
     int nChains_, currentChainI_;
     double burnin_;
+
+    bool stop_;
+    int stopRequestMessage_;
+    int stopRequestTag_;
+    bool stopRequestSent_;
+
+    void* receiveStopRequest_;
+    void* sendStopRequest_;
+
+    bool stopMessageRequested_;
+    int stopMessageBuff_;
+
+    int haveStoppedMessage_;
+    std::vector<int> haveStoppedBuff_;
+    int haveStoppedMessageTag_;
+
+    void* haveStoppedMesReq_;
+    std::vector<void*> haveStoppedReceiveReq_;
+
+    int updateReqTag_;
+    std::vector<void*> updateRequests_;
+    bool firstUpdateRequested_;
+    std::vector<void*> updateReceiveReq_;
 };
 
 double
@@ -215,6 +249,42 @@ MetropolisHastings::stop() const
     if(iteration_ >= maxChainLength_)
         return true;
 
+    if(!isMaster())
+        return stop_;
+
+    return checkStoppingCrit();
+}
+
+bool
+MetropolisHastings::checkStoppingCrit() const
+{
+    check(isMaster(), "");
+    
+    for(int i = 0; i < n_; ++i)
+    {
+        double s = 0;
+        for(int j = 0; j < nChains_; ++j)
+        {
+            const double x = stdMean_[j][i];
+            if(x == -1)
+                return false;
+
+            s += x * x;
+        }
+
+        const double sigma = std::sqrt(s) / nChains_;
+        if(sigma > accuracy_[i])
+            return false;
+    }
+
+    return true;
+}
+
+void
+MetropolisHastings::calculateStoppingData()
+{
+    check(iteration_ > burnin_, "");
+
     for(int i = 0; i < n_; ++i)
     {
         const double mean = paramSum_[i] / (iteration_ - burnin_);
@@ -226,11 +296,8 @@ MetropolisHastings::stop() const
         const double cor = (corSum_[i] / (iteration_ - burnin_) - mean * mean) / (stdev * stdev);
         if(cor < 1 && cor > -1)
             stdMean *= std::sqrt((1 + cor) / (1 - cor));
-        if(stdMean / std::sqrt(double(nChains_)) > accuracy_[i])
-            return false;
+        myStdMean_[i] = stdMean;
     }
-
-    return true;
 }
 
 void

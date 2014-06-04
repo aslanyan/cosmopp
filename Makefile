@@ -121,6 +121,7 @@ TEST_MCMC_HPP = include/test_mcmc.hpp $(TEST_FRAMEWORK_HPP)
 TEST_MULTINEST_HPP = include/test_multinest.hpp $(TEST_FRAMEWORK_HPP)
 TEST_MCMC_PLANCK_HPP = include/test_mcmc_planck.hpp $(TEST_FRAMEWORK_HPP)
 TEST_MULTINEST_PLANCK_HPP = include/test_multinest_planck.hpp $(TEST_FRAMEWORK_HPP)
+TEST_CMB_HPP = include/test_cmb.hpp $(TEST_FRAMEWORK_HPP)
 
 all: lib/libcosmopp.a bin/analyze_chain bin/sort_chain bin/contour_plot bin/test bin/generate_white_noise bin/apodize_mask $(PLANCK_TARGET) $(PLANCK_AND_MULTINEST_TARGET)
 
@@ -128,7 +129,7 @@ OBJ_LIBRARY = obj/test_framework.o obj/mcmc.o obj/whole_matrix.o obj/utils.o obj
 lib/libcosmopp.a: $(OBJ_LIBRARY)
 	ar rcs $@ $(OBJ_LIBRARY)
 
-OBJ_TEST = obj/test.o obj/test_framework.o obj/test_unit_conversions.o obj/test_int_operations.o obj/test_integral.o obj/test_conjugate_gradient.o obj/test_polynomial.o obj/test_legendre.o obj/test_mcmc.o obj/markov_chain.o obj/mcmc.o obj/test_multinest.o obj/mn_scanner.o obj/test_mcmc_planck.o obj/planck_like.o obj/cmb.o obj/test_multinest_planck.o	
+OBJ_TEST = obj/test.o obj/test_framework.o obj/test_unit_conversions.o obj/test_int_operations.o obj/test_integral.o obj/test_conjugate_gradient.o obj/test_polynomial.o obj/test_legendre.o obj/test_mcmc.o obj/markov_chain.o obj/mcmc.o obj/test_multinest.o obj/mn_scanner.o obj/test_mcmc_planck.o obj/planck_like.o obj/cmb.o obj/test_multinest_planck.o	obj/test_cmb.o
 bin/test: $(OBJ_TEST)
 	$(CC) $(LFLAGS1) -o $@ $(OBJ_TEST) $(LFLAGS2)
 
@@ -280,6 +281,9 @@ obj/test_mcmc_planck.o: source/test_mcmc_planck.cpp $(TEST_MCMC_PLANCK_HPP) $(MC
 
 obj/test_multinest_planck.o: source/test_multinest_planck.cpp $(TEST_MULTINEST_PLANCK_HPP) $(MN_SCANNER_HPP) $(PLANCK_LIKE_HPP) $(MARKOV_CHAIN_HPP) $(NUMERICS_HPP)
 	$(CC) $(CFLAGS) source/test_multinest_planck.cpp -o $@
+
+obj/test_cmb.o: source/test_cmb.cpp $(CMB_HPP) $(TEST_CMB_HPP)
+	$(CC) $(CFLAGS) source/test_cmb.cpp -o $@
 
 clean:
 	rm obj/* bin/* lib/*
