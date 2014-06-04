@@ -243,14 +243,14 @@ MetropolisHastings::stop() const
 {
     check(iteration_ >= 0, "");
 
+    if(!isMaster())
+        return stop_;
+
     if(iteration_ < burnin_ + 100)
         return false;
 
     if(iteration_ >= maxChainLength_)
         return true;
-
-    if(!isMaster())
-        return stop_;
 
     return checkStoppingCrit();
 }
