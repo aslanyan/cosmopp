@@ -30,7 +30,7 @@ public:
 
     virtual double calculate(double* params, int nParams)
     {
-        check(nParams = 2, "");
+        check(nParams == 2, "");
         const double x = params[0], y = params[1];
         const double deltaX = (x - x0_), deltaY = (y - y0_);
 
