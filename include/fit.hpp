@@ -17,11 +17,10 @@
 namespace Math
 {
 
-template<int N>
 class Chi2Calculator : public ROOT::Minuit2::FCNBase
 {
 public:
-    Chi2Calculator(ParametricFunction<N>& f, const std::vector<double>& x, const::std::vector<double>& y) : f_(f), x_(x), y_(y)
+    Chi2Calculator(ParametricFunction& f, const std::vector<double>& x, const::std::vector<double>& y) : f_(f), x_(x), y_(y)
     {
         check(x_.size() == y_.size(), "");
         check(!x_.empty(), "");
@@ -29,8 +28,8 @@ public:
     
     virtual double operator()(const std::vector<double>& par) const
     {
-        check(par.size() == N, "");
-        for(int i = 0; i < N; ++i)
+        check(par.size() == f_.numberOfParams(), "");
+        for(int i = 0; i < f_.numberOfParams(); ++i)
             f_.parameter(i) = par[i];
         
         double res = 0;
@@ -45,7 +44,7 @@ public:
     double Up() const {return 1.;}
     
 private:
-    ParametricFunction<N>& f_;
+    ParametricFunction& f_;
     std::vector<double> x_;
     std::vector<double> y_;
 };
@@ -53,7 +52,6 @@ private:
 /// Curve fitting class.
 
 /// This class provides the functionality for curve fitting. Minimization is performed using the Minuit C++ library, this needs to be installed.
-template<int N>
 class Fit
 {
 public:
@@ -67,16 +65,16 @@ public:
     /// \param error A vector containing the errors of the parameters.
     /// \param min A vector containing the lower limits for the ranges of the parameters. Provide an empty vector to allow unlimited ranges.
     /// \param max A vector containing the upper limits for the ranges of the parameters.
-    Fit(ParametricFunction<N>& f, const std::vector<double>& x, const::std::vector<double>& y, const std::vector<double>& starting, const std::vector<double>& error, const std::vector<double>& min, const std::vector<double>& max) : f_(f)
+    Fit(ParametricFunction& f, const std::vector<double>& x, const::std::vector<double>& y, const std::vector<double>& starting, const std::vector<double>& error, const std::vector<double>& min, const std::vector<double>& max) : f_(f)
     {
-        calc_ = new Chi2Calculator<N>(f, x, y);
-        check(starting.size() == N, "");
-        check(error.size() == N, "");
-        check(min.size() == N || min.empty(), "");
-        check(max.size() == N || max.empty(), "");
+        calc_ = new Chi2Calculator(f, x, y);
+        check(starting.size() == f.numberOfParams(), "");
+        check(error.size() == f.numberOfParams(), "");
+        check(min.size() == f.numberOfParams() || min.empty(), "");
+        check(max.size() == f.numberOfParams() || max.empty(), "");
         check(min.size() == max.size(), "");
         
-        for(int i = 0; i < N; ++i)
+        for(int i = 0; i < f.numberOfParams(); ++i)
         {
             std::stringstream paramName;
             paramName << "param_" << i;
@@ -102,7 +100,7 @@ public:
         params.clear();
         error.clear();
         
-        for(int i = 0; i < N; ++i)
+        for(int i = 0; i < f_.numberOfParams(); ++i)
         {
             std::stringstream paramName;
             paramName << "param_" << i;
@@ -114,9 +112,9 @@ public:
     }
     
 private:
-    Chi2Calculator<N>* calc_;
+    Chi2Calculator* calc_;
     ROOT::Minuit2::MnUserParameters upar_;
-    ParametricFunction<N>& f_;
+    ParametricFunction& f_;
 };
     
 } //namespace Math

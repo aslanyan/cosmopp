@@ -127,6 +127,7 @@ TEST_MCMC_PLANCK_HPP = include/test_mcmc_planck.hpp $(TEST_FRAMEWORK_HPP)
 TEST_MULTINEST_PLANCK_HPP = include/test_multinest_planck.hpp $(TEST_FRAMEWORK_HPP)
 TEST_CMB_HPP = include/test_cmb.hpp $(TEST_FRAMEWORK_HPP)
 TEST_CMB_GIBBS_HPP = include/test_cmb_gibbs.hpp $(TEST_FRAMEWORK_HPP)
+TEST_FIT = include/test_fit.hpp $(TEST_FRAMEWORK_HPP)
 
 all: lib/libcosmopp.a bin/analyze_chain bin/sort_chain bin/contour_plot bin/test bin/generate_white_noise bin/apodize_mask $(PLANCK_TARGET) $(PLANCK_AND_MULTINEST_TARGET)
 
@@ -134,7 +135,7 @@ OBJ_LIBRARY = obj/macros.o obj/test_framework.o obj/mcmc.o obj/whole_matrix.o ob
 lib/libcosmopp.a: $(OBJ_LIBRARY)
 	ar rcs $@ $(OBJ_LIBRARY)
 
-OBJ_TEST = obj/test.o obj/macros.o obj/test_framework.o obj/test_unit_conversions.o obj/test_int_operations.o obj/test_integral.o obj/test_conjugate_gradient.o obj/test_polynomial.o obj/test_legendre.o obj/test_mcmc.o obj/markov_chain.o obj/mcmc.o obj/test_multinest.o obj/mn_scanner.o obj/test_mcmc_planck.o obj/planck_like.o obj/cmb.o obj/test_multinest_planck.o	obj/test_cmb.o obj/test_cmb_gibbs.o obj/cmb_gibbs.o obj/utils.o obj/simulate.o obj/whole_matrix.o
+OBJ_TEST = obj/test.o obj/macros.o obj/test_framework.o obj/test_unit_conversions.o obj/test_int_operations.o obj/test_integral.o obj/test_conjugate_gradient.o obj/test_polynomial.o obj/test_legendre.o obj/test_mcmc.o obj/markov_chain.o obj/mcmc.o obj/test_multinest.o obj/mn_scanner.o obj/test_mcmc_planck.o obj/planck_like.o obj/cmb.o obj/test_multinest_planck.o	obj/test_cmb.o obj/test_cmb_gibbs.o obj/cmb_gibbs.o obj/utils.o obj/simulate.o obj/whole_matrix.o obj/test_fit.o
 bin/test: $(OBJ_TEST)
 	$(CC) $(LFLAGS1) -o $@ $(OBJ_TEST) $(LFLAGS2)
 
@@ -221,7 +222,7 @@ obj/analyze_chain.o: source/analyze_chain.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_
 obj/contour_plot.o: source/contour_plot.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP)
 	$(CC) $(CFLAGS) source/contour_plot.cpp -o $@
 
-obj/test.o: source/test.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(TEST_FRAMEWORK_HPP) $(TEST_UNIT_CONVERSIONS_HPP) $(TEST_INT_OPERATIONS_HPP) $(TEST_INTEGRAL_HPP) $(TEST_CONJUGATE_GRADIENT_HPP) $(TEST_POLYNOMIAL_HPP) $(TEST_LEGENDRE_HPP) $(TEST_MCMC_HPP) $(TEST_MULTINEST_HPP) $(TEST_MCMC_PLANCK_HPP) $(TEST_CMB_HPP) $(TEST_CMB_GIBBS_HPP)
+obj/test.o: source/test.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(TEST_FRAMEWORK_HPP) $(TEST_UNIT_CONVERSIONS_HPP) $(TEST_INT_OPERATIONS_HPP) $(TEST_INTEGRAL_HPP) $(TEST_CONJUGATE_GRADIENT_HPP) $(TEST_POLYNOMIAL_HPP) $(TEST_LEGENDRE_HPP) $(TEST_MCMC_HPP) $(TEST_MULTINEST_HPP) $(TEST_MCMC_PLANCK_HPP) $(TEST_CMB_HPP) $(TEST_CMB_GIBBS_HPP) $(TEST_FIT_HPP)
 	$(CC) $(CFLAGS) source/test.cpp -o $@
 
 obj/test_framework.o: source/test_framework.cpp $(MACROS_HPP) $(NUMERICS_HPP) $(TEST_FRAMEWORK_HPP)
@@ -294,6 +295,9 @@ obj/test_cmb.o: source/test_cmb.cpp $(CMB_HPP) $(TEST_CMB_HPP)
 
 obj/test_cmb_gibbs.o: source/test_cmb_gibbs.cpp $(MACROS_HPP) $(CMB_GIBBS_HPP) $(CMB_HPP) $(SIMULATE_HPP) $(UTILS_HPP) $(TEST_CMB_GIBBS_HPP)
 	$(CC) $(CFLAGS) source/test_cmb_gibbs.cpp -o $@
+
+obj/test_fit.o: source/test_fit.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(FIT_HPP) $(POLYNOMIAL_HPP) $(TEST_FIT_HPP)
+	$(CC) $(CFLAGS) source/test_fit.cpp -o $@
 
 clean:
 	rm obj/* bin/* lib/*

@@ -184,7 +184,7 @@ private:
 
 #ifdef VERBOSE1
 #define output_screen_clean1(A) output_screen_clean(A)
-#define output_screen1(A)
+#define output_screen1(A) output_screen(A)
 #else
 #define output_screen_clean1(A) output_log1(A)
 #define output_screen1(A)
