@@ -1,7 +1,10 @@
+#ifdef COSMO_MPI
+#include <mpi.h>
+#endif
+
 #include <macros.hpp>
 
 #ifdef COSMO_MPI
-#include <mpi.h>
 
 bool IS_PARALLEL()
 {
