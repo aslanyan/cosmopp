@@ -22,6 +22,7 @@
 #include <test_mcmc_planck.hpp>
 #include <test_multinest_planck.hpp>
 #include <test_cmb.hpp>
+#include <test_cmb_gibbs.hpp>
 
 TestFramework* createTest(const std::string& name)
 {
@@ -49,6 +50,8 @@ TestFramework* createTest(const std::string& name)
         test = new TestMultinestPlanck;
     else if(name == "cmb")
         test = new TestCMB;
+    else if(name == "cmb_gibbs")
+        test = new TestCMBGibbs;
 
     return test;
 }
@@ -100,6 +103,7 @@ int main(int argc, char *argv[])
 
         slowTests.insert("mcmc_planck");
         slowTests.insert("multinest_planck");
+        slowTests.insert("cmb_gibbs");
 
         if(argument == "all")
         {
@@ -146,14 +150,14 @@ int main(int argc, char *argv[])
         {
             if(isMaster)
             {
-                std::cout << std::endl << "FAST TESTS:" << std::endl;
+                output_screen_clean(std::endl << "FAST TESTS:" << std::endl);
                 for(std::set<std::string>::const_iterator it = fastTests.begin(); it != fastTests.end(); ++it)
-                    std::cout << "   " << *it << std::endl;
+                    output_screen_clean("   " << *it << std::endl);
 
-                std::cout << std::endl << "SLOW TESTS:" << std::endl;
+                output_screen_clean(std::endl << "SLOW TESTS:" << std::endl);
                 for(std::set<std::string>::const_iterator it = slowTests.begin(); it != slowTests.end(); ++it)
-                    std::cout << "   " << *it << std::endl;
-                std::cout << std::endl;
+                    output_screen_clean("   " << *it << std::endl);
+                output_screen_clean(std::endl);
             }
 
 #ifdef COSMO_MPI
@@ -202,14 +206,18 @@ int main(int argc, char *argv[])
 
         if(isMaster)
         {
-            std::cout << std::endl << "TOTAL NUMBER OF TESTS RUN: " << total << std::endl;
-            std::cout << "PASSES: " << pass << std::endl;
-            std::cout << "FAILURES: " << fail << std::endl;
+            output_screen_clean(std::endl << "TOTAL NUMBER OF TESTS RUN: " << total << std::endl);
+            output_screen_clean("PASSES: " << pass << std::endl);
+            output_screen_clean("FAILURES: " << fail << std::endl);
 
             if(fail == 0)
-                std::cout << std::endl << "\033[1;32mSUCCESS\033[0m" << std::endl << std::endl;
+            {
+                output_screen_clean(std::endl << "\033[1;32mSUCCESS\033[0m" << std::endl << std::endl);
+            }
             else
-                std::cout << std::endl << "\033[1;31mFAIL\033[0m" << std::endl << std::endl;
+            {
+                output_screen_clean(std::endl << "\033[1;31mFAIL\033[0m" << std::endl << std::endl);
+            }
         }
 
 #ifdef COSMO_MPI

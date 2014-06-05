@@ -400,7 +400,8 @@ MarkovChain::readFile(const char* fileName, unsigned long burnin, std::vector<El
 
         ++line;
     }
-    output_screen("OK" << std::endl << "Successfully read the chain. It has " << bigChain.size() << " elements, " << nParams_ << " parameters." << std::endl);
+    output_screen("OK" << std::endl);
+    output_screen("Successfully read the chain. It has " << bigChain.size() << " elements, " << nParams_ << " parameters." << std::endl);
 }
 
 void

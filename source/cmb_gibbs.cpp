@@ -495,7 +495,7 @@ CMBGibbsSampler::generateSignal()
     //output_screen("Generating the signal..." << std::endl);
     int iter;
     const std::vector<double>& res = cg.solve(1e-20, &iter);
-    output_screen("The CG converged in " << iter << " iterations." << std::endl);
+    output_screen2("The CG converged in " << iter << " iterations." << std::endl);
 
 #ifdef CHECKS_ON
     std::vector<double> x(res.size());

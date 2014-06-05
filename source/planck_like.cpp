@@ -49,7 +49,7 @@ PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useL
         clik_get_lmax(commander_, lMax, NULL);
         for(int i = 0; i < 6; ++i)
         {
-            output_screen("Commander has " << spectraNames_[i] << " = " << hasCl[i] << " with l_max = " << lMax[i] << std::endl);
+            output_screen1("Commander has " << spectraNames_[i] << " = " << hasCl[i] << " with l_max = " << lMax[i] << std::endl);
             if(lMax[i] > commanderLMax_)
                 commanderLMax_ = lMax[i];
         }
@@ -59,12 +59,12 @@ PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useL
 
         /*
         int extraParams = clik_get_extra_parameter_names(commander_, &names, NULL);
-        output_screen("Commander has " << extraParams << " extra parameters. Their names are as follows:" << std::endl);
+        output_screen1("Commander has " << extraParams << " extra parameters. Their names are as follows:" << std::endl);
         for(int i = 0; i < extraParams; ++i)
         {
-            output_screen(names[i] << std::endl);
+            output_screen1(names[i] << std::endl);
         }
-        output_screen(std::endl);
+        output_screen1(std::endl);
         delete names;
         */
     }
@@ -81,7 +81,7 @@ PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useL
         clik_get_lmax(camspec_, lMax, NULL);
         for(int i = 0; i < 6; ++i)
         {
-            output_screen("Camspec has " << spectraNames_[i] << " = " << hasCl[i] << " with l_max = " << lMax[i] << std::endl);
+            output_screen1("Camspec has " << spectraNames_[i] << " = " << hasCl[i] << " with l_max = " << lMax[i] << std::endl);
             if(lMax[i] > camspecLMax_)
                 camspecLMax_ = lMax[i];
         }
@@ -91,12 +91,12 @@ PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useL
 
         /*
         int extraParams = clik_get_extra_parameter_names(camspec_, &names, NULL);
-        output_screen("Camspec has " << extraParams << " extra parameters. Their names are as follows:" << std::endl);
+        output_screen1("Camspec has " << extraParams << " extra parameters. Their names are as follows:" << std::endl);
         for(int i = 0; i < extraParams; ++i)
         {
-            output_screen(names[i] << std::endl);
+            output_screen1(names[i] << std::endl);
         }
-        output_screen(std::endl);
+        output_screen1(std::endl);
         delete names;
         */
     }
@@ -113,7 +113,7 @@ PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useL
         clik_get_lmax(pol_, lMax, NULL);
         for(int i = 0; i < 6; ++i)
         {
-            output_screen("Pol has " << spectraNames_[i] << " = " << hasCl[i] << " with l_max = " << lMax[i] << std::endl);
+            output_screen1("Pol has " << spectraNames_[i] << " = " << hasCl[i] << " with l_max = " << lMax[i] << std::endl);
             if(lMax[i] > polLMax_)
                 polLMax_ = lMax[i];
         }
@@ -123,12 +123,12 @@ PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useL
 
         /*
         int extraParams = clik_get_extra_parameter_names(pol_, &names, NULL);
-        output_screen("Pol has " << extraParams << " extra parameters. Their names are as follows:" << std::endl);
+        output_screen1("Pol has " << extraParams << " extra parameters. Their names are as follows:" << std::endl);
         for(int i = 0; i < extraParams; ++i)
         {
-            output_screen(names[i] << std::endl);
+            output_screen1(names[i] << std::endl);
         }
-        output_screen(std::endl);
+        output_screen1(std::endl);
         delete names;
         */
     }
@@ -145,16 +145,16 @@ PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useL
         if(lensingLMax_ > lMax_)
             lMax_ = lensingLMax_;
 
-        output_screen("Lensing has l_max = " << lensingLMax_ << std::endl);
+        output_screen1("Lensing has l_max = " << lensingLMax_ << std::endl);
 
         /*
         int extraParams = clik_lensing_get_extra_parameter_names(lens_, &names, NULL);
-        output_screen("Lensing has " << extraParams << " extra parameters. Their names are as follows:" << std::endl);
+        output_screen1("Lensing has " << extraParams << " extra parameters. Their names are as follows:" << std::endl);
         for(int i = 0; i < extraParams; ++i)
         {
-            output_screen(names[i] << std::endl);
+            output_screen1(names[i] << std::endl);
         }
-        output_screen(std::endl);
+        output_screen1(std::endl);
         delete names;
         */
     }
@@ -171,7 +171,7 @@ PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useL
         clik_get_lmax(actspt_, lMax, NULL);
         for(int i = 0; i < 6; ++i)
         {
-            output_screen("ActSpt has " << spectraNames_[i] << " = " << hasCl[i] << " with l_max = " << lMax[i] << std::endl);
+            output_screen1("ActSpt has " << spectraNames_[i] << " = " << hasCl[i] << " with l_max = " << lMax[i] << std::endl);
             if(lMax[i] > actSptLMax_)
                 actSptLMax_ = lMax[i];
         }
@@ -181,17 +181,17 @@ PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useL
 
         /*
         int extraParams = clik_get_extra_parameter_names(actspt_, &names, NULL);
-        output_screen("ActSpt has " << extraParams << " extra parameters. Their names are as follows:" << std::endl);
+        output_screen1("ActSpt has " << extraParams << " extra parameters. Their names are as follows:" << std::endl);
         for(int i = 0; i < extraParams; ++i)
         {
-            output_screen(names[i] << std::endl);
+            output_screen1(names[i] << std::endl);
         }
-        output_screen(std::endl);
+        output_screen1(std::endl);
         delete names;
         */
     }
 
-    output_screen("Total l_max = " << lMax_ << std::endl);
+    output_screen1("Total l_max = " << lMax_ << std::endl);
     cmb_.preInitialize(lMax_ + 1000, false, true, includeTensors, lMax_ + 1000);
 }
 
@@ -284,9 +284,9 @@ PlanckLikelihood::commanderLike()
 
     check(clTT_.size() >= commanderLMax_ + 1, "");
 
-    output_screen("Calculating commander likelihood..." << std::endl);
+    output_screen2("Calculating commander likelihood..." << std::endl);
     const double l = clik_compute(commander_, &(clTT_[0]), NULL);
-    output_screen("OK" << std::endl);
+    output_screen2("OK" << std::endl);
     return -2.0 * l;
 }
 
@@ -300,13 +300,13 @@ PlanckLikelihood::camspecLike()
     check(clTT_.size() >= camspecLMax_ + 1, "");
     check(camspecExtra_.size() == 14, "");
 
-    output_screen("Calculating camspec likelihood..." << std::endl);
+    output_screen2("Calculating camspec likelihood..." << std::endl);
     std::vector<double> input;
     input.insert(input.end(), clTT_.begin(), clTT_.begin() + camspecLMax_ + 1);
     input.insert(input.end(), camspecExtra_.begin(), camspecExtra_.end());
 
     const double l = clik_compute(camspec_, &(input[0]), NULL);
-    output_screen("OK" << std::endl);
+    output_screen2("OK" << std::endl);
     return -2.0 * l;
 }
 
@@ -322,7 +322,7 @@ PlanckLikelihood::polLike()
     check(clEE_.size() >= polLMax_ + 1, "");
     check(clTE_.size() >= polLMax_ + 1, "");
 
-    output_screen("Calculating polarization likelihood..." << std::endl);
+    output_screen2("Calculating polarization likelihood..." << std::endl);
     std::vector<double> input;
     input.insert(input.end(), clTT_.begin(), clTT_.begin() + polLMax_ + 1);
     input.insert(input.end(), clEE_.begin(), clEE_.begin() + polLMax_ + 1);
@@ -330,7 +330,7 @@ PlanckLikelihood::polLike()
     input.insert(input.end(), clTE_.begin(), clTE_.begin() + polLMax_ + 1);
 
     const double l = clik_compute(pol_, &(input[0]), NULL);
-    output_screen("OK" << std::endl);
+    output_screen2("OK" << std::endl);
 
     return -2.0 * l;
 }
@@ -345,13 +345,13 @@ PlanckLikelihood::lensingLike()
     check(clTT_.size() >= lensingLMax_ + 1, "");
     check(clPP_.size() >= lensingLMax_ + 1, "");
 
-    output_screen("Calculating lensing likelihood..." << std::endl);
+    output_screen2("Calculating lensing likelihood..." << std::endl);
     std::vector<double> input;
     input.insert(input.end(), clPP_.begin(), clPP_.begin() + lensingLMax_ + 1);
     input.insert(input.end(), clTT_.begin(), clTT_.begin() + lensingLMax_ + 1);
     
     const double l = clik_lensing_compute(lens_, &(input[0]), NULL);
-    output_screen("OK" << std::endl);
+    output_screen2("OK" << std::endl);
 
     return -2.0 * l;
 }
@@ -366,13 +366,13 @@ PlanckLikelihood::actSptLike()
     check(clTT_.size() >= actSptLMax_ + 1, "");
     check(actSptExtra_.size() == 24, "");
 
-    output_screen("Calculating act-spt likelihood..." << std::endl);
+    output_screen2("Calculating act-spt likelihood..." << std::endl);
     std::vector<double> input;
     input.insert(input.end(), clTT_.begin(), clTT_.begin() + actSptLMax_ + 1);
     input.insert(input.end(), actSptExtra_.begin(), actSptExtra_.end());
 
     const double l = clik_compute(actspt_, &(input[0]), NULL);
-    output_screen("OK" << std::endl);
+    output_screen2("OK" << std::endl);
 
     return -2.0 * l;
 }

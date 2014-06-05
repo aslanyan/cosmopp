@@ -121,8 +121,8 @@ private:
     inline double gaussPrior(double mean, double sigma, double x) const;
     inline double calculatePrior();
     inline void calculateStoppingData();
-    inline bool stop() const;
-    inline bool checkStoppingCrit() const;
+    inline bool stop();
+    inline bool checkStoppingCrit();
     inline double generateNewPoint(int i) const { return current_[i] + generator_->generate() * samplingWidth_[i]; }
     inline void openOut(bool append);
     inline void closeOut() { out_.close(); }
@@ -142,7 +142,7 @@ private:
     std::vector<double> param1_, param2_, starting_, samplingWidth_, accuracy_;
     std::vector<PRIOR_MODE> priorMods_;
     std::vector<std::string> paramNames_;
-    std::vector<double> paramSum_, paramSquaredSum_, corSum_;
+    std::vector<double> paramSum_, paramSquaredSum_, corSum_, reachedSigma_;
     PriorFunctionBase* externalPrior_;
     ProposalFunctionBase* externalProposal_;
     std::vector<int> blocks_;
@@ -239,7 +239,7 @@ MetropolisHastings::calculatePrior()
 }
 
 bool
-MetropolisHastings::stop() const
+MetropolisHastings::stop()
 {
     check(iteration_ >= 0, "");
 
@@ -256,9 +256,11 @@ MetropolisHastings::stop() const
 }
 
 bool
-MetropolisHastings::checkStoppingCrit() const
+MetropolisHastings::checkStoppingCrit()
 {
     check(isMaster(), "");
+
+    bool doStop = true;
     
     for(int i = 0; i < n_; ++i)
     {
@@ -272,12 +274,12 @@ MetropolisHastings::checkStoppingCrit() const
             s += x * x;
         }
 
-        const double sigma = std::sqrt(s) / nChains_;
-        if(sigma > accuracy_[i])
-            return false;
+        reachedSigma_[i] = std::sqrt(s) / nChains_;
+        if(reachedSigma_[i] > accuracy_[i])
+            doStop = false;
     }
 
-    return true;
+    return doStop;
 }
 
 void

@@ -17,7 +17,7 @@ TestFramework::run(unsigned int& pass, unsigned int& fail)
 {
     if(isMaster())
     {
-        output_screen(std::endl << "TEST: " << name() << std::endl << std::endl);
+        output_screen_clean(std::endl << "TEST: " << name() << std::endl << std::endl);
         pass = 0;
         fail = 0;
     }
@@ -33,24 +33,24 @@ TestFramework::run(unsigned int& pass, unsigned int& fail)
         if(isMaster())
         {
             const bool testRes = Math::areEqual(expected, res, precision_);
-            output_screen("   " << subTestName << ": ");
+            output_screen_clean("   " << subTestName << ": ");
             if(testRes)
             {
                 ++pass;
-                output_screen("\033[1;32mPASS\033[0m" << std::endl);
+                output_screen_clean("\033[1;32mPASS\033[0m" << std::endl);
             }
             else
             {
                 ++fail;
-                output_screen("\033[1;31mFAIL\033[0m" << std::endl);
-                output_screen("      Result: " << res << "   Expected result: " << expected << std::endl);
+                output_screen_clean("\033[1;31mFAIL\033[0m" << std::endl);
+                output_screen_clean("      Result: " << res << "   Expected result: " << expected << std::endl);
             }
         }
     }
 
     if(isMaster())
     {
-        output_screen(std::endl << "Total subtests: " << pass + fail << std::endl << "Pass: " << pass << std::endl << "Fail: " << fail << std::endl << std::endl);
+        output_screen_clean(std::endl << "Total subtests: " << pass + fail << std::endl << "Pass: " << pass << std::endl << "Fail: " << fail << std::endl << std::endl);
         return (fail == 0);
     }
     return true;

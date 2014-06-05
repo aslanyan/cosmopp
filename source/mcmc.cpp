@@ -9,7 +9,7 @@
 namespace Math
 {
 
-MetropolisHastings::MetropolisHastings(int nPar, LikelihoodFunction& like, std::string fileRoot, time_t seed) : n_(nPar), like_(like), fileRoot_(fileRoot), paramNames_(nPar), param1_(nPar, 0), param2_(nPar, 0), starting_(nPar, std::numeric_limits<double>::max()), current_(nPar), prev_(nPar), samplingWidth_(nPar, 0), accuracy_(nPar, 0), paramSum_(nPar, 0), paramSquaredSum_(nPar, 0), corSum_(nPar, 0), priorMods_(nPar, PRIOR_MODE_MAX), externalPrior_(NULL), externalProposal_(NULL), resumeCode_(123456), nChains_(1), currentChainI_(0), stop_(false), stopRequestMessage_(111222), stopRequestTag_(0), stopRequestSent_(false), stopMessageRequested_(false), haveStoppedMessage_(476901), haveStoppedMessageTag_(100000), updateReqTag_(200000), firstUpdateRequested_(false)
+MetropolisHastings::MetropolisHastings(int nPar, LikelihoodFunction& like, std::string fileRoot, time_t seed) : n_(nPar), like_(like), fileRoot_(fileRoot), paramNames_(nPar), param1_(nPar, 0), param2_(nPar, 0), starting_(nPar, std::numeric_limits<double>::max()), current_(nPar), prev_(nPar), samplingWidth_(nPar, 0), accuracy_(nPar, 0), paramSum_(nPar, 0), paramSquaredSum_(nPar, 0), corSum_(nPar, 0), priorMods_(nPar, PRIOR_MODE_MAX), externalPrior_(NULL), externalProposal_(NULL), resumeCode_(123456), nChains_(1), currentChainI_(0), stop_(false), stopRequestMessage_(111222), stopRequestTag_(0), stopRequestSent_(false), stopMessageRequested_(false), haveStoppedMessage_(476901), haveStoppedMessageTag_(100000), updateReqTag_(200000), firstUpdateRequested_(false), reachedSigma_(nPar, -1)
 {
 #ifdef COSMO_MPI
     int hasMpiInitialized;
@@ -181,7 +181,7 @@ MetropolisHastings::communicate()
 #ifdef COSMO_MPI
     if(!isMaster() && !stop_)
     {
-        output_screen("CHAIN " << currentChainI_ << ": sending updates about progress to master." << std::endl);
+        output_screen1("Sending updates about progress to master." << std::endl);
         MPI_Request* updateReq = new MPI_Request;
         updateRequests_.push_back(updateReq);
         MPI_Isend(&(myStdMean_[0]), n_, MPI_DOUBLE, 0, updateReqTag_ + currentChainI_, MPI_COMM_WORLD, updateReq);
@@ -208,7 +208,7 @@ MetropolisHastings::communicate()
                 MPI_Test((MPI_Request*) updateReceiveReq_[i], &updateFlag, &updateSt);
                 if(updateFlag)
                 {
-                    output_screen("CHAIN " << currentChainI_ << ": Received an update from chain " << i << "." << std::endl);
+                    output_screen1("Received an update from chain " << i << "." << std::endl);
                     for(int j = 0; j < n_; ++j)
                         stdMean_[i][j] = stdMeanBuff_[i][j];
 
@@ -224,7 +224,7 @@ MetropolisHastings::communicate()
         {
             for(int i = 1; i < nChains_; ++i)
             {
-                output_screen("CHAIN " << currentChainI_ << ": Sending stop request to chain " << i << "." << std::endl);
+                output_screen1("Sending stop request to chain " << i << "." << std::endl);
                 MPI_Isend(&stopRequestMessage_, 1, MPI_INT, i, stopRequestTag_ + i, MPI_COMM_WORLD, (MPI_Request*) sendStopRequest_);
 
                 MPI_Irecv(&(haveStoppedBuff_[i]), 1, MPI_INT, i, haveStoppedMessageTag_ + i, MPI_COMM_WORLD, (MPI_Request*) haveStoppedReceiveReq_[i]);
@@ -251,7 +251,7 @@ MetropolisHastings::communicate()
         if(stopFlag)
         {
             check(stopMessageBuff_ == stopRequestMessage_, "wrong message received");
-            output_screen("CHAIN " << currentChainI_ << ": Received stop request." << std::endl);
+            output_screen1("Received stop request." << std::endl);
             stop_ = true;
         }
     }
@@ -264,7 +264,7 @@ MetropolisHastings::sendHaveStopped()
 #ifdef COSMO_MPI
     check(!isMaster(), "");
 
-    output_screen("CHAIN " << currentChainI_ << ": Informing master that I have stopped." << std::endl);
+    output_screen1("Informing master that I have stopped." << std::endl);
     MPI_Isend(&haveStoppedMessage_, 1, MPI_INT, 0, haveStoppedMessageTag_ + currentChainI_, MPI_COMM_WORLD, (MPI_Request*) haveStoppedMesReq_);
 #endif
 }
@@ -280,7 +280,7 @@ MetropolisHastings::run(unsigned long maxChainLength, int writeResumeInformation
 #ifdef COSMO_MPI
     if(currentChainI_ == 0)
     {
-        output_screen("Running the MPI version of MetropolisHastings with " << nChains_ << " tasks!!!" << std::endl << std::endl);
+        output_screen_clean("Running the MPI version of MetropolisHastings with " << nChains_ << " tasks!!!" << std::endl << std::endl);
     }
 #endif
 
@@ -398,18 +398,28 @@ MetropolisHastings::run(unsigned long maxChainLength, int writeResumeInformation
         ++iteration_;
         update();
 
-        if(iteration_ % 100)
+        if(iteration_ % 100 == 0)
+        {
             communicate();
+            if(isMaster())
+            {
+                output_log("MCMC iteration " << iteration_ << ":" << std::endl);
+                for(int i = 0; i < n_; ++i)
+                    output_log("MCMC parameter " << i << ": reached accuracy = " << reachedSigma_[i] << " , expected accuracy = " << accuracy_[i] << std::endl);
+            }
+        }
 
         if(writeResumeInformationEvery && iteration_ % writeResumeInformationEvery == 0)
             writeResumeInfo();
 
-        if(iteration_ % 1000 == 0)
+        if(iteration_ % 100 == 0)
         {
             closeOut();
             openOut(true);
 
-            output_screen(std::endl << std::endl << "Total iterations: " << iteration_ << std::endl);
+            output_screen(std::endl);
+            output_screen(std::endl);
+            output_screen("Total iterations: " << iteration_ << std::endl);
             for(int i = 0; i < blocks_.size(); ++i)
             {
                 output_screen("Acceptance rate for parameter block " << i << " = " << double(accepted[i]) / double(iteration_) << std::endl);
@@ -424,13 +434,24 @@ MetropolisHastings::run(unsigned long maxChainLength, int writeResumeInformation
 
     closeOut();
 
-    if(iteration_ >= maxChainLength_)
+    if(isMaster())
     {
-        output_screen("Maximum number of iterations (" << maxChainLength_ << ") reached, stopping!" << std::endl);
+        if(iteration_ >= maxChainLength_)
+        {
+            output_screen("Maximum number of iterations (" << maxChainLength_ << ") reached, stopping!" << std::endl);
+        }
+        else
+        {
+            output_screen("The chain has converged to the requested accuracy after " << iteration_ << " iterations, stopping!" << std::endl);
+
+            output_log("MCMC iteration " << iteration_ << ":" << std::endl);
+            for(int i = 0; i < n_; ++i)
+                output_log("MCMC parameter " << i << ": reached accuracy = " << reachedSigma_[i] << " , expected accuracy = " << accuracy_[i] << std::endl);
+        }
     }
     else
     {
-        output_screen("The chain has converged to the requested accuracy after " << iteration_ << " iterations, stopping!" << std::endl);
+        output_screen1("Received stop signal from the master, stopping!" << std::endl);
     }
 
     for(int i = 0; i < blocks_.size(); ++i)
@@ -451,7 +472,7 @@ MetropolisHastings::run(unsigned long maxChainLength, int writeResumeInformation
             MPI_Test((MPI_Request*) haveStoppedReceiveReq_[i], &f, &st);
             check(f, "");
             check(haveStoppedBuff_[i] == haveStoppedMessage_, "wrong message received");
-            output_screen("CHAIN " << currentChainI_ << ": heard from chain " << i << " that it has stopped." << std::endl);
+            output_screen1("Heard from chain " << i << " that it has stopped." << std::endl);
 
             //MPI_Wait((MPI_Request*) updateReceiveReq_[i], &st);
         }

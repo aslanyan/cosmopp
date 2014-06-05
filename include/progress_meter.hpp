@@ -13,7 +13,7 @@ public:
 
     /// Constructs the progress meter.
     /// \param total The total number of operations to be performed.
-	ProgressMeter(unsigned long total) : total_(total), completed_(0), previous_(0) { check(total_ > 0, ""); output_screen(previous_ << '%' << std::flush); }
+	ProgressMeter(unsigned long total) : total_(total), completed_(0), previous_(0) { check(total_ > 0, ""); output_screen_clean(previous_ << '%' << std::flush); }
 
     /// Advace the meter.
 
@@ -27,10 +27,10 @@ public:
 		if(progress == previous_)
 			return;
 		previous_ = progress;
-		output_screen('\r' << previous_ << '%' << std::flush);
+		output_screen_clean('\r' << previous_ << '%' << std::flush);
 		
 		if(previous_ == 100)
-			output_screen(std::endl);
+			output_screen_clean(std::endl);
 	}
 	
 private:
