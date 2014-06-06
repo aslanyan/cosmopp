@@ -31,33 +31,32 @@ TestMCMCPlanck::runSubTest(unsigned int i, double& res, double& expected, std::s
     std::string root = "slow_test_files/mcmc_planck_test";
     MetropolisHastings mh(20, planckLike, root);
 
-    mh.setParam(0, "ombh2", 0.005, 0.1, 0.022, 0.0003);
-    mh.setParam(1, "omch2", 0.001, 0.99, 0.12, 0.003);
-    mh.setParam(2, "h", 0.2, 1.0, 0.7, 0.015);
-    mh.setParam(3, "tau", 0.01, 0.8, 0.1, 0.03);
-    mh.setParam(4, "ns", 0.9, 1.1, 1.0, 0.01);
-    mh.setParam(5, "As", 2.7, 4.0, 3.0, 0.06);
+    mh.setParam(0, "ombh2", 0.005, 0.1, 0.022, 0.0006, 0.0003);
+    mh.setParam(1, "omch2", 0.001, 0.99, 0.12, 0.006, 0.003);
+    mh.setParam(2, "h", 0.2, 1.0, 0.7, 0.02, 0.01);
+    mh.setParam(3, "tau", 0.01, 0.8, 0.1, 0.02, 0.01);
+    mh.setParam(4, "ns", 0.9, 1.1, 1.0, 0.03, 0.01);
+    mh.setParam(5, "As", 2.7, 4.0, 3.0, 0.05, 0.01);
 
-    mh.setParam(6, "A_ps_100", 0, 360, 100, 60);
-    mh.setParam(7, "A_ps_143", 0, 270, 50, 13);
-    mh.setParam(8, "A_ps_217", 0, 450, 100, 16);
-    mh.setParam(9, "A_cib_143", 0, 20, 10, 5);
-    mh.setParam(10, "A_cib_217", 0, 80, 30, 7);
-    mh.setParam(11, "A_sz", 0, 10, 5, 2.7);
-    mh.setParam(12, "r_ps", 0.0, 1.0, 0.9, 0.08);
-    mh.setParam(13, "r_cib", 0.0, 1.0, 0.4, 0.2);
-    mh.setParam(14, "n_Dl_cib", -2, 2, 0.5, 0.1);
-    mh.setParam(15, "cal_100", 0.98, 1.02, 1.0, 0.0004);
-    mh.setParam(16, "cal_127", 0.95, 1.05, 1.0, 0.0013);
-    mh.setParam(17, "xi_sz_cib", 0, 1, 0.5, 0.3);
-    mh.setParam(18, "A_ksz", 0, 10, 5, 3);
-    mh.setParam(19, "Bm_1_1", -20, 20, 0.5, 0.6);
+    mh.setParam(6, "A_ps_100", 0, 360, 100, 100, 60);
+    mh.setParam(7, "A_ps_143", 0, 270, 50, 20, 13);
+    mh.setParam(8, "A_ps_217", 0, 450, 100, 30, 16);
+    mh.setParam(9, "A_cib_143", 0, 20, 10, 10, 5);
+    mh.setParam(10, "A_cib_217", 0, 80, 30, 15, 7);
+    mh.setParam(11, "A_sz", 0, 10, 5, 5, 2.7);
+    mh.setParam(12, "r_ps", 0.0, 1.0, 0.9, 0.2, 0.08);
+    mh.setParam(13, "r_cib", 0.0, 1.0, 0.4, 0.4, 0.2);
+    mh.setParam(14, "n_Dl_cib", -2, 2, 0.5, 0.2, 0.1);
+    mh.setParam(15, "cal_100", 0.98, 1.02, 1.0, 0.0008, 0.0004);
+    mh.setParam(16, "cal_127", 0.95, 1.05, 1.0, 0.003, 0.0013);
+    mh.setParam(17, "xi_sz_cib", 0, 1, 0.5, 0.6, 0.3);
+    mh.setParam(18, "A_ksz", 0, 10, 5, 6, 3);
+    mh.setParam(19, "Bm_1_1", -20, 20, 0.5, 1.0, 0.6);
 
-    std::vector<int> blocks(1, 20);
-
+    //std::vector<int> blocks(1, 20);
     //mh.specifyParameterBlocks(blocks);
 
-    const unsigned long burnin = 250;
+    const unsigned long burnin = 200;
     const int nChains = mh.run(1000, 1, burnin);
     
     subTestName = std::string("standard_param_limits");

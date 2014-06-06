@@ -55,10 +55,10 @@ TestMCMCFast::runSubTest(unsigned int i, double& res, double& expected, std::str
     MetropolisHastings mh1(2, l1, root1);
 
     const double xMin = -20, xMax = 20, yMin = -20, yMax = 20;
-    mh1.setParam(0, "x", xMin, xMax, 0, 2, 0.05);
-    mh1.setParam(1, "y", yMin, yMax, 0, 3, 0.05);
+    mh1.setParam(0, "x", xMin, xMax, 0, 4, 2);
+    mh1.setParam(1, "y", yMin, yMax, 0, 6, 3);
     const unsigned long burnin = 100;
-    const int nChains = mh1.run(1000000, 0, burnin);
+    const int nChains = mh1.run(1000000, 0, burnin, MetropolisHastings::GELMAN_RUBIN, 0.01);
 
     subTestName = std::string("2_param_gauss");
     res = 1;
@@ -106,33 +106,33 @@ TestMCMCFast::runSubTest(unsigned int i, double& res, double& expected, std::str
     delete px;
     delete py;
 
-    if(!Math::areEqual(xMedian, 5.0, 0.25))
+    if(!Math::areEqual(5.0, xMedian, 0.4))
     {
         output_screen("FAIL: Expected x median is 5, the result is " << xMedian << std::endl);
         res = 0;
     }
-    if(!Math::areEqual(xLower, 3.0, 0.25))
+    if(!Math::areEqual(3.0, xLower, 0.4))
     {
         output_screen("FAIL: Expected x lower limit is 3, the result is " << xLower << std::endl);
         res = 0;
     }
-    if(!Math::areEqual(xUpper, 7.0, 0.25))
+    if(!Math::areEqual(7.0, xUpper, 0.4))
     {
         output_screen("FAIL: Expected x upper limit is 7, the result is " << xUpper << std::endl);
         res = 0;
     }
 
-    if(!Math::areEqual(yMedian, -4.0, 0.25))
+    if(!Math::areEqual(-4.0, yMedian, 0.4))
     {
         output_screen("FAIL: Expected y median is -4, the result is " << yMedian << std::endl);
         res = 0;
     }
-    if(!Math::areEqual(yLower, -7.0, 0.25))
+    if(!Math::areEqual(-7.0, yLower, 0.4))
     {
         output_screen("FAIL: Expected y lower limit is -7, the result is " << yLower << std::endl);
         res = 0;
     }
-    if(!Math::areEqual(yUpper, -1.0, 0.25))
+    if(!Math::areEqual(-1.0, yUpper, 0.8))
     {
         output_screen("FAIL: Expected y upper limit is -1, the result is " << yUpper << std::endl);
         res = 0;

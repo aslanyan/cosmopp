@@ -59,7 +59,9 @@ class MetropolisHastings
 {
 private:
     enum PRIOR_MODE { UNIFORM_PRIOR = 0, GAUSSIAN_PRIOR, PRIOR_MODE_MAX };
+
 public:
+    enum CONVERGENCE_DIAGNOSTIC { GELMAN_RUBIN = 0, ACCURACY, GEWEKE, CONVERGENCE_DIAGNOSTIC_MAX };
 
     /// Constructor.
     /// \param nPar The number of parameters.
@@ -77,9 +79,10 @@ public:
     /// \param min The minimum value of the parameter (the lower bound for the prior).
     /// \param max The maximum value of the parameter (the upper bound for the prior).
     /// \param starting The starting value of the parameter. If not set, it will be set to the midpoint of the range by default.
+    /// \param startingWidth The starting value will be chosen within this width of starting parameter. Useful for multiple chains to start at different places. If not set, by default it will be set to 1/100-th of the width of the range.
     /// \param samplingWidth The sampling width of the parameter (the width of the Gaussian proposal distribution). If not set, by default it will be set to 1/100-th of the width of the range.
     /// \param accuracy The accuracy with which the parameter needs to be determined (used to choose the stopping time). If not set, by default it will be set to 1/10-th of the sampling width.
-    void setParam(int i, const std::string& name, double min, double max, double starting = std::numeric_limits<double>::max(), double samplingWidth = 0.0, double accuracy = 0.0);
+    void setParam(int i, const std::string& name, double min, double max, double starting = std::numeric_limits<double>::max(), double startingWidth = 0.0, double samplingWidth = 0.0, double accuracy = 0.0);
 
     /// Define a given parameter to have a gaussian prior. One of the parameter setting functions must be called for each parameter before the run.
     /// \param i The index of the parameter, 0 <= i < number of parameters.
@@ -87,9 +90,10 @@ public:
     /// \param mean The mean of the prior
     /// \param sigma The sigma of the prior
     /// \param starting The starting value of the parameter. If not set, it will be set to the midpoint of the range by default.
+    /// \param startingWidth The starting value will be chosen within this width of starting parameter. Useful for multiple chains to start at different places. If not set, by default it will be set to 1/100-th of the width of the range.
     /// \param samplingWidth The sampling width of the parameter (the width of the Gaussian proposal distribution). If not set, by default it will be set to 1/100-th of the width of the range.
     /// \param accuracy The accuracy with which the parameter needs to be determined (used to choose the stopping time). If not set, by default it will be set to 1/10-th of the sampling width.
-    void setParamGauss(int i, const std::string& name, double mean, double sigma, double starting = std::numeric_limits<double>::max(), double samplingWidth = 0.0, double accuracy = 0.0);
+    void setParamGauss(int i, const std::string& name, double mean, double sigma, double starting = std::numeric_limits<double>::max(), double startingWidth = 0.0, double samplingWidth = 0.0, double accuracy = 0.0);
 
     /// Get the name of a parameter.
     /// \param i The index of the parameter.
@@ -113,8 +117,11 @@ public:
     /// Run the scan. Should be called after all of the other necessary functions have been called to set all of the necessary settings. The resulting chain is written in the file (fileRoot).txt. The first column is the number of repetitions of the element, the second column is -2ln(likelihood), the following columns are the values of all of the parameters.
     /// \param maxChainLength The maximum length of the chain (1000000 by default). The scan will stop when the chain reaches that length, even if the required accuracy for the parameters has not been achieved. If the accuracies are achieved earlier the scan will stop earlier.
     /// \param writeResumeInformationEvery Defines if resume information should be written in a file and how often. This will allow an interrupted run to resume. 0 will mean no resume information will be written. The default setting of 1 is recommended in most cases. However, if the likelihood calculation is very fast, so that the likelihood computing time is faster or comparable to writing out a small binary file, this parameter should be set to higher value. The reason is that it will slow down the scan significantly, and the chance of the resume file being corrupt and useless will be high (this will happen if the code is stopped during writing out the resume file).
+    /// \param burnin The burnin length. These elements will still be written out into the chain but will be ignored for determining convergence.
+    /// \param cd Convergence diagnostic to be used.
+    /// \param convergenceCriterion A number used to determine convergence. For Gelman-Rubin diagnostic this is the number below which (R - 1) absolute values need to be for all the parameters.
     /// \return The number of chains generated.
-    int run(unsigned long maxChainLength = 1000000, int writeResumeInformationEvery = 1, unsigned long burnin = 0);
+    int run(unsigned long maxChainLength = 1000000, int writeResumeInformationEvery = 1, unsigned long burnin = 0, CONVERGENCE_DIAGNOSTIC cd = ACCURACY, double convergenceCriterion = 0.01);
 
 private:
     inline double uniformPrior(double min, double max, double x) const;
@@ -131,9 +138,13 @@ private:
     inline void writeResumeInfo() const;
     inline bool readResumeInfo();
 
+    inline void logProgress() const;
+
     inline bool isMaster() const { return currentChainI_ == 0; }
     void communicate();
     void sendHaveStopped();
+
+    inline void calculateMeanVar(std::vector<double>::const_iterator begin, std::vector<double>::const_iterator end, double& mean, double& var);
     
 private:
     int n_;
@@ -147,6 +158,13 @@ private:
     ProposalFunctionBase* externalProposal_;
     std::vector<int> blocks_;
 
+    std::vector<std::vector<double> > entireChain_;
+    std::vector<double> zGeweke_;
+    std::vector<double> rGelmanRubin_;
+
+    CONVERGENCE_DIAGNOSTIC cd_;
+    double cc_;
+
     time_t seed_;
     Math::UniformRealGenerator* uniformGen_;
     Math::GaussianGenerator* generator_;
@@ -157,10 +175,13 @@ private:
     double currentLike_;
     double currentPrior_;
 
-    // first index is chain index, second index is param index;
-    std::vector<std::vector<double> > stdMean_;
-    std::vector<std::vector<double> > stdMeanBuff_;
+    // first index is chain index, second index is the communication number, third index is parameter index;
+    std::vector<std::vector<std::vector<double> > > stdMean_, sums_, sqSums_;
+    std::vector<std::vector<double> > iters_;
+    std::vector<std::vector<double> > communicationBuff_;
     std::vector<double> myStdMean_;
+
+    std::vector<std::vector<double> > sendComBuff_;
 
     const int resumeCode_;
 
@@ -238,6 +259,38 @@ MetropolisHastings::calculatePrior()
     return result;
 }
 
+void
+MetropolisHastings::logProgress() const
+{
+    check(isMaster(), "");
+
+    output_log("MCMC iteration " << iteration_ << ":" << std::endl);
+    switch(cd_)
+    {
+    case GELMAN_RUBIN:
+        for(int i = 0; i < n_; ++i)
+        {
+            output_log("MCMC parameter " << i << ": Gelman-Rubin estimated potential scale reduction = " << rGelmanRubin_[i] << std::endl);
+        }
+        break;
+    case ACCURACY:
+        for(int i = 0; i < n_; ++i)
+        {
+            output_log("MCMC parameter " << i << ": reached accuracy = " << reachedSigma_[i] << " , expected accuracy = " << accuracy_[i] << std::endl);
+        }
+        break;
+    case GEWEKE:
+        for(int i = 0; i < n_; ++i)
+        {
+            output_log("MCMC parameter " << i << ": Geweke z = " << zGeweke_[i] << std::endl);
+        }
+        break;
+    default:
+        check(false ,"");
+        break;
+    }
+}
+
 bool
 MetropolisHastings::stop()
 {
@@ -260,26 +313,138 @@ MetropolisHastings::checkStoppingCrit()
 {
     check(isMaster(), "");
 
+    unsigned long chainSize, firstHalfEnd, secondHalfStart;
+
     bool doStop = true;
+    double s, x, mean1, mean2, var1, var2;
+    double total, totalMean;
+    double B, W;
     
-    for(int i = 0; i < n_; ++i)
+    unsigned long minChainNum;
+
+    std::vector<double> means(nChains_);
+        
+    switch(cd_)
     {
-        double s = 0;
-        for(int j = 0; j < nChains_; ++j)
+    case GELMAN_RUBIN:
+        check(nChains_ > 1, "");
+        minChainNum = iters_[0].size();
+        for(int i = 0; i < nChains_; ++i)
         {
-            const double x = stdMean_[j][i];
-            if(x == -1)
-                return false;
-
-            s += x * x;
+            if(iters_[i].size() < minChainNum)
+                minChainNum = iters_[i].size();
         }
+        if(minChainNum == 0)
+            return false;
+        total = iters_[0][minChainNum - 1];
+#ifdef CHECKS_ON
+        for(int i = 0; i < nChains_; ++i)
+        {
+            check(iters_[i][minChainNum - 1] == total, "");
+        }
+#endif
+        if(total < 100)
+            return false;
 
-        reachedSigma_[i] = std::sqrt(s) / nChains_;
-        if(reachedSigma_[i] > accuracy_[i])
-            doStop = false;
+        for(int i = 0; i < n_; ++i)
+        {
+            totalMean = 0;
+            for(int j = 0; j < nChains_; ++j)
+            {
+                means[j] = sums_[j][minChainNum - 1][i] / total;
+                totalMean += means[j];
+            }
+            totalMean /= nChains_;
+            B = 0;
+            W = 0;
+            for(int j = 0; j < nChains_; ++j)
+            {
+                const double diff = means[j] - totalMean;
+                B += diff * diff;
+                const double s2 = (sqSums_[j][minChainNum - 1][i] - 2 * means[j] * sums_[j][minChainNum - 1][i] + means[j] * means[j]) / (total - 1);
+                W += s2;
+            }
+            B *= total;
+            B /= (nChains_ - 1);
+            W /= nChains_;
+
+            const double var = (total - 1) * W / total + B / total;
+            rGelmanRubin_[i] = (W == 0 ? 100 : std::sqrt(var / W));
+
+            if(std::abs(rGelmanRubin_[i] - 1) > cc_)
+                doStop = false;
+        }
+        break;
+    case ACCURACY:
+        for(int i = 0; i < n_; ++i)
+        {
+            s = 0;
+            for(int j = 0; j < nChains_; ++j)
+            {
+                x = stdMean_[j][stdMean_[j].size() - 1][i];
+                if(x == -1)
+                    return false;
+
+                s += x * x;
+            }
+
+            reachedSigma_[i] = std::sqrt(s) / nChains_;
+            if(reachedSigma_[i] > accuracy_[i])
+                doStop = false;
+        }
+        break;
+    case GEWEKE:
+        chainSize = entireChain_[0].size();
+        if(chainSize < 100)
+            return false;
+
+        firstHalfEnd = (unsigned long)(0.1 * chainSize);
+        secondHalfStart = (unsigned long)(0.5 * chainSize);
+
+        for(int i = 0; i < n_; ++i)
+        {
+            std::vector<double>::const_iterator begin = entireChain_[i].begin();
+            calculateMeanVar(begin, begin + firstHalfEnd, mean1, var1);
+            calculateMeanVar(begin + secondHalfStart, entireChain_[i].end(), mean2, var2);
+
+            double varSum = std::sqrt(var1 + var2);
+            if(varSum == 0)
+                zGeweke_[i] = 10;
+            else
+                zGeweke_[i] = std::abs(mean1 - mean2) / varSum;
+
+            if(zGeweke_[i] > 0.005)
+                doStop = false;
+        }
+        break;
+    default:
+        check(false, "");
+        break;
+    }
+    return doStop;
+}
+
+void
+MetropolisHastings::calculateMeanVar(std::vector<double>::const_iterator begin, std::vector<double>::const_iterator end, double& mean, double& var)
+{
+    mean = 0;
+    double meanSq = 0;
+
+    unsigned long count = 0;
+    for(std::vector<double>::const_iterator it = begin; it != end; ++it)
+    {
+        ++count;
+        const double& val = (*it);
+        mean += val;
+        meanSq += val * val;
     }
 
-    return doStop;
+    check(count > 0, "");
+
+    mean /= count;
+    meanSq /= count;
+
+    var = meanSq - mean;
 }
 
 void
@@ -346,6 +511,9 @@ MetropolisHastings::update()
             paramSum_[i] += current_[i];
             paramSquaredSum_[i] += current_[i] * current_[i];
             corSum_[i] += current_[i] * prev_[i];
+
+            if(cd_ == GEWEKE)
+                entireChain_[i].push_back(current_[i]);
         }
     }
     prev_ = current_;

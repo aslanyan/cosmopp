@@ -9,7 +9,7 @@
 namespace Math
 {
 
-MetropolisHastings::MetropolisHastings(int nPar, LikelihoodFunction& like, std::string fileRoot, time_t seed) : n_(nPar), like_(like), fileRoot_(fileRoot), paramNames_(nPar), param1_(nPar, 0), param2_(nPar, 0), starting_(nPar, std::numeric_limits<double>::max()), current_(nPar), prev_(nPar), samplingWidth_(nPar, 0), accuracy_(nPar, 0), paramSum_(nPar, 0), paramSquaredSum_(nPar, 0), corSum_(nPar, 0), priorMods_(nPar, PRIOR_MODE_MAX), externalPrior_(NULL), externalProposal_(NULL), resumeCode_(123456), nChains_(1), currentChainI_(0), stop_(false), stopRequestMessage_(111222), stopRequestTag_(0), stopRequestSent_(false), stopMessageRequested_(false), haveStoppedMessage_(476901), haveStoppedMessageTag_(100000), updateReqTag_(200000), firstUpdateRequested_(false), reachedSigma_(nPar, -1)
+MetropolisHastings::MetropolisHastings(int nPar, LikelihoodFunction& like, std::string fileRoot, time_t seed) : n_(nPar), like_(like), fileRoot_(fileRoot), paramNames_(nPar), param1_(nPar, 0), param2_(nPar, 0), starting_(nPar, std::numeric_limits<double>::max()), current_(nPar), prev_(nPar), samplingWidth_(nPar, 0), accuracy_(nPar, 0), paramSum_(nPar, 0), paramSquaredSum_(nPar, 0), corSum_(nPar, 0), priorMods_(nPar, PRIOR_MODE_MAX), externalPrior_(NULL), externalProposal_(NULL), resumeCode_(123456), nChains_(1), currentChainI_(0), stop_(false), stopRequestMessage_(111222), stopRequestTag_(0), stopRequestSent_(false), stopMessageRequested_(false), haveStoppedMessage_(476901), haveStoppedMessageTag_(100000), updateReqTag_(200000), firstUpdateRequested_(false), reachedSigma_(nPar, -1), entireChain_(nPar), zGeweke_(nPar, 0), rGelmanRubin_(nPar, -1)
 {
 #ifdef COSMO_MPI
     int hasMpiInitialized;
@@ -36,12 +36,14 @@ MetropolisHastings::MetropolisHastings(int nPar, LikelihoodFunction& like, std::
     }
 #endif
 
+    sums_.resize(nChains_);
+    sqSums_.resize(nChains_);
     stdMean_.resize(nChains_);
-    stdMeanBuff_.resize(nChains_);
+    iters_.resize(nChains_);
+    communicationBuff_.resize(nChains_);
     for(int i = 0; i < nChains_; ++i)
     {
-        stdMean_[i].resize(n_, -1);
-        stdMeanBuff_[i].resize(n_, -1);
+        communicationBuff_[i].resize(1 + 3 * n_, -1);
     }
 
     myStdMean_.resize(n_, -1);
@@ -106,7 +108,7 @@ MetropolisHastings::~MetropolisHastings()
 }
 
 void
-MetropolisHastings::setParam(int i, const std::string& name, double min, double max, double starting, double samplingWidth, double accuracy)
+MetropolisHastings::setParam(int i, const std::string& name, double min, double max, double starting, double startingWidth, double samplingWidth, double accuracy)
 {
     check(i >= 0 && i < n_, "invalid index = " << i);
     check(max > min, "max = " << max << ", min = " << min << ". Need max > min.")
@@ -124,6 +126,19 @@ MetropolisHastings::setParam(int i, const std::string& name, double min, double 
         starting_[i] = starting;
     }
 
+    check(startingWidth >= 0 && startingWidth <= (max - min), "invalid starting width " << startingWidth);
+    if(startingWidth == 0)
+        startingWidth = (max - min) / 100;
+
+    double thisStarting = starting_[i];
+    do
+    {
+        thisStarting = starting_[i] + startingWidth * generator_->generate();
+    }
+    while(thisStarting < min || thisStarting > max);
+
+    starting_[i] = thisStarting;
+
     check(samplingWidth >= 0, "invalid sampling width " << samplingWidth);
     if(samplingWidth == 0.0)
         samplingWidth_[i] = (max - min) / 100;
@@ -138,7 +153,7 @@ MetropolisHastings::setParam(int i, const std::string& name, double min, double 
 }
 
 void
-MetropolisHastings::setParamGauss(int i, const std::string& name, double mean, double sigma, double starting, double samplingWidth, double accuracy)
+MetropolisHastings::setParamGauss(int i, const std::string& name, double mean, double sigma, double starting, double startingWidth, double samplingWidth, double accuracy)
 {
     check(i >= 0 && i < n_, "invalid index = " << i);
     check(sigma > 0, "invalid sigma = " << sigma);
@@ -152,6 +167,10 @@ MetropolisHastings::setParamGauss(int i, const std::string& name, double mean, d
         starting_[i] = mean;
     else
         starting_[i] = starting;
+
+    check(startingWidth >= 0, "invalid starting width " << startingWidth);
+    
+    starting_[i] += startingWidth * generator_->generate();
 
     check(samplingWidth >= 0, "invalid sampling width " << samplingWidth);
     if(samplingWidth == 0.0)
@@ -174,8 +193,10 @@ MetropolisHastings::communicate()
 
     if(isMaster())
     {
-        for(int i = 0; i < n_; ++i)
-            stdMean_[0][i] = myStdMean_[i];
+        sums_[0].push_back(paramSum_);
+        sqSums_[0].push_back(paramSquaredSum_);
+        stdMean_[0].push_back(myStdMean_);
+        iters_[0].push_back(double(iteration_ - burnin_));
     }
 
 #ifdef COSMO_MPI
@@ -184,7 +205,17 @@ MetropolisHastings::communicate()
         output_screen1("Sending updates about progress to master." << std::endl);
         MPI_Request* updateReq = new MPI_Request;
         updateRequests_.push_back(updateReq);
-        MPI_Isend(&(myStdMean_[0]), n_, MPI_DOUBLE, 0, updateReqTag_ + currentChainI_, MPI_COMM_WORLD, updateReq);
+        sendComBuff_.resize(sendComBuff_.size() + 1); 
+        std::vector<double>& currentCom = sendComBuff_[sendComBuff_.size() - 1];
+        currentCom.resize(1 + 3 * n_);
+        for(int i = 0; i < n_; ++i)
+        {
+            currentCom[i] = paramSum_[i];
+            currentCom[n_ + i] = paramSquaredSum_[i];
+            currentCom[2 * n_ + i] = myStdMean_[i];
+        }
+        currentCom[3 * n_] = double(iteration_ - burnin_);
+        MPI_Isend(&(currentCom[0]), 1 + 3 * n_, MPI_DOUBLE, 0, updateReqTag_ + currentChainI_, MPI_COMM_WORLD, updateReq);
     }
 
     if(isMaster())
@@ -193,7 +224,7 @@ MetropolisHastings::communicate()
         {
             for(int i = 1; i < nChains_; ++i)
             {
-                MPI_Irecv(&(stdMeanBuff_[i][0]), n_, MPI_DOUBLE, i, updateReqTag_ + i, MPI_COMM_WORLD, (MPI_Request*) updateReceiveReq_[i]);
+                MPI_Irecv(&(communicationBuff_[i][0]), 1 + 3 * n_, MPI_DOUBLE, i, updateReqTag_ + i, MPI_COMM_WORLD, (MPI_Request*) updateReceiveReq_[i]);
             }
 
             firstUpdateRequested_ = true;
@@ -209,10 +240,19 @@ MetropolisHastings::communicate()
                 if(updateFlag)
                 {
                     output_screen1("Received an update from chain " << i << "." << std::endl);
+                    std::vector<double> temp(n_);
+                    sums_[i].push_back(temp);
+                    sqSums_[i].push_back(temp);
+                    stdMean_[i].push_back(temp);
                     for(int j = 0; j < n_; ++j)
-                        stdMean_[i][j] = stdMeanBuff_[i][j];
+                    {
+                        sums_[i][sums_[i].size() -1][j] = communicationBuff_[i][j];
+                        sqSums_[i][sums_[i].size() -1][j] = communicationBuff_[i][n_ + j];
+                        stdMean_[i][stdMean_[i].size() - 1][j] = communicationBuff_[i][2 * n_ + j];
+                    }
+                    iters_[i].push_back(communicationBuff_[i][3 * n_]);
 
-                    MPI_Irecv(&(stdMeanBuff_[i][0]), n_, MPI_DOUBLE, i, updateReqTag_ + i, MPI_COMM_WORLD, (MPI_Request*) updateReceiveReq_[i]);
+                    MPI_Irecv(&(communicationBuff_[i][0]), 1 + 3 * n_, MPI_DOUBLE, i, updateReqTag_ + i, MPI_COMM_WORLD, (MPI_Request*) updateReceiveReq_[i]);
                 }
             }
         }
@@ -270,12 +310,25 @@ MetropolisHastings::sendHaveStopped()
 }
 
 int
-MetropolisHastings::run(unsigned long maxChainLength, int writeResumeInformationEvery, unsigned long burnin)
+MetropolisHastings::run(unsigned long maxChainLength, int writeResumeInformationEvery, unsigned long burnin, CONVERGENCE_DIAGNOSTIC cd, double convergenceCriterion)
 {
     check(maxChainLength > 0, "invalid maxChainLength = " << maxChainLength);
     check(!blocks_.empty(), "");
+
+    check(cd >= 0 && cd < CONVERGENCE_DIAGNOSTIC_MAX, "invalid convergence diagnostic");
+
+    check(convergenceCriterion > 0, "invalid convergence criterion " << convergenceCriterion << ", needs to be positive");
     
     burnin_ = burnin;
+
+    cd_ = cd;
+    if(nChains_ > 1 && cd_ == GEWEKE)
+        cd_ = ACCURACY;
+
+    if(nChains_ == 1 && cd_ == GELMAN_RUBIN)
+        cd_ = ACCURACY;
+
+    cc_ = convergenceCriterion;
 
 #ifdef COSMO_MPI
     if(currentChainI_ == 0)
@@ -403,9 +456,7 @@ MetropolisHastings::run(unsigned long maxChainLength, int writeResumeInformation
             communicate();
             if(isMaster())
             {
-                output_log("MCMC iteration " << iteration_ << ":" << std::endl);
-                for(int i = 0; i < n_; ++i)
-                    output_log("MCMC parameter " << i << ": reached accuracy = " << reachedSigma_[i] << " , expected accuracy = " << accuracy_[i] << std::endl);
+                logProgress();
             }
         }
 
@@ -443,10 +494,7 @@ MetropolisHastings::run(unsigned long maxChainLength, int writeResumeInformation
         else
         {
             output_screen("The chain has converged to the requested accuracy after " << iteration_ << " iterations, stopping!" << std::endl);
-
-            output_log("MCMC iteration " << iteration_ << ":" << std::endl);
-            for(int i = 0; i < n_; ++i)
-                output_log("MCMC parameter " << i << ": reached accuracy = " << reachedSigma_[i] << " , expected accuracy = " << accuracy_[i] << std::endl);
+            logProgress();
         }
     }
     else
