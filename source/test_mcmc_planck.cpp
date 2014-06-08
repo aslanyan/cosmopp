@@ -57,7 +57,7 @@ TestMCMCPlanck::runSubTest(unsigned int i, double& res, double& expected, std::s
     //mh.specifyParameterBlocks(blocks);
 
     const unsigned long burnin = 200;
-    const int nChains = mh.run(1000, 1, burnin, MetropolisHastings::GELMAN_RUBIN, 0.01);
+    const int nChains = mh.run(10000, 1, burnin, MetropolisHastings::GELMAN_RUBIN, 0.01);
     
     subTestName = std::string("standard_param_limits");
     res = 1;

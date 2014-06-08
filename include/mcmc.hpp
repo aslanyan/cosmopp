@@ -369,7 +369,7 @@ MetropolisHastings::checkStoppingCrit()
             W /= nChains_;
 
             const double var = (total - 1) * W / total + B / total;
-            rGelmanRubin_[i] = (W == 0 ? 100 : std::sqrt(var / W));
+            rGelmanRubin_[i] = (W <= 0 || var < 0 ? 100 : std::sqrt(var / W));
 
             if(std::abs(rGelmanRubin_[i] - 1) > cc_)
                 doStop = false;
