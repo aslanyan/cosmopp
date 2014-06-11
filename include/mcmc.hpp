@@ -61,7 +61,7 @@ private:
     enum PRIOR_MODE { UNIFORM_PRIOR = 0, GAUSSIAN_PRIOR, PRIOR_MODE_MAX };
 
 public:
-    enum CONVERGENCE_DIAGNOSTIC { GELMAN_RUBIN = 0, ACCURACY, GEWEKE, CONVERGENCE_DIAGNOSTIC_MAX };
+    enum CONVERGENCE_DIAGNOSTIC { GELMAN_RUBIN = 0, ACCURACY, CONVERGENCE_DIAGNOSTIC_MAX };
 
     /// Constructor.
     /// \param nPar The number of parameters.
@@ -158,8 +158,6 @@ private:
     ProposalFunctionBase* externalProposal_;
     std::vector<int> blocks_;
 
-    std::vector<std::vector<double> > entireChain_;
-    std::vector<double> zGeweke_;
     std::vector<double> rGelmanRubin_;
 
     CONVERGENCE_DIAGNOSTIC cd_;
@@ -279,12 +277,6 @@ MetropolisHastings::logProgress() const
             output_log("MCMC parameter " << i << ": reached accuracy = " << reachedSigma_[i] << " , expected accuracy = " << accuracy_[i] << std::endl);
         }
         break;
-    case GEWEKE:
-        for(int i = 0; i < n_; ++i)
-        {
-            output_log("MCMC parameter " << i << ": Geweke z = " << zGeweke_[i] << std::endl);
-        }
-        break;
     default:
         check(false ,"");
         break;
@@ -393,30 +385,6 @@ MetropolisHastings::checkStoppingCrit()
                 doStop = false;
         }
         break;
-    case GEWEKE:
-        chainSize = entireChain_[0].size();
-        if(chainSize < 100)
-            return false;
-
-        firstHalfEnd = (unsigned long)(0.1 * chainSize);
-        secondHalfStart = (unsigned long)(0.5 * chainSize);
-
-        for(int i = 0; i < n_; ++i)
-        {
-            std::vector<double>::const_iterator begin = entireChain_[i].begin();
-            calculateMeanVar(begin, begin + firstHalfEnd, mean1, var1);
-            calculateMeanVar(begin + secondHalfStart, entireChain_[i].end(), mean2, var2);
-
-            double varSum = std::sqrt(var1 + var2);
-            if(varSum == 0)
-                zGeweke_[i] = 10;
-            else
-                zGeweke_[i] = std::abs(mean1 - mean2) / varSum;
-
-            if(zGeweke_[i] > 0.005)
-                doStop = false;
-        }
-        break;
     default:
         check(false, "");
         break;
@@ -511,9 +479,6 @@ MetropolisHastings::update()
             paramSum_[i] += current_[i];
             paramSquaredSum_[i] += current_[i] * current_[i];
             corSum_[i] += current_[i] * prev_[i];
-
-            if(cd_ == GEWEKE)
-                entireChain_[i].push_back(current_[i]);
         }
     }
     prev_ = current_;

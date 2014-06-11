@@ -3,6 +3,7 @@
 #include <ctime>
 
 #include <macros.hpp>
+#include <exception_handler.hpp>
 #include <cmb_gibbs.hpp>
 #include <cmb.hpp>
 #include <simulate.hpp>

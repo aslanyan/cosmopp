@@ -316,7 +316,7 @@ obj/test_multinest_planck.o: source/test_multinest_planck.cpp $(TEST_MULTINEST_P
 obj/test_cmb.o: source/test_cmb.cpp $(CMB_HPP) $(TEST_CMB_HPP)
 	$(CC) $(CFLAGS) source/test_cmb.cpp -o $@
 
-obj/test_cmb_gibbs.o: source/test_cmb_gibbs.cpp $(MACROS_HPP) $(CMB_GIBBS_HPP) $(CMB_HPP) $(SIMULATE_HPP) $(UTILS_HPP) $(RANDOM_HPP) $(MARKOV_CHAIN_HPP) $(NUMERICS_HPP) $(PROGRESS_METER_HPP) $(TEST_CMB_GIBBS_HPP)
+obj/test_cmb_gibbs.o: source/test_cmb_gibbs.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(CMB_GIBBS_HPP) $(CMB_HPP) $(SIMULATE_HPP) $(UTILS_HPP) $(RANDOM_HPP) $(MARKOV_CHAIN_HPP) $(NUMERICS_HPP) $(PROGRESS_METER_HPP) $(TEST_CMB_GIBBS_HPP)
 	$(CC) $(CFLAGS) source/test_cmb_gibbs.cpp -o $@
 
 obj/test_fit.o: source/test_fit.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(FIT_HPP) $(POLYNOMIAL_HPP) $(TEST_FIT_HPP)
