@@ -24,6 +24,7 @@
 #include <test_cmb.hpp>
 #include <test_cmb_gibbs.hpp>
 #include <test_fit.hpp>
+#include <test_wmap9_like.hpp>
 
 TestFramework* createTest(const std::string& name)
 {
@@ -55,6 +56,8 @@ TestFramework* createTest(const std::string& name)
         test = new TestCMBGibbs;
     else if(name == "fit")
         test = new TestFit;
+    else if(name == "wmap9_like")
+        test = new TestWMAP9Like;
 
     return test;
 }
@@ -104,6 +107,7 @@ int main(int argc, char *argv[])
         fastTests.insert("multinest_fast");
         fastTests.insert("cmb");
         fastTests.insert("fit");
+        fastTests.insert("wmap9_like");
 
         slowTests.insert("mcmc_planck");
         slowTests.insert("multinest_planck");

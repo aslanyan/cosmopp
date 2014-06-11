@@ -22,6 +22,7 @@ public:
     double max() const { return max_; }
     double maxLikePoint() const { return maxLikePoint_; }
     double mean() const { check(smooth_, "not generated"); return mean_; }
+    double peak() const;
     double median() const { check(cumulInv_, "not generated"); return cumulInv_->evaluate(0.5 * norm_); }
     void get1SigmaTwoSided(double& lower, double& upper) const { check(cumulInv_, "not generated"); upper = cumulInv_->evaluate((1.0 - (1.0 - 0.683) / 2) * norm_); lower = cumulInv_->evaluate((1.0 - 0.683) / 2 * norm_); }
     void get2SigmaTwoSided(double& lower, double& upper) const { check(cumulInv_, "not generated"); upper = cumulInv_->evaluate((1.0 - (1.0 - 0.955) / 2) * norm_); lower = cumulInv_->evaluate((1.0 - 0.955) / 2 * norm_); }

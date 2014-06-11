@@ -34,7 +34,6 @@ public:
     void setActSptExtraParams(double A_sz, double A_ksz, double xi_sz_cib, double a_ps_act_148, double a_ps_act_217, double a_ps_spt_95, double a_ps_spt_150, double a_ps_spt_220, double A_cib_143, double A_cib_217, double n_Dl_cib, double r_ps_spt_95x150, double r_ps_spt_95x220, double r_ps_150x220, double r_cib, double a_gs, double a_ge, double cal_acts_148, double cal_acts_217, double cal_acte_148, double cal_acte_217, double cal_spt_95, double cal_spt_150, double cal_spt_220);
 
     /// Calculate the Cl values. Should be called after setCosmoParams but before any likelihood calculation.
-    /// \return -2ln(likelihood).
     void calculateCls();
 
     /// Calculate commander likelihood. Should not be called if commander likelihood was not included in the constructor. Must be called after calculateCls.

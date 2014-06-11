@@ -361,7 +361,7 @@ MetropolisHastings::checkStoppingCrit()
             {
                 const double diff = means[j] - totalMean;
                 B += diff * diff;
-                const double s2 = (sqSums_[j][minChainNum - 1][i] - 2 * means[j] * sums_[j][minChainNum - 1][i] + means[j] * means[j]) / (total - 1);
+                const double s2 = (sqSums_[j][minChainNum - 1][i] - 2 * means[j] * sums_[j][minChainNum - 1][i] + total * means[j] * means[j]) / (total - 1);
                 W += s2;
             }
             B *= total;

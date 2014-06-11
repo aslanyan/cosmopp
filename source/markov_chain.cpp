@@ -126,6 +126,28 @@ Posterior1D::generate(SmoothingMethod method, double scale)
     }
 }
 
+double
+Posterior1D::peak() const
+{
+    const int nPoints = 10000;
+    const double delta = (max() - min()) / nPoints;
+    double peakVal = 0, x = min();
+    for(int i = 0; i <= nPoints; ++i)
+    {
+        double t = min() + i * delta;
+        if(i == nPoints)
+            t = max();
+        const double y = evaluate(t);
+        if(y > peakVal)
+        {
+            peakVal = y;
+            x = t;
+        }
+    }
+
+    return x;
+}
+
 void
 Posterior2D::addPoint(double x1, double x2, double prob, double like)
 {

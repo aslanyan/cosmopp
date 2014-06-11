@@ -109,7 +109,7 @@ TestMCMCPlanck::runSubTest(unsigned int i, double& res, double& expected, std::s
 
             if(!Math::areEqual(expectedSigma[i], sigma, 0.25))
             {
-                output_screen("FAIL: Expected" << paramName << "sigma is " << expectedSigma[i] << ", the result is " << sigma << std::endl);
+                output_screen("FAIL: Expected " << paramName << " sigma is " << expectedSigma[i] << ", the result is " << sigma << std::endl);
                 res = 0;
             }
         }

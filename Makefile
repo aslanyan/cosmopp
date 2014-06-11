@@ -53,13 +53,29 @@ PlANCK_TARGET =
 PLANCK_AND_MULTINEST_TARGET =
 endif
 
-LFLAGS1 = -L $(CFITSIO)/lib -L $(HEALPIX)/lib -L $(HEALPIXPP)/lib -L $(LAPACKPPLIBDIR) -fopenmp -L $(CLASSDIR) $(MINUIT_LIB_FLAGS1) $(MULTINEST_LIB_FLAGS1) $(PLANCK_LIB_FLAGS1)
+ifdef WMAP9DIR
+WMAP_COMPILE_FLAGS =
+WMAP_INCLUDE_FLAGS =
+WMAP_LIB_FLAGS1 = -L $(WMAP9DIR)
+WMAP_LIB_FLAGS2 = -lwmap9 -lgfortran $(WMAP9LAPACKFLAG)
+WMAP_OBJ = obj/wmap9_like.o
+WMAP_TARGET =
+else
+WMAP_COMPILE_FLAGS =
+WMAP_INCLUDE_FLAGS =
+WMAP_LIB_FLAGS1 =
+WMAP_LIB_FLAGS2 =
+WMAP_OBJ =
+WMAP_TARGET =
+endif
 
-LFLAGS2 = -lstdc++ -lchealpix -lhealpix_cxx -lcxxsupport -lsharp -lfftpack -lc_utils -lcfitsio -llapackpp -lclass $(MINUIT_LIB_FLAGS2) $(MULTINEST_LIB_FLAGS2) $(PLANCK_LIB_FLAGS2)
+LFLAGS1 = -L $(CFITSIO)/lib -L $(HEALPIX)/lib -L $(HEALPIXPP)/lib -L $(LAPACKPPLIBDIR) -fopenmp -L $(CLASSDIR) $(MINUIT_LIB_FLAGS1) $(MULTINEST_LIB_FLAGS1) $(PLANCK_LIB_FLAGS1) $(WMAP_LIB_FLAGS1)
 
-MYFLAGS = $(MY_COMPILE_FLAGS) -D HEALPIX_DATA_DIR=$(HEALPIX)/data $(PLANCK_COMPILE_FLAGS) $(MPI_COMPILE_FLAGS) $(OMP_COMPILE_FLAGS)
+LFLAGS2 = -lstdc++ -lchealpix -lhealpix_cxx -lcxxsupport -lsharp -lfftpack -lc_utils -lcfitsio -llapackpp -lclass $(MINUIT_LIB_FLAGS2) $(MULTINEST_LIB_FLAGS2) $(PLANCK_LIB_FLAGS2) $(WMAP_LIB_FLAGS2)
 
-INCLUDE_FLAGS = -I include -I $(CFITSIO)/include -I $(HEALPIX)/include -I $(HEALPIXPP)/include -I $(LAPACKPPINCDIR) -I $(CLASSDIR)/include $(MINUIT_INCLUDE_FLAGS) $(MULTINEST_INCLUDE_FLAGS) $(PLANCK_INCLUDE_FLAGS)
+MYFLAGS = $(MY_COMPILE_FLAGS) -D HEALPIX_DATA_DIR=$(HEALPIX)/data $(PLANCK_COMPILE_FLAGS) $(WMAP_COMPILE_FLAGS) $(MPI_COMPILE_FLAGS) $(OMP_COMPILE_FLAGS)
+
+INCLUDE_FLAGS = -I include -I $(CFITSIO)/include -I $(HEALPIX)/include -I $(HEALPIXPP)/include -I $(LAPACKPPINCDIR) -I $(CLASSDIR)/include $(MINUIT_INCLUDE_FLAGS) $(MULTINEST_INCLUDE_FLAGS) $(PLANCK_INCLUDE_FLAGS) $(WMAP_INCLUDE_FLAGS)
 
 CFLAGS = $(MYFLAGS) -c -g -O2 -fpic -Werror -std=c++11 $(INCLUDE_FLAGS) $(OMP_FLAG)
 CFLAGS_NO11 = $(MYFLAGS) -c -g -O2 -Werror -fpic $(INCLUDE_FLAGS) $(OMP_FLAG)
@@ -110,6 +126,7 @@ POWER_SPECTRUM_HPP = include/power_spectrum.hpp $(FUNCTION_HPP) $(TABLE_FUNCTION
 COSMOLOGICAL_PARAMS_HPP = include/cosmological_params.hpp $(MACROS_HPP) $(PHYS_CONSTANTS_HPP) $(UNIT_CONVERSIONS_HPP) $(POWER_SPECTRUM_HPP)
 CMB_HPP = include/cmb.hpp $(TABLE_FUNCTION_HPP) $(COSMOLOGICAL_PARAMS_HPP)
 PLANCK_LIKE_HPP = include/planck_like.hpp $(LIKELIHOOD_FUNCTION_HPP) $(CMB_HPP)
+WMAP9_LIKE_HPP = include/wmap9_like.hpp $(MACROS_HPP) $(LIKELIHOOD_FUNCTION_HPP) $(CMB_HPP)
 SCALE_FACTOR_HPP = include/scale_factor.hpp $(MACROS_HPP) $(TABLE_FUNCTION_HPP) $(COSMOLOGICAL_PARAMS_HPP)
 CMB_GIBBS_HPP = include/cmb_gibbs.hpp $(RANDOM_HPP)
 MASK_APODIZER_HPP = include/mask_apodizer.hpp
@@ -128,14 +145,15 @@ TEST_MULTINEST_PLANCK_HPP = include/test_multinest_planck.hpp $(TEST_FRAMEWORK_H
 TEST_CMB_HPP = include/test_cmb.hpp $(TEST_FRAMEWORK_HPP)
 TEST_CMB_GIBBS_HPP = include/test_cmb_gibbs.hpp $(TEST_FRAMEWORK_HPP)
 TEST_FIT = include/test_fit.hpp $(TEST_FRAMEWORK_HPP)
+TEST_WMAP9_LIKE = include/test_wmap9_like.hpp $(TEST_FRAMEWORK_HPP)
 
-all: lib/libcosmopp.a bin/analyze_chain bin/sort_chain bin/contour_plot bin/test bin/generate_white_noise bin/apodize_mask $(PLANCK_TARGET) $(PLANCK_AND_MULTINEST_TARGET)
+all: lib/libcosmopp.a bin/analyze_chain bin/sort_chain bin/contour_plot bin/test bin/generate_white_noise bin/apodize_mask $(PLANCK_TARGET) $(PLANCK_AND_MULTINEST_TARGET) $(WMAP_TARGET)
 
-OBJ_LIBRARY = obj/macros.o obj/test_framework.o obj/mcmc.o obj/whole_matrix.o obj/utils.o obj/c_matrix.o obj/c_matrix_generator.o obj/simulate.o obj/likelihood.o obj/master.o obj/mode_directions.o obj/scale_factor.o obj/cmb.o obj/cmb_gibbs.o obj/mask_apodizer.o obj/markov_chain.o obj/inflation.o $(MULTINEST_OBJ) $(PLANCK_OBJ) 
+OBJ_LIBRARY = obj/macros.o obj/test_framework.o obj/mcmc.o obj/whole_matrix.o obj/utils.o obj/c_matrix.o obj/c_matrix_generator.o obj/simulate.o obj/likelihood.o obj/master.o obj/mode_directions.o obj/scale_factor.o obj/cmb.o obj/cmb_gibbs.o obj/mask_apodizer.o obj/markov_chain.o obj/inflation.o $(MULTINEST_OBJ) $(PLANCK_OBJ) $(WMAP_OBJ)
 lib/libcosmopp.a: $(OBJ_LIBRARY)
 	ar rcs $@ $(OBJ_LIBRARY)
 
-OBJ_TEST = obj/test.o obj/macros.o obj/test_framework.o obj/test_unit_conversions.o obj/test_int_operations.o obj/test_integral.o obj/test_conjugate_gradient.o obj/test_polynomial.o obj/test_legendre.o obj/test_mcmc.o obj/markov_chain.o obj/mcmc.o obj/test_multinest.o obj/mn_scanner.o obj/test_mcmc_planck.o obj/planck_like.o obj/cmb.o obj/test_multinest_planck.o	obj/test_cmb.o obj/test_cmb_gibbs.o obj/cmb_gibbs.o obj/utils.o obj/simulate.o obj/whole_matrix.o obj/test_fit.o
+OBJ_TEST = obj/test.o obj/macros.o obj/test_framework.o obj/test_unit_conversions.o obj/test_int_operations.o obj/test_integral.o obj/test_conjugate_gradient.o obj/test_polynomial.o obj/test_legendre.o obj/test_mcmc.o obj/markov_chain.o obj/mcmc.o obj/test_multinest.o obj/mn_scanner.o obj/test_mcmc_planck.o obj/planck_like.o obj/cmb.o obj/test_multinest_planck.o	obj/test_cmb.o obj/test_cmb_gibbs.o obj/cmb_gibbs.o obj/utils.o obj/simulate.o obj/whole_matrix.o obj/test_fit.o obj/test_wmap9_like.o obj/wmap9_like.o
 bin/test: $(OBJ_TEST)
 	$(CC) $(LFLAGS1) -o $@ $(OBJ_TEST) $(LFLAGS2)
 
@@ -207,6 +225,11 @@ obj/planck_like.o: source/planck_like.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP)
 	$(CC) $(CFLAGS_NO11) source/planck_like.cpp -o $@
 endif
 
+ifdef WMAP9DIR
+obj/wmap9_like.o: source/wmap9_like.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(NUMERICS_HPP) $(WMAP9_LIKE_HPP)
+	$(CC) $(CFLAGS) source/wmap9_like.cpp -o $@
+endif
+
 obj/scale_factor.o: source/scale_factor.cpp $(UNIT_CONVERSIONS_HPP) $(TABLE_FUNCTION_HPP) $(SCALE_FACTOR_HPP)
 	$(CC) $(CFLAGS) source/scale_factor.cpp -o $@
 
@@ -222,7 +245,7 @@ obj/analyze_chain.o: source/analyze_chain.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_
 obj/contour_plot.o: source/contour_plot.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP)
 	$(CC) $(CFLAGS) source/contour_plot.cpp -o $@
 
-obj/test.o: source/test.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(TEST_FRAMEWORK_HPP) $(TEST_UNIT_CONVERSIONS_HPP) $(TEST_INT_OPERATIONS_HPP) $(TEST_INTEGRAL_HPP) $(TEST_CONJUGATE_GRADIENT_HPP) $(TEST_POLYNOMIAL_HPP) $(TEST_LEGENDRE_HPP) $(TEST_MCMC_HPP) $(TEST_MULTINEST_HPP) $(TEST_MCMC_PLANCK_HPP) $(TEST_CMB_HPP) $(TEST_CMB_GIBBS_HPP) $(TEST_FIT_HPP)
+obj/test.o: source/test.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(TEST_FRAMEWORK_HPP) $(TEST_UNIT_CONVERSIONS_HPP) $(TEST_INT_OPERATIONS_HPP) $(TEST_INTEGRAL_HPP) $(TEST_CONJUGATE_GRADIENT_HPP) $(TEST_POLYNOMIAL_HPP) $(TEST_LEGENDRE_HPP) $(TEST_MCMC_HPP) $(TEST_MULTINEST_HPP) $(TEST_MCMC_PLANCK_HPP) $(TEST_CMB_HPP) $(TEST_CMB_GIBBS_HPP) $(TEST_FIT_HPP) $(TEST_WMAP9_LIKE_HPP)
 	$(CC) $(CFLAGS) source/test.cpp -o $@
 
 obj/test_framework.o: source/test_framework.cpp $(MACROS_HPP) $(NUMERICS_HPP) $(TEST_FRAMEWORK_HPP)
@@ -293,11 +316,14 @@ obj/test_multinest_planck.o: source/test_multinest_planck.cpp $(TEST_MULTINEST_P
 obj/test_cmb.o: source/test_cmb.cpp $(CMB_HPP) $(TEST_CMB_HPP)
 	$(CC) $(CFLAGS) source/test_cmb.cpp -o $@
 
-obj/test_cmb_gibbs.o: source/test_cmb_gibbs.cpp $(MACROS_HPP) $(CMB_GIBBS_HPP) $(CMB_HPP) $(SIMULATE_HPP) $(UTILS_HPP) $(TEST_CMB_GIBBS_HPP)
+obj/test_cmb_gibbs.o: source/test_cmb_gibbs.cpp $(MACROS_HPP) $(CMB_GIBBS_HPP) $(CMB_HPP) $(SIMULATE_HPP) $(UTILS_HPP) $(RANDOM_HPP) $(MARKOV_CHAIN_HPP) $(NUMERICS_HPP) $(PROGRESS_METER_HPP) $(TEST_CMB_GIBBS_HPP)
 	$(CC) $(CFLAGS) source/test_cmb_gibbs.cpp -o $@
 
 obj/test_fit.o: source/test_fit.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(FIT_HPP) $(POLYNOMIAL_HPP) $(TEST_FIT_HPP)
 	$(CC) $(CFLAGS) source/test_fit.cpp -o $@
+
+obj/test_wmap9_like.o: source/test_wmap9_like.cpp $(WMAP9_LIKE_HPP) $(NUMERICS_HPP) $(TEST_WMAP9_LIKE_HPP)
+	$(CC) $(CFLAGS) source/test_wmap9_like.cpp -o $@
 
 clean:
 	rm obj/* bin/* lib/*
