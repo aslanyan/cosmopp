@@ -27,19 +27,19 @@ extern "C" bool __wmap_options_MOD_use_tt_beam_ptsrc;
 #else
 extern "C"
 {
-    void wmap_likelihood_9yr_md_wmap_likelihood_init_();
-    void wmap_likelihood_9yr_md_wmap_likelihood_compute_(double* cltt, double* clte, double* clee, double* clbb, double* like);
+    void wmap_likelihood_9yr_mp_wmap_likelihood_init_();
+    void wmap_likelihood_9yr_mp_wmap_likelihood_compute_(double* cltt, double* clte, double* clee, double* clbb, double* like);
 }
 
-extern "C" int wmap_options_md_ttmax_;
-extern "C" int wmap_options_md_ttmin_;
-extern "C" int wmap_options_md_lowl_max_;
-extern "C" bool wmap_options_md_use_lowl_tt_;
-extern "C" bool wmap_options_md_use_lowl_pol_;
-extern "C" bool wmap_options_md_use_tt_;
-extern "C" bool wmap_options_md_use_te_;
-extern "C" bool wmap_options_md_use_gibbs_;
-extern "C" bool wmap_options_md_use_tt_beam_ptsrc_;
+extern "C" int wmap_options_mp_ttmax_;
+extern "C" int wmap_options_mp_ttmin_;
+extern "C" int wmap_options_mp_lowl_max_;
+extern "C" bool wmap_options_mp_use_lowl_tt_;
+extern "C" bool wmap_options_mp_use_lowl_pol_;
+extern "C" bool wmap_options_mp_use_tt_;
+extern "C" bool wmap_options_mp_use_te_;
+extern "C" bool wmap_options_mp_use_gibbs_;
+extern "C" bool wmap_options_mp_use_tt_beam_ptsrc_;
 #endif
 
 bool WMAP9Likelihood::initialized_ = false;
@@ -52,8 +52,8 @@ WMAP9Likelihood::WMAP9Likelihood(bool useLowlT, bool useHighlT, bool useLowlP, b
     const int lMin = __wmap_options_MOD_ttmin;
     int lMax = __wmap_options_MOD_ttmax;
 #else
-    const int lMin = wmap_options_md_ttmin_;
-    int lMax = wmap_options_md_ttmax_;
+    const int lMin = wmap_options_mp_ttmin_;
+    int lMax = wmap_options_mp_ttmax_;
 #endif
     output_screen1("lMax = " << lMax << std::endl);
     lMax += 1000;
@@ -67,13 +67,13 @@ WMAP9Likelihood::WMAP9Likelihood(bool useLowlT, bool useHighlT, bool useLowlP, b
     __wmap_options_MOD_lowl_max = (useGibbs ? 32 : 30);
     __wmap_options_MOD_use_tt_beam_ptsrc = useTTBeam;
 #else
-    wmap_options_md_use_lowl_tt_ = useLowlT;
-    wmap_options_md_use_tt_ = useHighlT;
-    wmap_options_md_use_lowl_pol_ = useLowlP;
-    wmap_options_md_use_te_ = useHighlP;
-    wmap_options_md_use_gibbs_ = useGibbs;
-    wmap_options_md_lowl_max_ = (useGibbs ? 32 : 30);
-    wmap_options_md_use_tt_beam_ptsrc_ = useTTBeam;
+    wmap_options_mp_use_lowl_tt_ = useLowlT;
+    wmap_options_mp_use_tt_ = useHighlT;
+    wmap_options_mp_use_lowl_pol_ = useLowlP;
+    wmap_options_mp_use_te_ = useHighlP;
+    wmap_options_mp_use_gibbs_ = useGibbs;
+    wmap_options_mp_lowl_max_ = (useGibbs ? 32 : 30);
+    wmap_options_mp_use_tt_beam_ptsrc_ = useTTBeam;
 #endif
 
     cmb_.preInitialize(lMax);
@@ -81,7 +81,7 @@ WMAP9Likelihood::WMAP9Likelihood(bool useLowlT, bool useHighlT, bool useLowlP, b
 #ifdef WMAP9_GFORT
     __wmap_likelihood_9yr_MOD_wmap_likelihood_init();
 #else
-    wmap_likelihood_9yr_md_wmap_likelihood_init_();
+    wmap_likelihood_9yr_mp_wmap_likelihood_init_();
 #endif
 
     clTT_.resize(lMax + 1, 0.0);
@@ -173,7 +173,7 @@ WMAP9Likelihood::likelihood()
 #ifdef WMAP9_GFORT
     __wmap_likelihood_9yr_MOD_wmap_likelihood_compute(&(clTT_[2]), &(clTE_[2]), &(clEE_[2]), &(clBB_[2]), &(like_[0]));
 #else
-    wmap_likelihood_9yr_md_wmap_likelihood_compute_(&(clTT_[2]), &(clTE_[2]), &(clEE_[2]), &(clBB_[2]), &(like_[0]));
+    wmap_likelihood_9yr_mp_wmap_likelihood_compute_(&(clTT_[2]), &(clTE_[2]), &(clEE_[2]), &(clBB_[2]), &(like_[0]));
 #endif
 
     double l = 0;
