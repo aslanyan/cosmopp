@@ -3,6 +3,7 @@
 
 #include <fstream>
 #include <vector>
+#include <list>
 #include <string>
 #include <sstream>
 #include <cmath>
@@ -138,6 +139,10 @@ private:
     inline void writeResumeInfo() const;
     inline bool readResumeInfo();
 
+    inline void writeCommInfo(std::ofstream& out) const;
+    inline void readCommInfo(std::ifstream& in);
+    bool synchronizeCommInfo();
+
     inline void logProgress() const;
 
     inline bool isMaster() const { return currentChainI_ == 0; }
@@ -145,6 +150,12 @@ private:
     void sendHaveStopped();
 
     inline void calculateMeanVar(std::vector<double>::const_iterator begin, std::vector<double>::const_iterator end, double& mean, double& var);
+
+    struct BadResumeInfo
+    {
+        BadResumeInfo(int a) : n(a) {}
+        int n;
+    };
     
 private:
     int n_;
@@ -173,9 +184,42 @@ private:
     double currentLike_;
     double currentPrior_;
 
+    struct CommunicationInfo
+    {
+        CommunicationInfo(int n = 0) : sums(n), sqSums(n), stdMean(n) {}
+        CommunicationInfo(const CommunicationInfo& other) : sums(other.sums), sqSums(other.sqSums), stdMean(other.stdMean), iter(other.iter) {}
+
+        std::vector<double> sums, sqSums, stdMean;
+        double iter;
+
+        inline void writeIntoFile(std::ofstream& out) const
+        {
+            const int n = sums.size();
+            check(sqSums.size() == n, "");
+            check(stdMean.size() == n, "");
+
+            out.write((char*)(&iter), sizeof(iter));
+            out.write((char*)(&(sums[0])), n * sizeof(double));
+            out.write((char*)(&(sqSums[0])), n * sizeof(double));
+            out.write((char*)(&(stdMean[0])), n * sizeof(double));
+        };
+
+        inline void readFromFile(std::ifstream& in)
+        {
+            const int n = sums.size();
+            check(sqSums.size() == n, "");
+            check(stdMean.size() == n, "");
+
+            in.read((char*)(&iter), sizeof(iter));
+            in.read((char*)(&(sums[0])), n * sizeof(double));
+            in.read((char*)(&(sqSums[0])), n * sizeof(double));
+            in.read((char*)(&(stdMean[0])), n * sizeof(double));
+        }
+    };
     // first index is chain index, second index is the communication number, third index is parameter index;
-    std::vector<std::vector<std::vector<double> > > stdMean_, sums_, sqSums_;
-    std::vector<std::vector<double> > iters_;
+    std::vector<std::list<CommunicationInfo> > commInfo_;
+
+
     std::vector<std::vector<double> > communicationBuff_;
     std::vector<double> myStdMean_;
 
@@ -315,26 +359,34 @@ MetropolisHastings::checkStoppingCrit()
     unsigned long minChainNum;
 
     std::vector<double> means(nChains_);
+
+    const bool synchronized = synchronizeCommInfo();
+    std::list<CommunicationInfo>::const_iterator firstIt;
         
     switch(cd_)
     {
     case GELMAN_RUBIN:
         check(nChains_ > 1, "");
-        minChainNum = iters_[0].size();
-        for(int i = 0; i < nChains_; ++i)
+        if(!synchronized)
         {
-            if(iters_[i].size() < minChainNum)
-                minChainNum = iters_[i].size();
+            for(int i = 0; i < n_; ++i)
+                rGelmanRubin_[i] = 100;
+
+            doStop = false;
+            break;
         }
-        if(minChainNum == 0)
-            return false;
-        total = iters_[0][minChainNum - 1];
+
+        check(!(commInfo_[0].empty()), "");
+        firstIt = commInfo_[0].begin();
+        total = (*firstIt).iter;
 #ifdef CHECKS_ON
         for(int i = 0; i < nChains_; ++i)
         {
-            check(iters_[i][minChainNum - 1] == total, "");
+            firstIt = commInfo_[i].begin();
+            check((*firstIt).iter == total, "");
         }
 #endif
+
         if(total < 100)
             return false;
 
@@ -343,7 +395,8 @@ MetropolisHastings::checkStoppingCrit()
             totalMean = 0;
             for(int j = 0; j < nChains_; ++j)
             {
-                means[j] = sums_[j][minChainNum - 1][i] / total;
+                const CommunicationInfo& ci = *(commInfo_[j].begin());
+                means[j] = ci.sums[i] / total;
                 totalMean += means[j];
             }
             totalMean /= nChains_;
@@ -351,9 +404,10 @@ MetropolisHastings::checkStoppingCrit()
             W = 0;
             for(int j = 0; j < nChains_; ++j)
             {
+                const CommunicationInfo& ci = *(commInfo_[j].begin());
                 const double diff = means[j] - totalMean;
                 B += diff * diff;
-                const double s2 = (sqSums_[j][minChainNum - 1][i] - 2 * means[j] * sums_[j][minChainNum - 1][i] + total * means[j] * means[j]) / (total - 1);
+                const double s2 = (ci.sqSums[i] - 2 * means[j] * ci.sums[i] + total * means[j] * means[j]) / (total - 1);
                 W += s2;
             }
             B *= total;
@@ -373,7 +427,8 @@ MetropolisHastings::checkStoppingCrit()
             s = 0;
             for(int j = 0; j < nChains_; ++j)
             {
-                x = stdMean_[j][stdMean_[j].size() - 1][i];
+                const CommunicationInfo& ci = *(commInfo_[j].begin());
+                x = ci.stdMean[i];
                 if(x == -1)
                     return false;
 
@@ -485,6 +540,61 @@ MetropolisHastings::update()
 }
 
 void
+MetropolisHastings::writeCommInfo(std::ofstream& out) const
+{
+    const int n = commInfo_.size();
+    check(n == nChains_, "");
+
+    out.write((char*)(&n), sizeof(n));
+
+    std::vector<int> sizes(n);
+    
+    for(int i = 0; i < n; ++i)
+        sizes[i] = commInfo_[i].size();
+
+    out.write((char*)(&(sizes[0])), n * sizeof(int));
+    for(int i = 0; i < n; ++i)
+        for(std::list<CommunicationInfo>::const_iterator it = commInfo_[i].begin(); it != commInfo_[i].end(); ++it)
+            (*it).writeIntoFile(out);
+}
+
+void
+MetropolisHastings::readCommInfo(std::ifstream& in)
+{
+    commInfo_.clear();
+    int n;
+    in.read((char*)(&n), sizeof(n));
+    if(n != nChains_)
+    {
+        BadResumeInfo bri(n);
+        throw bri;
+    }
+    std::vector<int> sizes(n);
+    in.read((char*)(&(sizes[0])), n * sizeof(int));
+    commInfo_.resize(n);
+    for(int i = 0; i < n; ++i)
+    {
+        if(sizes[i] < 0 || sizes[i] > 1000000)
+        {
+            BadResumeInfo bri(sizes[i]);
+            throw bri;
+        }
+    }
+
+    for(int i = 0; i < n; ++i)
+        for(int j = 0; j < sizes[i]; ++j)
+        {
+            CommunicationInfo info(n_);
+            commInfo_[i].push_back(info);
+            
+            std::list<CommunicationInfo>::iterator it = commInfo_[i].end();
+            --it;
+
+            (*it).readFromFile(in);
+        }
+}
+
+void
 MetropolisHastings::writeResumeInfo() const
 {
     std::ofstream out(resumeFileName_.c_str(), std::ios::binary | std::ios::out);
@@ -500,6 +610,9 @@ MetropolisHastings::writeResumeInfo() const
     out.write((char*)(&(paramSum_[0])), n_ * sizeof(double));
     out.write((char*)(&(paramSquaredSum_[0])), n_ * sizeof(double));
     out.write((char*)(&(corSum_[0])), n_ * sizeof(double));
+
+    if(isMaster())
+        writeCommInfo(out);
 
     out.write((char*)(&resumeCode_), sizeof(int));
 
@@ -522,6 +635,24 @@ MetropolisHastings::readResumeInfo()
     in.read((char*)(&(paramSum_[0])), n_ * sizeof(double));
     in.read((char*)(&(paramSquaredSum_[0])), n_ * sizeof(double));
     in.read((char*)(&(corSum_[0])), n_ * sizeof(double));
+
+    if(isMaster())
+    {
+        try{
+            readCommInfo(in);
+        } catch (BadResumeInfo& bri)
+        {
+            if(bri.n > 0)
+            {
+                output_screen1("Seems like the resume info is for a different number of chains. Currently running " << nChains_ << " resume file indicates " << bri.n << std::endl);
+            }
+            else
+            {
+                output_screen1("Problem in the resume file, read a size of" << bri.n << std::endl);
+            }
+            return false;
+        }
+    }
 
     int code = 0;
 

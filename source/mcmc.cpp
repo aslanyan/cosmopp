@@ -36,10 +36,8 @@ MetropolisHastings::MetropolisHastings(int nPar, LikelihoodFunction& like, std::
     }
 #endif
 
-    sums_.resize(nChains_);
-    sqSums_.resize(nChains_);
-    stdMean_.resize(nChains_);
-    iters_.resize(nChains_);
+    commInfo_.resize(nChains_);
+
     communicationBuff_.resize(nChains_);
     for(int i = 0; i < nChains_; ++i)
     {
@@ -193,10 +191,14 @@ MetropolisHastings::communicate()
 
     if(isMaster())
     {
-        sums_[0].push_back(paramSum_);
-        sqSums_[0].push_back(paramSquaredSum_);
-        stdMean_[0].push_back(myStdMean_);
-        iters_[0].push_back(double(iteration_ - burnin_));
+        CommunicationInfo info;
+        commInfo_[0].push_back(info);
+        std::list<CommunicationInfo>::iterator it = commInfo_[0].end();
+        --it;
+        (*it).sums = paramSum_;
+        (*it).sqSums = paramSquaredSum_;
+        (*it).stdMean = myStdMean_;
+        (*it).iter = double(iteration_ - burnin_);
     }
 
 #ifdef COSMO_MPI
@@ -240,17 +242,17 @@ MetropolisHastings::communicate()
                 if(updateFlag)
                 {
                     output_screen1("Received an update from chain " << i << "." << std::endl);
-                    std::vector<double> temp(n_);
-                    sums_[i].push_back(temp);
-                    sqSums_[i].push_back(temp);
-                    stdMean_[i].push_back(temp);
+                    CommunicationInfo temp(n_);
+                    commInfo_[i].push_back(temp);
+                    std::list<CommunicationInfo>::iterator it = commInfo_[i].end();
+                    --it;
                     for(int j = 0; j < n_; ++j)
                     {
-                        sums_[i][sums_[i].size() -1][j] = communicationBuff_[i][j];
-                        sqSums_[i][sqSums_[i].size() -1][j] = communicationBuff_[i][n_ + j];
-                        stdMean_[i][stdMean_[i].size() - 1][j] = communicationBuff_[i][2 * n_ + j];
+                        (*it).sums[j] = communicationBuff_[i][j];
+                        (*it).sqSums[j] = communicationBuff_[i][n_ + j];
+                        (*it).stdMean[j] = communicationBuff_[i][2 * n_ + j];
                     }
-                    iters_[i].push_back(communicationBuff_[i][3 * n_]);
+                    (*it).iter = communicationBuff_[i][3 * n_];
 
                     MPI_Irecv(&(communicationBuff_[i][0]), 1 + 3 * n_, MPI_DOUBLE, i, updateReqTag_ + i, MPI_COMM_WORLD, (MPI_Request*) updateReceiveReq_[i]);
                 }
@@ -382,6 +384,9 @@ MetropolisHastings::run(unsigned long maxChainLength, int writeResumeInformation
             paramSquaredSum_[i] = 0;
             corSum_[i] = 0;
         }
+
+        commInfo_.clear();
+        commInfo_.resize(nChains_);
 
         openOut(false);
     }
@@ -541,6 +546,59 @@ MetropolisHastings::specifyParameterBlocks(const std::vector<int>& blocks)
 #endif
 
     blocks_ = blocks;
+}
+
+bool
+MetropolisHastings::synchronizeCommInfo()
+{
+    check(commInfo_.size() == nChains_, "");
+    std::vector<std::list<CommunicationInfo>::iterator> currentIters(nChains_);
+
+    bool found = false;
+    for(std::list<CommunicationInfo>::reverse_iterator ri = commInfo_[0].rbegin(); ri != commInfo_[0].rend(); ++ri)
+    {
+        bool sync = true;
+        const double currentI = (*ri).iter;
+        for(int i = 0; i < nChains_; ++i)
+        {
+            if(commInfo_[i].empty())
+            {
+                sync = false;
+                break;
+            }
+
+            bool currentFound = false;
+            for(currentIters[i] = commInfo_[i].begin(); currentIters[i] != commInfo_[i].end(); ++(currentIters[i]))
+            {
+                const double thisI = (*(currentIters[i])).iter;
+                if(thisI == currentI)
+                {
+                    currentFound = true;
+                    break;
+                }
+                if(thisI > currentI)
+                    break;
+            }
+            if(!currentFound)
+            {
+                sync = false;
+                break;
+            }
+        }
+        if(sync)
+        {
+            found = true;
+            break;
+        }
+    }
+
+    if(!found)
+        return false;
+
+    for(int i = 0; i < nChains_; ++i)
+        commInfo_[i].erase(commInfo_[i].begin(), currentIters[i]);
+
+    return true;
 }
 
 } // namespace Math
