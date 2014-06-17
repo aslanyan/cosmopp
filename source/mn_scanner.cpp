@@ -107,7 +107,7 @@ MnScanner::setParamGeneral(int i, const std::string& name, double min, double ma
         const double y = norm * distrib.evaluate(x);
 
         res += (x - xPrev) * (y + yPrev) / 2.0;
-        check(res <= 1.0, "");
+        check(res <= 1.0 + 1e-5, "");
 
         paramPriors_[i][res] = x;
         xPrev = x;

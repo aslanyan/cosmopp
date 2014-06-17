@@ -31,12 +31,12 @@ TestMCMCPlanck::runSubTest(unsigned int i, double& res, double& expected, std::s
     std::string root = "slow_test_files/mcmc_planck_test";
     MetropolisHastings mh(20, planckLike, root);
 
-    mh.setParam(0, "ombh2", 0.005, 0.1, 0.022, 0.0006, 0.0003);
-    mh.setParam(1, "omch2", 0.001, 0.99, 0.12, 0.006, 0.003);
+    mh.setParam(0, "ombh2", 0.005, 0.1, 0.022, 0.0003, 0.0002);
+    mh.setParam(1, "omch2", 0.001, 0.99, 0.12, 0.003, 0.002);
     mh.setParam(2, "h", 0.2, 1.0, 0.7, 0.02, 0.01);
     mh.setParam(3, "tau", 0.01, 0.8, 0.1, 0.02, 0.01);
-    mh.setParam(4, "ns", 0.9, 1.1, 1.0, 0.03, 0.01);
-    mh.setParam(5, "As", 2.7, 4.0, 3.0, 0.05, 0.01);
+    mh.setParam(4, "ns", 0.9, 1.1, 1.0, 0.01, 0.005);
+    mh.setParam(5, "As", 2.7, 4.0, 3.0, 0.01, 0.005);
 
     mh.setParam(6, "A_ps_100", 0, 360, 100, 100, 60);
     mh.setParam(7, "A_ps_143", 0, 270, 50, 20, 13);

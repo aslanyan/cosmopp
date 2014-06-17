@@ -98,6 +98,7 @@ PHYS_CONSTANTS_HPP = include/phys_constants.hpp $(MATH_CONSTANTS_HPP)
 UNIT_CONVERSIONS_HPP = include/unit_conversions.hpp $(PHYS_CONSTANTS_HPP)
 FUNCTION_HPP = include/function.hpp
 HISTOGRAM_HPP = include/histogram.hpp
+CHI_SQUARED_HPP = include/chi_squared.hpp $(MARCOR_HPP) $(FUNCTION_HPP)
 RANDOM_HPP = include/random.hpp
 INT_OPERATION_HPP = include/int_operations.hpp
 LIKELIHOOD_FUNCTION_HPP = include/likelihood_function.hpp
@@ -150,6 +151,7 @@ TEST_CMB_HPP = include/test_cmb.hpp $(TEST_FRAMEWORK_HPP)
 TEST_CMB_GIBBS_HPP = include/test_cmb_gibbs.hpp $(TEST_FRAMEWORK_HPP)
 TEST_FIT = include/test_fit.hpp $(TEST_FRAMEWORK_HPP)
 TEST_WMAP9_LIKE = include/test_wmap9_like.hpp $(TEST_FRAMEWORK_HPP)
+TEST_LIKE_HIGH = include/test_like_high.hpp $(TEST_FRAMEWORK_HPP)
 
 all: lib/libcosmopp.a bin/analyze_chain bin/sort_chain bin/contour_plot bin/test bin/generate_white_noise bin/apodize_mask $(PLANCK_TARGET) $(PLANCK_AND_MULTINEST_TARGET) $(WMAP_TARGET)
 
@@ -157,7 +159,7 @@ OBJ_LIBRARY = obj/macros.o obj/test_framework.o obj/mcmc.o obj/whole_matrix.o ob
 lib/libcosmopp.a: $(OBJ_LIBRARY)
 	ar rcs $@ $(OBJ_LIBRARY)
 
-OBJ_TEST = obj/test.o obj/macros.o obj/test_framework.o obj/test_unit_conversions.o obj/test_int_operations.o obj/test_integral.o obj/test_conjugate_gradient.o obj/test_polynomial.o obj/test_legendre.o obj/test_mcmc.o obj/markov_chain.o obj/mcmc.o obj/test_multinest.o obj/mn_scanner.o obj/test_mcmc_planck.o obj/planck_like.o obj/cmb.o obj/test_multinest_planck.o	obj/test_cmb.o obj/test_cmb_gibbs.o obj/cmb_gibbs.o obj/utils.o obj/simulate.o obj/whole_matrix.o obj/test_fit.o obj/test_wmap9_like.o obj/wmap9_like.o
+OBJ_TEST = $(OBJ_LIBRARY) obj/test.o obj/test_unit_conversions.o obj/test_int_operations.o obj/test_integral.o obj/test_conjugate_gradient.o obj/test_polynomial.o obj/test_legendre.o obj/test_mcmc.o obj/test_multinest.o obj/test_mcmc_planck.o obj/test_multinest_planck.o obj/test_cmb.o obj/test_cmb_gibbs.o obj/test_fit.o obj/test_wmap9_like.o obj/test_like_high.o
 bin/test: $(OBJ_TEST)
 	$(CC) $(LFLAGS1) -o $@ $(OBJ_TEST) $(LFLAGS2)
 
@@ -249,7 +251,7 @@ obj/analyze_chain.o: source/analyze_chain.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_
 obj/contour_plot.o: source/contour_plot.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP)
 	$(CC) $(CFLAGS) source/contour_plot.cpp -o $@
 
-obj/test.o: source/test.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(TEST_FRAMEWORK_HPP) $(TEST_UNIT_CONVERSIONS_HPP) $(TEST_INT_OPERATIONS_HPP) $(TEST_INTEGRAL_HPP) $(TEST_CONJUGATE_GRADIENT_HPP) $(TEST_POLYNOMIAL_HPP) $(TEST_LEGENDRE_HPP) $(TEST_MCMC_HPP) $(TEST_MULTINEST_HPP) $(TEST_MCMC_PLANCK_HPP) $(TEST_CMB_HPP) $(TEST_CMB_GIBBS_HPP) $(TEST_FIT_HPP) $(TEST_WMAP9_LIKE_HPP)
+obj/test.o: source/test.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(TEST_FRAMEWORK_HPP) $(TEST_UNIT_CONVERSIONS_HPP) $(TEST_INT_OPERATIONS_HPP) $(TEST_INTEGRAL_HPP) $(TEST_CONJUGATE_GRADIENT_HPP) $(TEST_POLYNOMIAL_HPP) $(TEST_LEGENDRE_HPP) $(TEST_MCMC_HPP) $(TEST_MULTINEST_HPP) $(TEST_MCMC_PLANCK_HPP) $(TEST_CMB_HPP) $(TEST_CMB_GIBBS_HPP) $(TEST_FIT_HPP) $(TEST_WMAP9_LIKE_HPP) $(TEST_LIKE_HIGH_HPP)
 	$(CC) $(CFLAGS) source/test.cpp -o $@
 
 obj/test_framework.o: source/test_framework.cpp $(MACROS_HPP) $(NUMERICS_HPP) $(TEST_FRAMEWORK_HPP)
@@ -328,6 +330,9 @@ obj/test_fit.o: source/test_fit.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(FIT
 
 obj/test_wmap9_like.o: source/test_wmap9_like.cpp $(WMAP9_LIKE_HPP) $(NUMERICS_HPP) $(TEST_WMAP9_LIKE_HPP)
 	$(CC) $(CFLAGS) source/test_wmap9_like.cpp -o $@
+
+obj/test_like_high.o: source/test_like_high.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(UTILS_HPP) $(HISTOGRAM_HPP) $(LIKELIHOOD_HPP) $(CMB_HPP) $(MASTER_HPP) $(SIMULATE_HPP) $(PROGRESS_METER_HPP) $(CHI_SQUARED_HPP) $(TEST_LIKE_HIGH_HPP)
+	$(CC) $(CFLAGS) source/test_like_high.cpp -o $@
 
 clean:
 	rm obj/* bin/* lib/*

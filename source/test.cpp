@@ -25,6 +25,7 @@
 #include <test_cmb_gibbs.hpp>
 #include <test_fit.hpp>
 #include <test_wmap9_like.hpp>
+#include <test_like_high.hpp>
 
 TestFramework* createTest(const std::string& name)
 {
@@ -58,6 +59,8 @@ TestFramework* createTest(const std::string& name)
         test = new TestFit;
     else if(name == "wmap9_like")
         test = new TestWMAP9Like;
+    else if(name == "like_high")
+        test = new TestLikeHigh;
 
     return test;
 }
@@ -112,6 +115,7 @@ int main(int argc, char *argv[])
         slowTests.insert("mcmc_planck");
         slowTests.insert("multinest_planck");
         slowTests.insert("cmb_gibbs");
+        slowTests.insert("like_high");
 
         if(argument == "all")
         {
