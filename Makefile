@@ -208,7 +208,7 @@ INTEGRAL_HPP = include/integral.hpp $(MACROS_HPP) $(FUNCTION_HPP)
 PARAMETRIC_FUNCTION_HPP = include/parametric_function.hpp $(MACROS_HPP) $(FUNCTION_HPP)
 FIT_HPP = include/fit.hpp $(MACROS_HPP) $(PARAMETRIC_FUNCTION_HPP)
 POLYNOMIAL_HPP = include/polynomial.hpp $(PARAMETRIC_FUNCTION_HPP)
-LEGENDRE_HPP = include/legendre.hpp $(POLYNOMIAL_HPP)
+LEGENDRE_HPP = include/legendre.hpp
 TABLE_FUNCTION_HPP = include/table_function.hpp $(MACROS_HPP) $(FUNCTION_HPP)
 CUBIC_SPLINE_HPP = include/cubic_spline.hpp $(MACROS_HPP) $(FUNCTION_HPP)
 GAUSS_SMOOTH_HPP = include/gauss_smooth.hpp $(MACROS_HPP) $(FUNCTION_HPP)
@@ -397,7 +397,7 @@ obj/test_conjugate_gradient.o: source/test_conjugate_gradient.cpp $(TEST_CONJUGA
 obj/test_polynomial.o: source/test_polynomial.cpp $(TEST_POLYNOMIAL_HPP) $(POLYNOMIAL_HPP)
 	$(CC) $(CFLAGS) source/test_polynomial.cpp -o $@
 
-obj/test_legendre.o: source/test_legendre.cpp $(TEST_LEGENDRE_HPP) $(LEGENDRE_HPP)
+obj/test_legendre.o: source/test_legendre.cpp $(MACROS_HPP) $(TEST_LEGENDRE_HPP) $(LEGENDRE_HPP)
 	$(CC) $(CFLAGS) source/test_legendre.cpp -o $@
 
 obj/test_mcmc.o: source/test_mcmc.cpp $(TEST_MCMC_HPP) $(MCMC_HPP) $(MARKOV_CHAIN_HPP) $(NUMERICS_HPP)

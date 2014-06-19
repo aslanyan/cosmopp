@@ -2,8 +2,8 @@
 #define COSMO_PP_LEGENDRE_HPP
 
 #include <vector>
-
-#include <polynomial.hpp>
+#include <string>
+#include <sstream>
 
 namespace Math
 {
@@ -11,37 +11,23 @@ namespace Math
 class Legendre
 {
 public:
-    Legendre()
-    {
-        Polynomial p0(1), p1(2);
-        p0.parameter(0) = 1;
-        p1.parameter(1) = 1;
-
-        p_.push_back(p0);
-        p_.push_back(p1);
-    }
-
+    Legendre() {}
     ~Legendre() {}
 
-    const Polynomial& get(unsigned int l)
+    double calculate(unsigned int l, double x)
     {
-        while(l >= p_.size())
-            add();
+        if(l == 0)
+            return 0.0;
+        if(l == 1)
+            return x;
 
-        return p_[l];
+        std::vector<double> vals(l + 1, 1);
+        vals[1] = x;
+        for(int l1 = 2; l1 <= l; ++l1)
+            vals[l1] = (2 - 1.0 / l1) * x * vals[l1 - 1] - (1 - 1.0 / l1) * vals[l1 - 2];
+
+        return vals[l];
     }
-
-private:
-    void add()
-    {
-        int n = p_.size();
-        check(n >= 2, "");
-
-        Polynomial pNew = ((2 * n - 1) * p_[1] * p_[n - 1] - (n - 1) * p_[n - 2]) / n;
-        p_.push_back(pNew);
-    }
-private:
-    std::vector<Polynomial> p_;
 };
 
 } // namespace Math

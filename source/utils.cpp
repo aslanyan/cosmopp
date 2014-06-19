@@ -211,6 +211,7 @@ Utils::readClFromFile(const char* fileName, std::vector<double>& cl, bool hasL, 
             val *= (2 * Math::pi / (l * (l + 1)));
 
         cl.push_back(val);
+        ++l;
     }
     in.close();
 }

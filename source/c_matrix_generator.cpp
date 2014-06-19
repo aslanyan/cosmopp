@@ -67,7 +67,7 @@ LegendrePolynomialContainer::LegendrePolynomialContainer(int lMax, long nSide, c
                     dot = -1;
                 }
                 
-                data_[l][j][i] = legendre.get(l).evaluate(dot);
+                data_[l][j][i] = legendre.calculate(l, dot);
                 
                 meter.advance();
             }
@@ -218,7 +218,7 @@ CMatrixGenerator::clToCMatrix(const std::vector<double>& cl, long nSide, double 
             double element = 0;
             for(int l = 2; l <= lMax; ++l)
             {
-                const double leg = (lp ? lp->value(l, j, i) : legendre.get(l).evaluate(dot));
+                const double leg = (lp ? lp->value(l, j, i) : legendre.calculate(l, dot));
                 element += clCopy[l] * leg * beam[l] * beam[l];
             }
             
@@ -725,7 +725,7 @@ CMatrixGenerator::getFiducialMatrix(const std::vector<double>& cl, long nSide, i
             double element = 0;
             for(int l = lMax + 1; l <= lMaxMax; ++l)
             {
-                const double leg = (lp ? lp->value(l, j, i) : legendre.get(l).evaluate(dot));
+                const double leg = (lp ? lp->value(l, j, i) : legendre.calculate(l, dot));
                 element += cl[l] * ((2 * l + 1) / (4 * Math::pi)) * leg * beam[l] * beam[l];
             }
             
