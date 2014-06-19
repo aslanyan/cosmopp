@@ -69,8 +69,6 @@ public:
     /// \return The maximum l.
     int getLMax() const { return lMax_; }
     
-    //void rotate(double phi, double theta, double psi, bool firstIndexT = true, bool secondIndexT = true);
-    
 private:
     void initialize();
     bool checkIndices(int l, int m) const;

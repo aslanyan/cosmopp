@@ -11,75 +11,177 @@ CC = $(MPI_COMP)
 MPI_COMPILE_FLAGS = -D COSMO_MPI
 endif
 
-PLANCK_AND_MULTINEST_TARGET = bin/mn_scan_planck
+HEALPIX_AND_LAPACKPP_OBJ = obj/simulate.o obj/likelihood.o obj/master.o
+HEALPIX_AND_LAPACKPP_TARGET = bin/generate_white_noise
+
+HEALPIX_AND_LAPACK_AND_CLASS_TEST_OBJ = obj/test_cmb_gibbs.o obj/test_like_high.o
+
+PLANCK_AND_CLASS_OBJ = obj/planck_like.o
+PLANCK_AND_CLASS_TEST_OBJ = obj/test_mcmc_planck.o
+PLANCK_AND_CLASS_TARGET = bin/test_planck
+
+WMAP_AND_CLASS_OBJ = obj/wmap9_like.o
+WMAP_AND_CLASS_TEST_OBJ = obj/test_wmap9_like.o
+
+PLANCK_AND_MULTINEST_AND_CLASS_TEST_OBJ = obj/test_multinest_planck.o
+PLANCK_AND_MULTINEST_AND_CLASS_TARGET = bin/mn_scan_planck
+
+ifdef HEALPIX
+ifndef CFITSIO
+$(error Need to specify CFITSIO if HEALPIX is specified)
+endif
+ifndef HEALPIXPP
+$(error Need to specify HEALPIXPP if HEALPIX is specified)
+endif
+HEALPIX_INCLUDE_FLAGS = -I $(CFITSIO)/include -I $(HEALPIX)/include -I $(HEALPIXPP)/include
+HEALPIX_COMPILE_FLAGS = -D COSMO_HEALPIX -D HEALPIX_DATA_DIR=$(HEALPIX)/data
+HEALPIX_LIB_FLAGS1 = -L $(CFITSIO)/lib -L $(HEALPIX)/lib -L $(HEALPIXPP)/lib
+HEALPIX_LIB_FLAGS2 = -lchealpix -lhealpix_cxx -lcxxsupport -lsharp -lfftpack -lc_utils -lcfitsio
+HEALPIX_OBJ = obj/utils.o obj/c_matrix.o obj/c_matrix_generator.o obj/mode_directions.o obj/cmb_gibbs.o obj/mask_apodizer.o
+HEALPIX_TARGET = bin/apodize_mask
+else
+HEALPIX_INCLUDE_FLAGS =
+HEALPIX_COMPILE_FLAGS =
+HEALPIX_LIB_FLAGS1 =
+HEALPIX_LIB_FLAGS2 =
+HEALPIX_OBJ =
+HEALPIX_TARGET =
+HEALPIX_AND_LAPACKPP_OBJ =
+HEALPIX_AND_LAPACKPP_TARGET =
+HEALPIX_AND_LAPACK_AND_CLASS_TEST_OBJ =
+endif
+
+ifdef LAPACKPPINCDIR
+ifndef LAPACKPPLIBDIR
+$(error Need to specify LAPACKPPLIBDIR if LAPACKPPINCDIR is specified)
+endif
+LAPACKPP_INCLUDE_FLAGS = -I $(LAPACKPPINCDIR)
+LAPACKPP_COMPILE_FLAGS = -D COSMO_LAPACKPP
+LAPACKPP_LIB_FLAGS1 = -L $(LAPACKPPLIBDIR)
+LAPACKPP_LIB_FLAGS2 = -llapackpp
+else
+LAPACKPP_INCLUDE_FLAGS =
+LAPACKPP_COMPILE_FLAGS =
+LAPACKPP_LIB_FLAGS1 =
+LAPACKPP_LIB_FLAGS2 =
+HEALPIX_AND_LAPACKPP_OBJ =
+HEALPIX_AND_LAPACKPP_TARGET =
+HEALPIX_AND_LAPACK_AND_CLASS_TEST_OBJ =
+endif
+
+ifdef CLASSDIR
+CLASS_INCLUDE_FLAGS = -I $(CLASSDIR)/include
+CLASS_COMPILE_FLAGS = -D COSMO_CLASS
+CLASS_LIB_FLAGS1 = -L $(CLASSDIR)
+CLASS_LIB_FLAGS2 = -lclass
+CLASS_OBJ = obj/cmb.o
+CLASS_TEST_OBJ = obj/test_cmb.o
+else
+CLASS_INCLUDE_FLAGS =
+CLASS_COMPILE_FLAGS =
+CLASS_LIB_FLAGS1 =
+CLASS_LIB_FLAGS2 =
+CLASS_OBJ =
+CLASS_TEST_OBJ =
+PLANCK_AND_CLASS_OBJ =
+PLANCK_AND_CLASS_TEST_OBJ =
+PLANCK_AND_CLASS_TARGET =
+PLANCK_AND_MULTINEST_AND_CLASS_TEST_OBJ =
+PLANCK_AND_MULTINEST_AND_CLASS_TARGET =
+WMAP_AND_CLASS_OBJ =
+HEALPIX_AND_LAPACK_AND_CLASS_TEST_OBJ =
+WMAP_AND_CLASS_TEST_OBJ =
+endif
 
 ifdef MINUIT
 MINUIT_INCLUDE_FLAGS = -I $(MINUIT)/include
+MINUIT_COMPILE_FLAGS = -D COSMO_MINUIT
 MINUIT_LIB_FLAGS1 = -L $(MINUIT)/lib
 MINUIT_LIB_FLAGS2 = -lMinuit2
+MINUIT_TEST_OBJ = obj/test_fit.o
 else
 MINUIT_INCLUDE_FLAGS =
+MINUIT_COMPILE_FLAGS =
 MINUIT_LIB_FLAGS1 =
 MINUIT_LIB_FLAGS2 =
+MINUIT_TEST_OBJ =
 endif
 
 ifdef MULTINEST
 MULTINEST_INCLUDE_FLAGS = -I $(MULTINEST)/includes
+MULTINEST_COMPILE_FLAGS = -D COSMO_MULTINEST
 MULTINEST_LIB_FLAGS1 = -L $(MULTINEST)/lib
 MULTINEST_LIB_FLAGS2 = -lmultinest_mpi
 MULTINEST_OBJ = obj/mn_scanner.o
+MULTINEST_TEST_OBJ = obj/test_multinest.o
 else
 MULTINEST_INCLUDE_FLAGS =
+MULTINEST_COMPILE_FLAGS =
 MULTINEST_LIB_FLAGS1 =
 MULTINEST_LIB_FLAGS2 =
 MULTINEST_OBJ =
-PLANCK_AND_MULTINEST_TARGET =
+MULTINEST_TEST_OBJ =
+PLANCK_AND_MULTINEST_AND_CLASS_TEST_OBJ =
+PLANCK_AND_MULTINEST_AND_CLASS_TARGET =
 endif
 
 ifdef PLANCKDIR
-PLANCK_COMPILE_FLAGS = -D LAPACK_CLIK -D PLANCK_DATA_DIR=$(PLANCKDATADIR)
+ifndef PLANCKDATADIR
+$(error Need to specify PLANCKDATADIR if PLANCKDIR is specified) 
+endif
+PLANCK_COMPILE_FLAGS = -D COSMO_PLANCK -D LAPACK_CLIK -D PLANCK_DATA_DIR=$(PLANCKDATADIR)
 PLANCK_INCLUDE_FLAGS = -I $(PLANCKDIR)/include
 PLANCK_LIB_FLAGS1 = -L $(PLANCKDIR)/lib
 PLANCK_LIB_FLAGS2 = -lclik
-PLANCK_OBJ = obj/planck_like.o
-PLANCK_TARGET = bin/test_planck
+PLANCK_OBJ =
+PLANCK_TEST_OBJ =
 else
 PLANCK_COMPILE_FLAGS =
 PLANCK_INCLUDE_FLAGS =
 PLANCK_LIB_FLAGS1 =
 PLANCK_LIB_FLAGS2 =
 PLANCK_OBJ =
-PlANCK_TARGET =
-PLANCK_AND_MULTINEST_TARGET =
+PLANCK_TEST_OBJ =
+PLANCK_AND_MULTINEST_AND_CLASS_TEST_OBJ =
+PLANCK_AND_MULTINEST_AND_CLASS_TARGET =
+PLANCK_AND_CLASS_OBJ =
+PLANCK_AND_CLASS_TEST_OBJ =
+PLANCK_AND_CLASS_TARGET =
 endif
 
 ifdef WMAP9DIR
+ifndef WMAP9COMPILER
+$(error Need to specify WMAP9COMPILER if WMAP9DIR is specified)
+endif
+ifndef WMAP9LIBFLAGS
+$(error Need to specify WMAP9LIBFLAGS if WMAP9DIR is specified)
+endif
 ifeq ($(WMAP9COMPILER),gfortran)
-WMAP_COMPILE_FLAGS = -D WMAP9_GFORT
+WMAP_COMPILE_FLAGS = -D COSMO_WMAP9 -D WMAP9_GFORT
 else
-WMAP_COMPILE_FLAGS = -D WMAP9_IFORT
+WMAP_COMPILE_FLAGS = -D COSMO_WMAP9 -D WMAP9_IFORT
 endif
 WMAP_INCLUDE_FLAGS =
 WMAP_LIB_FLAGS1 = -L $(WMAP9DIR)
 WMAP_LIB_FLAGS2 = $(WMAP9LIBFLAGS)
-WMAP_OBJ = obj/wmap9_like.o
-WMAP_TARGET =
+WMAP_OBJ =
 else
 WMAP_COMPILE_FLAGS =
 WMAP_INCLUDE_FLAGS =
 WMAP_LIB_FLAGS1 =
 WMAP_LIB_FLAGS2 =
 WMAP_OBJ =
-WMAP_TARGET =
+WMAP_AND_CLASS_OBJ =
+WMAP_AND_CLASS_TEST_OBJ =
 endif
 
-LFLAGS1 = -L $(CFITSIO)/lib -L $(HEALPIX)/lib -L $(HEALPIXPP)/lib -L $(LAPACKPPLIBDIR) -fopenmp -L $(CLASSDIR) $(MINUIT_LIB_FLAGS1) $(MULTINEST_LIB_FLAGS1) $(PLANCK_LIB_FLAGS1) $(WMAP_LIB_FLAGS1)
+LFLAGS1 = $(HEALPIX_LIB_FLAGS1) $(LAPACKPP_LIB_FLAGS1) $(CLASS_LIB_FLAGS1) $(MINUIT_LIB_FLAGS1) $(MULTINEST_LIB_FLAGS1) $(PLANCK_LIB_FLAGS1) $(WMAP_LIB_FLAGS1) -fopenmp
 
-LFLAGS2 = -lstdc++ -lchealpix -lhealpix_cxx -lcxxsupport -lsharp -lfftpack -lc_utils -lcfitsio -llapackpp -lclass $(MINUIT_LIB_FLAGS2) $(MULTINEST_LIB_FLAGS2) $(PLANCK_LIB_FLAGS2) $(WMAP_LIB_FLAGS2)
+LFLAGS2 = -lstdc++ $(HEALPIX_LIB_FLAGS2) $(LAPACKPP_LIB_FLAGS2) $(CLASS_LIB_FLAGS2) $(MINUIT_LIB_FLAGS2) $(MULTINEST_LIB_FLAGS2) $(PLANCK_LIB_FLAGS2) $(WMAP_LIB_FLAGS2)
 
-MYFLAGS = $(MY_COMPILE_FLAGS) -D HEALPIX_DATA_DIR=$(HEALPIX)/data $(PLANCK_COMPILE_FLAGS) $(WMAP_COMPILE_FLAGS) $(MPI_COMPILE_FLAGS) $(OMP_COMPILE_FLAGS)
+MYFLAGS = $(MY_COMPILE_FLAGS) $(HEALPIX_COMPILE_FLAGS) $(LAPACKPP_COMPILE_FLAGS) $(CLASS_COMPILE_FLAGS) $(MINUIT_COMPILE_FLAGS) $(MULTINEST_COMPILE_FLAGS) $(PLANCK_COMPILE_FLAGS) $(WMAP_COMPILE_FLAGS) $(MPI_COMPILE_FLAGS) $(OMP_COMPILE_FLAGS)
 
-INCLUDE_FLAGS = -I include -I $(CFITSIO)/include -I $(HEALPIX)/include -I $(HEALPIXPP)/include -I $(LAPACKPPINCDIR) -I $(CLASSDIR)/include $(MINUIT_INCLUDE_FLAGS) $(MULTINEST_INCLUDE_FLAGS) $(PLANCK_INCLUDE_FLAGS) $(WMAP_INCLUDE_FLAGS)
+INCLUDE_FLAGS = -I include $(HEALPIX_INCLUDE_FLAGS) $(LAPACKPP_INCLUDE_FLAGS) $(CLASS_INCLUDE_FLAGS) $(MINUIT_INCLUDE_FLAGS) $(MULTINEST_INCLUDE_FLAGS) $(PLANCK_INCLUDE_FLAGS) $(WMAP_INCLUDE_FLAGS)
 
 CFLAGS = $(MYFLAGS) -c -g -O2 -fpic -Werror -std=c++11 $(INCLUDE_FLAGS) $(OMP_FLAG)
 CFLAGS_NO11 = $(MYFLAGS) -c -g -O2 -Werror -fpic $(INCLUDE_FLAGS) $(OMP_FLAG)
@@ -153,47 +255,43 @@ TEST_FIT = include/test_fit.hpp $(TEST_FRAMEWORK_HPP)
 TEST_WMAP9_LIKE = include/test_wmap9_like.hpp $(TEST_FRAMEWORK_HPP)
 TEST_LIKE_HIGH = include/test_like_high.hpp $(TEST_FRAMEWORK_HPP)
 
-all: lib/libcosmopp.a bin/analyze_chain bin/sort_chain bin/contour_plot bin/test bin/generate_white_noise bin/apodize_mask $(PLANCK_TARGET) $(PLANCK_AND_MULTINEST_TARGET) $(WMAP_TARGET)
+all: lib/libcosmopp.a bin/test $(HEALPIX_AND_LAPACKPP_TARGET) $(HEALPIX_TARGET) $(PLANCK_AND_CLASS_TARGET) $(PLANCK_AND_MULTINEST_AND_CLASS_TARGET)
 
-OBJ_LIBRARY = obj/macros.o obj/test_framework.o obj/mcmc.o obj/whole_matrix.o obj/utils.o obj/c_matrix.o obj/c_matrix_generator.o obj/simulate.o obj/likelihood.o obj/master.o obj/mode_directions.o obj/scale_factor.o obj/cmb.o obj/cmb_gibbs.o obj/mask_apodizer.o obj/markov_chain.o obj/inflation.o $(MULTINEST_OBJ) $(PLANCK_OBJ) $(WMAP_OBJ)
+GENERAL_OBJ = obj/macros.o obj/test_framework.o obj/mcmc.o obj/whole_matrix.o obj/scale_factor.o obj/markov_chain.o obj/inflation.o
+
+OBJ_LIBRARY = $(GENERAL_OBJ) $(HEALPIX_OBJ) $(HEALPIX_AND_LAPACKPP_OBJ) $(CLASS_OBJ) $(MULTINEST_OBJ) $(PLANCK_OBJ) $(PLANCK_AND_CLASS_OBJ) $(WMAP_OBJ) $(WMAP_AND_CLASS_OBJ)
 lib/libcosmopp.a: $(OBJ_LIBRARY)
 	ar rcs $@ $(OBJ_LIBRARY)
 
-OBJ_TEST = $(OBJ_LIBRARY) obj/test.o obj/test_unit_conversions.o obj/test_int_operations.o obj/test_integral.o obj/test_conjugate_gradient.o obj/test_polynomial.o obj/test_legendre.o obj/test_mcmc.o obj/test_multinest.o obj/test_mcmc_planck.o obj/test_multinest_planck.o obj/test_cmb.o obj/test_cmb_gibbs.o obj/test_fit.o obj/test_wmap9_like.o obj/test_like_high.o
+GENERAL_TEST_OBJ = obj/test.o obj/test_unit_conversions.o obj/test_int_operations.o obj/test_integral.o obj/test_conjugate_gradient.o obj/test_polynomial.o obj/test_legendre.o obj/test_mcmc.o
+
+OBJ_TEST = $(OBJ_LIBRARY) $(GENERAL_TEST_OBJ) $(MULTINEST_TEST_OBJ) $(PLANCK_TEST_OBJ) $(PLANCK_AND_MULTINEST_AND_CLASS_TEST_OBJ) $(CLASS_TEST_OBJ) $(PLANCK_AND_CLASS_TEST_OBJ) $(HEALPIX_AND_LAPACK_AND_CLASS_TEST_OBJ) $(MINUIT_TEST_OBJ) $(WMAP_AND_CLASS_TEST_OBJ)
 bin/test: $(OBJ_TEST)
 	$(CC) $(LFLAGS1) -o $@ $(OBJ_TEST) $(LFLAGS2)
 
+ifdef HEALPIX_AND_LAPACKPP_TARGET
 OBJ_GENERATE_WHITE_NOISE = obj/generate_white_noise.o obj/macros.o obj/simulate.o obj/whole_matrix.o
 bin/generate_white_noise: $(OBJ_GENERATE_WHITE_NOISE)
 	$(CC) $(LFLAGS1) -o $@ $(OBJ_GENERATE_WHITE_NOISE) $(LFLAGS2)
+endif
 
+ifdef HEALPIX_TARGET
 OBJ_APODIZE_MASK = obj/apodize_mask.o obj/macros.o obj/mask_apodizer.o
 bin/apodize_mask: $(OBJ_APODIZE_MASK)
 	$(CC) $(LFLAGS1) -o $@ $(OBJ_APODIZE_MASK) $(LFLAGS2)
+endif
 
-ifdef PLANCKDIR
+ifdef PLANCK_AND_CLASS_TARGET
 OBJ_TEST_PLANCK = obj/test_planck.o obj/macros.o obj/planck_like.o obj/cmb.o
 bin/test_planck: $(OBJ_TEST_PLANCK)
 	$(CC) $(LFLAGS1) -o $@ $(OBJ_TEST_PLANCK) $(LFLAGS2)
 endif
 
-ifdef PLANCK_AND_MULTINEST_TARGET
+ifdef PLANCK_AND_MULTINEST_AND_CLASS_TARGET
 OBJ_MN_SCAN_PLANCK = obj/mn_scan_planck.o obj/macros.o obj/planck_like.o obj/cmb.o obj/mn_scanner.o
 bin/mn_scan_planck: $(OBJ_MN_SCAN_PLANCK)
 	$(CC) $(LFLAGS1) -o $@ $(OBJ_MN_SCAN_PLANCK) $(LFLAGS2)
 endif
-
-OBJ_ANALYZE_CHAIN = obj/analyze_chain.o obj/macros.o 
-bin/analyze_chain: $(OBJ_ANALYZE_CHAIN)
-	$(CC) $(LFLAGS1) -o $@ $(OBJ_ANALYZE_CHAIN) $(LFLAGS2)
-
-OBJ_SORT_CHAIN = obj/sort_chain.o obj/macros.o 
-bin/sort_chain: $(OBJ_SORT_CHAIN)
-	$(CC) $(LFLAGS1) -o $@ $(OBJ_SORT_CHAIN) $(LFLAGS2)
-
-OBJ_CONTOUR_PLOT = obj/contour_plot.o obj/macros.o 
-bin/contour_plot: $(OBJ_CONTOUR_PLOT)
-	$(CC) $(LFLAGS1) -o $@ $(OBJ_CONTOUR_PLOT) $(LFLAGS2)
 
 obj/macros.o: source/macros.cpp $(MACROS_HPP)
 	$(CC) $(CFLAGS) source/macros.cpp -o $@
@@ -213,7 +311,7 @@ obj/likelihood.o: source/likelihood.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $
 obj/master.o: source/master.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(MATH_CONSTANTS_HPP) $(PROGRESS_METER_HPP) $(WIGNER_3J_HPP) $(MASTER_HPP)
 	$(CC) $(CFLAGS) source/master.cpp -o $@
 
-ifdef PLANCK_AND_MULTINEST_TARGET
+ifdef PLANCK_AND_MULTINEST_AND_CLASS_TARGET
 obj/mn_scan_planck.o: source/mn_scan_planck.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(LIKELIHOOD_FUNCTION_HPP) $(PLANCK_LIKE_HPP) $(MN_SCANNER_HPP)
 	$(CC) $(CFLAGS) source/mn_scan_planck.cpp -o $@
 endif
@@ -242,22 +340,13 @@ obj/scale_factor.o: source/scale_factor.cpp $(UNIT_CONVERSIONS_HPP) $(TABLE_FUNC
 obj/simulate.o: source/simulate.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(NUMERICS_HPP) $(WHOLE_MATRIX_HPP) $(RANDOM_HPP) $(SIMULATE_HPP)
 	$(CC) $(CFLAGS) source/simulate.cpp -o $@
 
-obj/sort_chain.o: source/sort_chain.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP)
-	$(CC) $(CFLAGS) source/sort_chain.cpp -o $@
-
-obj/analyze_chain.o: source/analyze_chain.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(CUBIC_SPLINE_HPP) $(TABLE_FUNCTION_HPP)
-	$(CC) $(CFLAGS) source/analyze_chain.cpp -o $@
-
-obj/contour_plot.o: source/contour_plot.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP)
-	$(CC) $(CFLAGS) source/contour_plot.cpp -o $@
-
 obj/test.o: source/test.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(TEST_FRAMEWORK_HPP) $(TEST_UNIT_CONVERSIONS_HPP) $(TEST_INT_OPERATIONS_HPP) $(TEST_INTEGRAL_HPP) $(TEST_CONJUGATE_GRADIENT_HPP) $(TEST_POLYNOMIAL_HPP) $(TEST_LEGENDRE_HPP) $(TEST_MCMC_HPP) $(TEST_MULTINEST_HPP) $(TEST_MCMC_PLANCK_HPP) $(TEST_CMB_HPP) $(TEST_CMB_GIBBS_HPP) $(TEST_FIT_HPP) $(TEST_WMAP9_LIKE_HPP) $(TEST_LIKE_HIGH_HPP)
 	$(CC) $(CFLAGS) source/test.cpp -o $@
 
 obj/test_framework.o: source/test_framework.cpp $(MACROS_HPP) $(NUMERICS_HPP) $(TEST_FRAMEWORK_HPP)
 	$(CC) $(CFLAGS) source/test_framework.cpp -o $@
 
-ifdef PLANCKDIR
+ifdef PLANCK_AND_CLASS_TARGET
 obj/test_planck.o: source/test_planck.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(PLANCK_LIKE_HPP)
 	$(CC) $(CFLAGS) source/test_planck.cpp -o $@
 endif
@@ -271,14 +360,18 @@ obj/whole_matrix.o: source/whole_matrix.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HP
 obj/cmb_gibbs.o: source/cmb_gibbs.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(MATH_CONSTANTS_HPP) $(PROGRESS_METER_HPP) $(UTILS_HPP) $(CONJUGATE_GRADIENT_HPP) $(NUMERICS_HPP) $(CMB_GIBBS_HPP)
 	$(CC) $(CFLAGS) source/cmb_gibbs.cpp -o $@
 
+ifdef HEALPIX_AND_LAPACKPP_TARGET
 obj/generate_white_noise.o: source/generate_white_noise.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(SIMULATE_HPP)
 	$(CC) $(CFLAGS) source/generate_white_noise.cpp -o $@
+endif
 
 obj/mask_apodizer.o: source/mask_apodizer.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(PROGRESS_METER_HPP) $(THREE_VECTOR_HPP) $(MATH_CONSTANTS_HPP) $(MASK_APODIZER_HPP)
 	$(CC) $(CFLAGS) source/mask_apodizer.cpp -o $@
 
+ifdef HEALPIX_TARGET
 obj/apodize_mask.o: source/apodize_mask.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(MASK_APODIZER_HPP)
 	$(CC) $(CFLAGS) source/apodize_mask.cpp -o $@
+endif
 
 obj/mcmc.o: source/mcmc.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(MCMC_HPP)
 	$(CC) $(CFLAGS) source/mcmc.cpp -o $@

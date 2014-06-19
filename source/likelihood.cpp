@@ -20,14 +20,6 @@
 #include <blas2pp.h>
 #include <blas3pp.h>
 
-/*
-#include "Minuit2/FCNGradientBase.h"
-#include "Minuit2/FunctionMinimum.h"
-#include "Minuit2/MnMigrad.h"
-#include "Minuit2/MnUserParameters.h"
-#include "Minuit2/MnPrint.h"
-*/
-
 #include "healpix_base.h"
 #include "alm.h"
 #include "alm_healpix_tools.h"

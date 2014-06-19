@@ -45,22 +45,44 @@ TestFramework* createTest(const std::string& name)
         test = new TestLegendre;
     else if(name == "mcmc_fast")
         test = new TestMCMCFast;
+#ifdef COSMO_MULTINEST
     else if(name == "multinest_fast")
         test = new TestMultinestFast;
+#endif
+#ifdef COSMO_PLANCK
+#ifdef COSMO_CLASS
     else if(name == "mcmc_planck")
         test = new TestMCMCPlanck;
+#ifdef COSMO_MULTINEST
     else if(name == "multinest_planck")
         test = new TestMultinestPlanck;
+#endif
+#endif
+#endif
+#ifdef COSMO_CLASS
     else if(name == "cmb")
         test = new TestCMB;
+#endif
+#ifdef COSMO_HEALPIX
+#ifdef COSMO_LAPACKPP
+#ifdef COSMO_CLASS
     else if(name == "cmb_gibbs")
         test = new TestCMBGibbs;
-    else if(name == "fit")
-        test = new TestFit;
-    else if(name == "wmap9_like")
-        test = new TestWMAP9Like;
     else if(name == "like_high")
         test = new TestLikeHigh;
+#endif
+#endif
+#endif
+#ifdef COSMO_MINUIT
+    else if(name == "fit")
+        test = new TestFit;
+#endif
+#ifdef COSMO_CLASS
+#ifdef COSMO_WMAP9
+    else if(name == "wmap9_like")
+        test = new TestWMAP9Like;
+#endif
+#endif
 
     return test;
 }
@@ -107,15 +129,37 @@ int main(int argc, char *argv[])
         fastTests.insert("polynomial");
         fastTests.insert("legendre");
         fastTests.insert("mcmc_fast");
+#ifdef COSMO_MULTINEST
         fastTests.insert("multinest_fast");
+#endif
+#ifdef COSMO_CLASS
         fastTests.insert("cmb");
+#endif
+#ifdef COSMO_MINUIT
         fastTests.insert("fit");
+#endif
+#ifdef COSMO_CLASS
+#ifdef COSMO_WMAP9
         fastTests.insert("wmap9_like");
+#endif
+#endif
 
+#ifdef COSMO_PLANCK
+#ifdef COSMO_CLASS
         slowTests.insert("mcmc_planck");
+#ifdef COSMO_MULTINEST
         slowTests.insert("multinest_planck");
+#endif
+#endif
+#endif
+#ifdef COSMO_HEALPIX
+#ifdef COSMO_LAPACKPP
+#ifdef COSMO_CLASS
         slowTests.insert("cmb_gibbs");
         slowTests.insert("like_high");
+#endif
+#endif
+#endif
 
         if(argument == "all")
         {
