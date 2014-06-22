@@ -26,6 +26,7 @@
 #include <test_fit.hpp>
 #include <test_wmap9_like.hpp>
 #include <test_like_high.hpp>
+#include <test_inflation.hpp>
 
 TestFramework* createTest(const std::string& name)
 {
@@ -83,6 +84,8 @@ TestFramework* createTest(const std::string& name)
         test = new TestWMAP9Like;
 #endif
 #endif
+    else if(name == "inflation")
+        test = new TestInflation;
 
     return test;
 }
@@ -143,6 +146,7 @@ int main(int argc, char *argv[])
         fastTests.insert("wmap9_like");
 #endif
 #endif
+        fastTests.insert("inflation");
 
 #ifdef COSMO_PLANCK
 #ifdef COSMO_CLASS

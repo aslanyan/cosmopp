@@ -8,6 +8,7 @@
 #include <macros.hpp>
 #include <exception_handler.hpp>
 #include <math_constants.hpp>
+#include <three_vector.hpp>
 #include <utils.hpp>
 
 #include "chealpix.h"
@@ -214,4 +215,39 @@ Utils::readClFromFile(const char* fileName, std::vector<double>& cl, bool hasL, 
         ++l;
     }
     in.close();
+}
+
+void
+Utils::maskRegion(Healpix_Map<double>& mask, double theta, double phi, double angle)
+{
+    Math::ThreeVectorDouble dir(std::sin(theta) * std::cos(phi), std::sin(theta) * std::sin(phi), std::cos(theta));
+    for(unsigned long i = 0; i < mask.Npix(); ++i)
+    {
+        double theta1, phi1;
+        mask.Scheme() == NEST ? pix2ang_nest(mask.Nside(), i, &theta1, &phi1) : pix2ang_ring(mask.Nside(), i, &theta1, &phi1);
+        Math::ThreeVectorDouble dir1(std::sin(theta1) * std::cos(phi1), std::sin(theta1) * std::sin(phi1), std::cos(theta1));
+        const double dot = dir1 * dir;
+        if(dot > std::cos(angle))
+            mask[i] = 0;
+    }
+}
+
+void
+Utils::maskRegions(Healpix_Map<double>& mask, const std::vector<double>& theta, const std::vector<double>& phi, const std::vector<double>& angle)
+{
+    check(theta.size() == phi.size(), "");
+    check(angle.size() == theta.size(), "");
+    for(unsigned long i = 0; i < mask.Npix(); ++i)
+    {
+        double theta1, phi1;
+        mask.Scheme() == NEST ? pix2ang_nest(mask.Nside(), i, &theta1, &phi1) : pix2ang_ring(mask.Nside(), i, &theta1, &phi1);
+        Math::ThreeVectorDouble dir1(std::sin(theta1) * std::cos(phi1), std::sin(theta1) * std::sin(phi1), std::cos(theta1));
+        for(int j = 0; j < theta.size(); ++j)
+        {
+            Math::ThreeVectorDouble dir(std::sin(theta[j]) * std::cos(phi[j]), std::sin(theta[j]) * std::sin(phi[j]), std::cos(theta[j]));
+            const double dot = dir1 * dir;
+            if(dot > std::cos(angle[j]))
+                mask[i] = 0;
+        }
+    }
 }

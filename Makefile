@@ -251,9 +251,10 @@ TEST_MCMC_PLANCK_HPP = include/test_mcmc_planck.hpp $(TEST_FRAMEWORK_HPP)
 TEST_MULTINEST_PLANCK_HPP = include/test_multinest_planck.hpp $(TEST_FRAMEWORK_HPP)
 TEST_CMB_HPP = include/test_cmb.hpp $(TEST_FRAMEWORK_HPP)
 TEST_CMB_GIBBS_HPP = include/test_cmb_gibbs.hpp $(TEST_FRAMEWORK_HPP)
-TEST_FIT = include/test_fit.hpp $(TEST_FRAMEWORK_HPP)
-TEST_WMAP9_LIKE = include/test_wmap9_like.hpp $(TEST_FRAMEWORK_HPP)
-TEST_LIKE_HIGH = include/test_like_high.hpp $(TEST_FRAMEWORK_HPP)
+TEST_FIT_HPP = include/test_fit.hpp $(TEST_FRAMEWORK_HPP)
+TEST_WMAP9_LIKE_HPP = include/test_wmap9_like.hpp $(TEST_FRAMEWORK_HPP)
+TEST_LIKE_HIGH_HPP = include/test_like_high.hpp $(TEST_FRAMEWORK_HPP)
+TEST_INFLATION_HPP = include/test_inflation.hpp $(TEST_FRAMEWORK_HPP)
 
 all: lib/libcosmopp.a bin/test $(HEALPIX_AND_LAPACKPP_TARGET) $(HEALPIX_TARGET) $(PLANCK_AND_CLASS_TARGET) $(PLANCK_AND_MULTINEST_AND_CLASS_TARGET)
 
@@ -263,7 +264,7 @@ OBJ_LIBRARY = $(GENERAL_OBJ) $(HEALPIX_OBJ) $(HEALPIX_AND_LAPACKPP_OBJ) $(CLASS_
 lib/libcosmopp.a: $(OBJ_LIBRARY)
 	ar rcs $@ $(OBJ_LIBRARY)
 
-GENERAL_TEST_OBJ = obj/test.o obj/test_unit_conversions.o obj/test_int_operations.o obj/test_integral.o obj/test_conjugate_gradient.o obj/test_polynomial.o obj/test_legendre.o obj/test_mcmc.o
+GENERAL_TEST_OBJ = obj/test.o obj/test_unit_conversions.o obj/test_int_operations.o obj/test_integral.o obj/test_conjugate_gradient.o obj/test_polynomial.o obj/test_legendre.o obj/test_mcmc.o obj/test_inflation.o
 
 OBJ_TEST = $(OBJ_LIBRARY) $(GENERAL_TEST_OBJ) $(MULTINEST_TEST_OBJ) $(PLANCK_TEST_OBJ) $(PLANCK_AND_MULTINEST_AND_CLASS_TEST_OBJ) $(CLASS_TEST_OBJ) $(PLANCK_AND_CLASS_TEST_OBJ) $(HEALPIX_AND_LAPACK_AND_CLASS_TEST_OBJ) $(MINUIT_TEST_OBJ) $(WMAP_AND_CLASS_TEST_OBJ)
 bin/test: $(OBJ_TEST)
@@ -340,7 +341,7 @@ obj/scale_factor.o: source/scale_factor.cpp $(UNIT_CONVERSIONS_HPP) $(TABLE_FUNC
 obj/simulate.o: source/simulate.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(NUMERICS_HPP) $(WHOLE_MATRIX_HPP) $(RANDOM_HPP) $(SIMULATE_HPP)
 	$(CC) $(CFLAGS) source/simulate.cpp -o $@
 
-obj/test.o: source/test.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(TEST_FRAMEWORK_HPP) $(TEST_UNIT_CONVERSIONS_HPP) $(TEST_INT_OPERATIONS_HPP) $(TEST_INTEGRAL_HPP) $(TEST_CONJUGATE_GRADIENT_HPP) $(TEST_POLYNOMIAL_HPP) $(TEST_LEGENDRE_HPP) $(TEST_MCMC_HPP) $(TEST_MULTINEST_HPP) $(TEST_MCMC_PLANCK_HPP) $(TEST_CMB_HPP) $(TEST_CMB_GIBBS_HPP) $(TEST_FIT_HPP) $(TEST_WMAP9_LIKE_HPP) $(TEST_LIKE_HIGH_HPP)
+obj/test.o: source/test.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(TEST_FRAMEWORK_HPP) $(TEST_UNIT_CONVERSIONS_HPP) $(TEST_INT_OPERATIONS_HPP) $(TEST_INTEGRAL_HPP) $(TEST_CONJUGATE_GRADIENT_HPP) $(TEST_POLYNOMIAL_HPP) $(TEST_LEGENDRE_HPP) $(TEST_MCMC_HPP) $(TEST_MULTINEST_HPP) $(TEST_MCMC_PLANCK_HPP) $(TEST_CMB_HPP) $(TEST_CMB_GIBBS_HPP) $(TEST_FIT_HPP) $(TEST_WMAP9_LIKE_HPP) $(TEST_LIKE_HIGH_HPP) $(TEST_INFLATION_HPP)
 	$(CC) $(CFLAGS) source/test.cpp -o $@
 
 obj/test_framework.o: source/test_framework.cpp $(MACROS_HPP) $(NUMERICS_HPP) $(TEST_FRAMEWORK_HPP)
@@ -351,7 +352,7 @@ obj/test_planck.o: source/test_planck.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP)
 	$(CC) $(CFLAGS) source/test_planck.cpp -o $@
 endif
 
-obj/utils.o: source/utils.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(MATH_CONSTANTS_HPP) $(UTILS_HPP)
+obj/utils.o: source/utils.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(MATH_CONSTANTS_HPP) $(THREE_VECTOR_HPP) $(UTILS_HPP)
 	$(CC) $(CFLAGS) source/utils.cpp -o $@
 
 obj/whole_matrix.o: source/whole_matrix.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(NUMERICS_HPP) $(THREE_ROTATION_HPP) $(WHOLE_MATRIX_HPP)
@@ -424,8 +425,11 @@ obj/test_fit.o: source/test_fit.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(FIT
 obj/test_wmap9_like.o: source/test_wmap9_like.cpp $(WMAP9_LIKE_HPP) $(NUMERICS_HPP) $(TEST_WMAP9_LIKE_HPP)
 	$(CC) $(CFLAGS) source/test_wmap9_like.cpp -o $@
 
-obj/test_like_high.o: source/test_like_high.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(UTILS_HPP) $(HISTOGRAM_HPP) $(LIKELIHOOD_HPP) $(CMB_HPP) $(MASTER_HPP) $(SIMULATE_HPP) $(PROGRESS_METER_HPP) $(CHI_SQUARED_HPP) $(TEST_LIKE_HIGH_HPP)
+obj/test_like_high.o: source/test_like_high.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(UTILS_HPP) $(MASK_APODIZER_HPP) $(RANDOM_HPP) $(HISTOGRAM_HPP) $(LIKELIHOOD_HPP) $(CMB_HPP) $(MASTER_HPP) $(SIMULATE_HPP) $(PROGRESS_METER_HPP) $(CHI_SQUARED_HPP) $(TEST_LIKE_HIGH_HPP)
 	$(CC) $(CFLAGS) source/test_like_high.cpp -o $@
+
+obj/test_inflation.o: source/test_inflation.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(NUMERICS_HPP) $(INFLATION_HPP) $(TEST_INFLATION_HPP)
+	$(CC) $(CFLAGS) source/test_inflation.cpp -o $@
 
 clean:
 	rm obj/* bin/* lib/*

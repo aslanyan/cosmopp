@@ -3,6 +3,8 @@
 
 #include <vector>
 
+#include <healpix_map.h>
+
 /// A class for various utility functions.
 
 /// All of the functions in the class are static.
@@ -43,6 +45,20 @@ public:
     /// \param hasL Indicates if the l values proceed the cl values, false by default.
     /// \param isDl Indicates if the cl-s include a factor of l(l+1)/2pi. If so, this will be corrected for in the output (false by default).
     static void readClFromFile(const char* fileName, std::vector<double>& cl, bool hasL = false, bool isDl = false);
+
+    /// Mask out a circular region around a given direction.
+    /// \param mask The mask to be modified.
+    /// \param theta The theta angle of the direction of the center of the region.
+    /// \param phi The phi angle of the direction of the center of the region.
+    /// \param angle The radius of the circular region.
+    static void maskRegion(Healpix_Map<double>& mask, double theta, double phi, double angle);
+
+    /// Mask out multiple circular regions around given directions.
+    /// \param mask The mask to be modified.
+    /// \param theta A vector of the theta angles of the directions of the centers of the regions.
+    /// \param phi A vector of the phi angles of the directions of the centers of the regions. Must have the same size as theta.
+    /// \param angle A vector of the radii of the circular regions. Must have the same size as theta.
+    static void maskRegions(Healpix_Map<double>& mask, const std::vector<double>& theta, const std::vector<double>& phi, const std::vector<double>& angle);
 };
 
 #endif

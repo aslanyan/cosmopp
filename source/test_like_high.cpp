@@ -5,6 +5,8 @@
 #include <macros.hpp>
 #include <exception_handler.hpp>
 #include <utils.hpp>
+#include <mask_apodizer.hpp>
+#include <random.hpp>
 #include <histogram.hpp>
 #include <likelihood.hpp>
 #include <cmb.hpp>
@@ -38,9 +40,11 @@ TestLikeHigh::numberOfSubtests() const
 void
 TestLikeHigh::runSubTest(unsigned int i, double& res, double& expected, std::string& subTestName)
 {
+    using namespace Math;
+
     check(i >= 0 && i < 1, "invalid index " << i);
 
-    const long nSide = 2048;
+    const long nSide = 1024;
     const int lMaxSim = 2 * int(nSide);
 
     const int lMin = 31;
@@ -97,14 +101,59 @@ TestLikeHigh::runSubTest(unsigned int i, double& res, double& expected, std::str
 
     Healpix_Map<double>& mask = uniformMask;
 
+    // mask out some stuff
+    output_screen1("Masking out some regions..." << std::endl);
+    int nRegions = 50;
+    time_t seed1 = 1000000;
+    Math::UniformRealGenerator thetaGen(seed1, pi / 100, pi - pi / 100), phiGen(seed1 + 1, 0, 2 * pi), angleGen(seed1 + 2, pi / 60, pi / 30);
+    std::vector<double> maskTheta(nRegions), maskPhi(nRegions), maskAngle(nRegions);
+    for(int i = 0; i < nRegions; ++i)
+    {
+        maskTheta[i] = thetaGen.generate();
+        maskPhi[i] = phiGen.generate();
+        maskAngle[i] = angleGen.generate();
+    }
+
+    Utils::maskRegions(mask, maskTheta, maskPhi, maskAngle);
+    for(unsigned long i = 0; i < mask.Npix(); ++i)
+    {
+        double theta, phi;
+        pix2ang_ring(nSide, i, &theta, &phi);
+
+        if(theta < Math::pi / 2 + pi / 20 && theta > pi / 2 - pi / 20)
+            mask[i] = 0;
+    }
+    output_screen1("OK" << std::endl);
+
+    fitshandle outMaskHandle;
+    std::stringstream maskFileName;
+    maskFileName << "slow_test_files/test_highl_mask_" << i << ".fits";
+    outMaskHandle.create(maskFileName.str().c_str());
+    write_Healpix_map_to_fits(outMaskHandle, mask, PLANCK_FLOAT64);
+    outMaskHandle.close();
+
+    output_screen1("Apodizing the mask..." << std::endl);
+    MaskApodizer ap(mask);
+    Healpix_Map<double> apodizedMask;
+    const double apAngle = 30.0 / 60.0 / 180.0 * pi;
+    ap.apodize(MaskApodizer::COSINE_APODIZATION, apAngle, apodizedMask);
+    output_screen1("OK" << std::endl);
+
+    fitshandle outMaskHandle1;
+    std::stringstream maskFileName1;
+    maskFileName1 << "slow_test_files/test_highl_mask_ap_" << i << ".fits";
+    outMaskHandle1.create(maskFileName1.str().c_str());
+    write_Healpix_map_to_fits(outMaskHandle1, apodizedMask, PLANCK_FLOAT64);
+    outMaskHandle1.close();
+
     std::stringstream couplingKernelFileName;
     couplingKernelFileName << "slow_test_files/" << "test_highl_uniform_mask_cc.txt";
 
     output_screen1("Calculating mask coupling kernel..." << std::endl);
-    Master::calculateCouplingKernel(mask, lMax, couplingKernelFileName.str().c_str());
+    Master::calculateCouplingKernel(apodizedMask, lMax, couplingKernelFileName.str().c_str());
     output_screen1("OK" << std::endl);
 
-    Master master(mask, couplingKernelFileName.str().c_str(), beam, NULL, lMax); 
+    Master master(apodizedMask, couplingKernelFileName.str().c_str(), beam, NULL, lMax); 
 
     output_screen1("Starting simulations..." << std::endl);
 
