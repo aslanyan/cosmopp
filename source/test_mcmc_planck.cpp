@@ -53,7 +53,10 @@ TestMCMCPlanck::runSubTest(unsigned int i, double& res, double& expected, std::s
     mh.setParam(18, "A_ksz", 0, 10, 5, 6, 3);
     mh.setParam(19, "Bm_1_1", -20, 20, 0.5, 1.0, 0.6);
 
-    //std::vector<int> blocks(1, 20);
+    std::vector<int> blocks(3);
+    blocks[0] = 4;
+    blocks[1] = 6;
+    blocks[2] = 20;
     //mh.specifyParameterBlocks(blocks);
 
     const unsigned long burnin = 200;
