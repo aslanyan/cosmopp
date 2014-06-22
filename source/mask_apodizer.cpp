@@ -73,16 +73,16 @@ MaskApodizer::apodize(ApodizationType type, double angle, Healpix_Map<double>& r
         double theta, phi;
         result.Scheme() == NEST ? pix2ang_nest(result.Nside(), i, &theta, &phi) : pix2ang_ring(result.Nside(), i, &theta, &phi);
         long index;
-        result.Scheme() == NEST ? ang2pix_nest(result.Nside(), correctTheta(theta + pixSize), phi, &index) : ang2pix_nest(result.Nside(), correctTheta(theta + pixSize), phi, &index);
+        result.Scheme() == NEST ? ang2pix_nest(result.Nside(), correctTheta(theta + pixSize), phi, &index) : ang2pix_ring(result.Nside(), correctTheta(theta + pixSize), phi, &index);
         if(result[index] == 0)
             isOnEdge = true;
-        result.Scheme() == NEST ? ang2pix_nest(result.Nside(), correctTheta(theta - pixSize), phi, &index) : ang2pix_nest(result.Nside(), correctTheta(theta - pixSize), phi, &index);
+        result.Scheme() == NEST ? ang2pix_nest(result.Nside(), correctTheta(theta - pixSize), phi, &index) : ang2pix_ring(result.Nside(), correctTheta(theta - pixSize), phi, &index);
         if(result[index] == 0)
             isOnEdge = true;
-        result.Scheme() == NEST ? ang2pix_nest(result.Nside(), theta, phi + pixSize, &index) : ang2pix_nest(result.Nside(), theta, phi + pixSize, &index);
+        result.Scheme() == NEST ? ang2pix_nest(result.Nside(), theta, phi + pixSize, &index) : ang2pix_ring(result.Nside(), theta, phi + pixSize, &index);
         if(result[index] == 0)
             isOnEdge = true;
-        result.Scheme() == NEST ? ang2pix_nest(result.Nside(), theta, phi - pixSize, &index) : ang2pix_nest(result.Nside(), theta, phi - pixSize, &index);
+        result.Scheme() == NEST ? ang2pix_nest(result.Nside(), theta, phi - pixSize, &index) : ang2pix_ring(result.Nside(), theta, phi - pixSize, &index);
         if(result[index] == 0)
             isOnEdge = true;
         if(isOnEdge)
