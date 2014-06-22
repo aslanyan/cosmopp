@@ -12,7 +12,7 @@
 #define MY_STRINGIZE(P) MY_STRINGIZE1(P)
 #define PLANCK_DATA_DIR_STR MY_STRINGIZE(PLANCK_DATA_DIR)
 
-PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useLensing, bool usePol, bool useActSpt, bool includeTensors) : commander_(NULL), camspec_(NULL), lens_(NULL), pol_(NULL), actspt_(NULL), spectraNames_(6)
+PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useLensing, bool usePol, bool useActSpt, bool includeTensors) : commander_(NULL), camspec_(NULL), lens_(NULL), pol_(NULL), actspt_(NULL), spectraNames_(6), cosmoParams_(6), prevCosmoCalculated_(false)
 {
     check(useCommander || useCamspec || useLensing || usePol, "at least one likelihood must be specified");
 
@@ -383,8 +383,28 @@ PlanckLikelihood::calculate(double* params, int nPar)
     check(nPar == (6 + (camspec_ ? 14 : 0) + (actspt_ ? 24 : 0)), "");
     const double pivot = 0.05;
 
-    LambdaCDMParams lcdmParams(params[0], params[1], params[2], params[3], params[4], std::exp(params[5]) / 1e10, pivot);
-    setCosmoParams(lcdmParams);
+    bool needToCalculate = true;
+    if(prevCosmoCalculated_)
+    {
+        check(cosmoParams_.size() == 6, "");
+        bool areParamsEqual = true;
+        for(int i = 0; i < 6; ++i)
+        {
+            if(params[i] != cosmoParams_[i])
+            {
+                areParamsEqual = false;
+                break;
+            }
+        }
+
+        needToCalculate = !areParamsEqual;
+    }
+
+    if(needToCalculate)
+    {
+        LambdaCDMParams lcdmParams(params[0], params[1], params[2], params[3], params[4], std::exp(params[5]) / 1e10, pivot);
+        setCosmoParams(lcdmParams);
+    }
 
     if(camspec_)
     {
@@ -399,7 +419,15 @@ PlanckLikelihood::calculate(double* params, int nPar)
         actSptExtra_.insert(actSptExtra_.end(), params + paramShift, params + paramShift + 24);
     }
 
-    calculateCls();
+    if(needToCalculate)
+    {
+        calculateCls();
+        check(cosmoParams_.size() == 6, "");
+        for(int i = 0; i < 6; ++i)
+            cosmoParams_[i] = params[i];
+        prevCosmoCalculated_ = true;
+    }
+
     return likelihood();
 }
 

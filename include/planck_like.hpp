@@ -74,6 +74,8 @@ private:
     std::vector<std::string> spectraNames_;
     std::vector<double> camspecExtra_, actSptExtra_;
     std::vector<double> clTT_, clEE_, clTE_, clPP_;
+    std::vector<double> cosmoParams_;
+    bool prevCosmoCalculated_;
 };
 
 #endif

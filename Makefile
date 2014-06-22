@@ -183,13 +183,13 @@ MYFLAGS = $(MY_COMPILE_FLAGS) $(HEALPIX_COMPILE_FLAGS) $(LAPACKPP_COMPILE_FLAGS)
 
 INCLUDE_FLAGS = -I include $(HEALPIX_INCLUDE_FLAGS) $(LAPACKPP_INCLUDE_FLAGS) $(CLASS_INCLUDE_FLAGS) $(MINUIT_INCLUDE_FLAGS) $(MULTINEST_INCLUDE_FLAGS) $(PLANCK_INCLUDE_FLAGS) $(WMAP_INCLUDE_FLAGS)
 
-CFLAGS = $(MYFLAGS) -c -g -O2 -fpic -Werror -std=c++11 $(INCLUDE_FLAGS) $(OMP_FLAG)
-CFLAGS_NO11 = $(MYFLAGS) -c -g -O2 -Werror -fpic $(INCLUDE_FLAGS) $(OMP_FLAG)
+CFLAGS = $(MYFLAGS) -c -g -O2 -fpic -std=c++11 $(INCLUDE_FLAGS) $(OMP_FLAG)
 
 #Header file tree
 MACROS_HPP = include/macros.hpp
 EXCEPTION_HANDLER_HPP = include/exception_handler.hpp
 PROGRESS_METER_HPP = include/progress_meter.hpp $(MACROS_HPP)
+TIMER_HPP = include/timer.hpp $(MACROS_HPP)
 NUMERICS_HPP = include/numerics.hpp
 TEST_FRAMEWORK_HPP = include/test_framework.hpp
 
@@ -326,7 +326,7 @@ obj/mode_directions.o: source/mode_directions.cpp $(MACROS_HPP) $(EXCEPTION_HAND
 
 ifdef PLANCKDIR
 obj/planck_like.o: source/planck_like.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(PLANCK_LIKE_HPP)
-	$(CC) $(CFLAGS_NO11) source/planck_like.cpp -o $@
+	$(CC) $(CFLAGS) source/planck_like.cpp -o $@
 endif
 
 ifdef WMAP9DIR
@@ -347,7 +347,7 @@ obj/test_framework.o: source/test_framework.cpp $(MACROS_HPP) $(NUMERICS_HPP) $(
 	$(CC) $(CFLAGS) source/test_framework.cpp -o $@
 
 ifdef PLANCK_AND_CLASS_TARGET
-obj/test_planck.o: source/test_planck.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(PLANCK_LIKE_HPP)
+obj/test_planck.o: source/test_planck.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(TIMER_HPP) $(PLANCK_LIKE_HPP)
 	$(CC) $(CFLAGS) source/test_planck.cpp -o $@
 endif
 

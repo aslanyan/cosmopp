@@ -4,6 +4,7 @@
 
 #include <macros.hpp>
 #include <exception_handler.hpp>
+#include <timer.hpp>
 
 #include <planck_like.hpp>
 
@@ -29,6 +30,8 @@ int main(int argc, char *argv[])
 
         const double kCut = 0.0001;
 
+        Timer t1("CL_CALCULATE");
+
 
         //LambdaCDMParams params(omBH2, omCH2, h, tau, ns, as, pivot);
         //LCDMWithTensorParams params(omBH2, omCH2, h, tau, ns, as, pivot, r, nt, pivot); 
@@ -40,7 +43,9 @@ int main(int argc, char *argv[])
         planck.setCamspecExtraParams(153, 54.9, 55.8, 4, 55.5, 4, 0.91, 0.63, 0.6, 1, 1, 0.1, 1, 0.3);
         //planck.setActSptExtraParams(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
+        t1.start();
         planck.calculateCls();
+        t1.end();
 
         const double comLike = planck.commanderLike();
         output_screen("Commander likelihood = " << comLike << std::endl);
