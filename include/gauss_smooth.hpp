@@ -55,7 +55,7 @@ GaussSmooth::kernel(double x, double x1) const
     check(sigmaSq_ > 0, "");
     const double diff = x - x1;
     const double diffSq = diff * diff;
-    return std::exp(-diffSq / (2.0 * sigmaSq_));
+    return (diffSq < 25 * sigmaSq_ ? std::exp(-diffSq / (2.0 * sigmaSq_)) : 0.0);
 }
 
 class GaussSmooth2D : public Math::Function2<double, double, double>
@@ -106,7 +106,7 @@ GaussSmooth2D::kernel(double x1, double x2, double x1Prime, double x2Prime) cons
 {
     check(sigmaSq1_ > 0 && sigmaSq2_ > 0, "");
     const double diff1 = x1 - x1Prime, diff2 = x2 - x2Prime;
-    return std::exp(-diff1 * diff1 / (2.0 * sigmaSq1_) - diff2 * diff2 / (2.0 * sigmaSq2_));
+    return (diff1 * diff1 < 25 * sigmaSq1_ && diff2 * diff2 < 25 * sigmaSq2_ ? std::exp(-diff1 * diff1 / (2.0 * sigmaSq1_) - diff2 * diff2 / (2.0 * sigmaSq2_)) : 0.0);
 }
 
 } // namespace Math

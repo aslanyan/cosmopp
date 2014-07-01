@@ -149,6 +149,34 @@ Posterior1D::peak() const
 }
 
 void
+Posterior1D::writeIntoFile(const char* fileName, int n) const
+{
+    check(n >= 2, "invalid number of points " << n << ", should be at least 2.");
+    std::ofstream out(fileName);
+    StandardException exc;
+    if(!out)
+    {
+        std::stringstream exceptionStr;
+        exceptionStr << "Cannot write into file " << fileName << ".";
+        exc.set(exceptionStr.str());
+        throw exc;
+    }
+
+    const double delta = (max() - min()) / n;
+    for(int i = 0; i <= n; ++i)
+    {
+        double x = min() + i * delta;
+        if(i == n)
+            x = max();
+
+        check(x >= min() && x <= max(), "");
+
+        out << x << '\t' << evaluate(x) << std::endl;
+    }
+    out.close();
+}
+
+void
 Posterior2D::addPoint(double x1, double x2, double prob, double like)
 {
     points1_.push_back(x1);
@@ -305,13 +333,13 @@ bool lessMarkovChainElementPointer(MarkovChain::Element* i, MarkovChain::Element
     return (*i) < (*j);
 }
 
-MarkovChain::MarkovChain(const char* fileName, unsigned long burnin)
+MarkovChain::MarkovChain(const char* fileName, unsigned long burnin, unsigned int thin)
 {
     minLike_ = std::numeric_limits<double>::max();
-    addFile(fileName, burnin);
+    addFile(fileName, burnin, thin);
 }
 
-MarkovChain::MarkovChain(int nChains, const char* fileNameRoot, unsigned long burnin)
+MarkovChain::MarkovChain(int nChains, const char* fileNameRoot, unsigned long burnin, unsigned int thin)
 {
     check(nChains > 0, "need at least 1 chain");
 
@@ -327,7 +355,7 @@ MarkovChain::MarkovChain(int nChains, const char* fileNameRoot, unsigned long bu
             fileName << '_' << i;
         fileName << ".txt";
         double thisMaxP;
-        readFile(fileName.str().c_str(), burnin, bigChain, thisMaxP);
+        readFile(fileName.str().c_str(), burnin, thin, bigChain, thisMaxP);
         if(thisMaxP > maxP)
             maxP = thisMaxP;
     }
@@ -347,11 +375,11 @@ MarkovChain::~MarkovChain()
 }
 
 void
-MarkovChain::addFile(const char* fileName, unsigned long burnin)
+MarkovChain::addFile(const char* fileName, unsigned long burnin, unsigned int thin)
 {
     std::vector<Element*> bigChain;
     double maxP;
-    readFile(fileName, burnin, bigChain, maxP);
+    readFile(fileName, burnin, thin, bigChain, maxP);
     double minP = maxP / bigChain.size() / 1000;
     filterChain(bigChain, minP);
 
@@ -361,8 +389,10 @@ MarkovChain::addFile(const char* fileName, unsigned long burnin)
 }
 
 void
-MarkovChain::readFile(const char* fileName, unsigned long burnin, std::vector<Element*>& bigChain, double& maxP)
+MarkovChain::readFile(const char* fileName, unsigned long burnin, unsigned int thin, std::vector<Element*>& bigChain, double& maxP)
 {
+    check(thin > 0, "thin factor cannot be 0");
+
     StandardException exc;
     std::ifstream in(fileName);
 
@@ -417,7 +447,7 @@ MarkovChain::readFile(const char* fileName, unsigned long burnin, std::vector<El
             throw exc;
         }
 
-        if(line >= burnin)
+        if(line >= burnin && (line - burnin) % thin == 0)
             bigChain.push_back(elem);
 
         ++line;
@@ -474,6 +504,58 @@ MarkovChain::posterior(int paramIndex1, int paramIndex2, double scale1, double s
 
     post->generate(scale1, scale2);
     return post;
+}
+
+void
+Posterior2D::writeIntoFile(const char* fileName, int n) const
+{
+    check(n >= 2, "invalid number of points " << n << ", should be at least 2.");
+    std::ofstream out(fileName);
+    StandardException exc;
+    if(!out)
+    {
+        std::stringstream exceptionStr;
+        exceptionStr << "Cannot write into file " << fileName << ".";
+        exc.set(exceptionStr.str());
+        throw exc;
+    }
+
+    const double delta1 = (max1() - min1()) / n, delta2 = (max2() - min2()) / n;
+    std::vector<double> x, y;
+    for(int i = 0; i <= n; ++i)
+    {
+        double xVal = min1() + i * delta1, yVal = min2() + i * delta2;
+        if(i == n)
+        {
+            xVal = max1();
+            yVal = max2();
+        }
+        x.push_back(xVal);
+        y.push_back(yVal);
+    }
+    out << x[0];
+    for(int i = 1; i <= n; ++i)
+        out << ' ' << x[i];
+
+    out << std::endl;
+
+    out << y[0];
+    for(int i = 1; i <= n; ++i)
+        out << ' ' << y[i];
+    out << std::endl;
+    
+    for(int i = 0; i <= n; ++i)
+    {
+        for(int j = 0; j <= n; ++j)
+        {
+            double val = evaluate(x[i], y[j]);
+            out << val;
+            if(j != n)
+                out << ' ';
+        }
+        out << std::endl;
+    }
+    out.close();
 }
 
 void

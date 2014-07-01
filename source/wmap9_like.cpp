@@ -44,7 +44,7 @@ extern "C" bool wmap_options_mp_use_tt_beam_ptsrc_;
 
 bool WMAP9Likelihood::initialized_ = false;
 
-WMAP9Likelihood::WMAP9Likelihood(bool useLowlT, bool useHighlT, bool useLowlP, bool useHighlP, bool useGibbs, bool useTTBeam) : useLowlT_(useLowlT), useHighlT_(useHighlT), useLowlP_(useLowlP), useHighlP_(useHighlP), useGibbs_(useGibbs), useTTBeam_(useTTBeam), like_(10, 0.0)
+WMAP9Likelihood::WMAP9Likelihood(bool useLowlT, bool useHighlT, bool useLowlP, bool useHighlP, bool useGibbs, bool useTTBeam) : useLowlT_(useLowlT), useHighlT_(useHighlT), useLowlP_(useLowlP), useHighlP_(useHighlP), useGibbs_(useGibbs), useTTBeam_(useTTBeam), like_(10, 0.0), cosmoParams_(6), prevCosmoCalculated_(false)
 {
     check(!initialized_, "WMAP 9 likelihood can be initialized only once through the runtime of the program");
 
@@ -156,11 +156,35 @@ WMAP9Likelihood::calculate(double* params, int nPar)
 
     const double pivot = 0.05;
 
-    LambdaCDMParams lcdmParams(params[0], params[1], params[2], params[3], params[4], std::exp(params[5]) / 1e10, pivot);
+    bool needToCalculate = true;
+    if(prevCosmoCalculated_)
+    {
+        check(cosmoParams_.size() == 6, "");
+        bool areParamsEqual = true;
+        for(int i = 0; i < 6; ++i)
+        {
+            if(params[i] != cosmoParams_[i])
+            {
+                areParamsEqual = false;
+                break;
+            }
+        }
 
-    setCosmoParams(lcdmParams);
+        needToCalculate = !areParamsEqual;
+    }
 
-    calculateCls();
+    if(needToCalculate)
+    {
+        LambdaCDMParams lcdmParams(params[0], params[1], params[2], params[3], params[4], std::exp(params[5]) / 1e10, pivot);
+        setCosmoParams(lcdmParams);
+        calculateCls();
+
+        for(int i = 0; i < 6; ++i)
+            cosmoParams_[i] = params[i];
+
+        prevCosmoCalculated_ = true;
+    }
+
     return likelihood();
 }
 

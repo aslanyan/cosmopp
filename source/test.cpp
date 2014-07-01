@@ -24,9 +24,15 @@
 #include <test_cmb.hpp>
 #include <test_cmb_gibbs.hpp>
 #include <test_fit.hpp>
+#include <test_planck_like.hpp>
 #include <test_wmap9_like.hpp>
 #include <test_like_high.hpp>
 #include <test_inflation.hpp>
+#include <test_wigner_3j.hpp>
+#include <test_table_function.hpp>
+#include <test_cubic_spline.hpp>
+#include <test_three_rotation.hpp>
+#include <test_mask_apodizer.hpp>
 
 TestFramework* createTest(const std::string& name)
 {
@@ -79,6 +85,12 @@ TestFramework* createTest(const std::string& name)
         test = new TestFit;
 #endif
 #ifdef COSMO_CLASS
+#ifdef COSMO_PLANCK
+    else if(name == "planck_like")
+        test = new TestPlanckLike;
+#endif
+#endif
+#ifdef COSMO_CLASS
 #ifdef COSMO_WMAP9
     else if(name == "wmap9_like")
         test = new TestWMAP9Like;
@@ -86,6 +98,18 @@ TestFramework* createTest(const std::string& name)
 #endif
     else if(name == "inflation")
         test = new TestInflation;
+    else if(name == "wigner_3j")
+        test = new TestWigner3J;
+    else if(name == "table_function")
+        test = new TestTableFunction;
+    else if(name == "cubic_spline")
+        test = new TestCubicSpline;
+    else if(name == "three_rotation")
+        test = new TestThreeRotation;
+#ifdef COSMO_HEALPIX
+    else if(name == "mask_apodizer")
+        test = new TestMaskApodizer(1e-3);
+#endif
 
     return test;
 }
@@ -142,11 +166,20 @@ int main(int argc, char *argv[])
         fastTests.insert("fit");
 #endif
 #ifdef COSMO_CLASS
+#ifdef COSMO_PLANCK
+        fastTests.insert("planck_like");
+#endif
+#endif
+#ifdef COSMO_CLASS
 #ifdef COSMO_WMAP9
         fastTests.insert("wmap9_like");
 #endif
 #endif
         fastTests.insert("inflation");
+        fastTests.insert("wigner_3j");
+        fastTests.insert("table_function");
+        fastTests.insert("cubic_spline");
+        fastTests.insert("three_rotation");
 
 #ifdef COSMO_PLANCK
 #ifdef COSMO_CLASS
@@ -163,6 +196,10 @@ int main(int argc, char *argv[])
         slowTests.insert("like_high");
 #endif
 #endif
+#endif
+
+#ifdef COSMO_HEALPIX
+        slowTests.insert("mask_apodizer");
 #endif
 
         if(argument == "all")

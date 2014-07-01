@@ -44,7 +44,7 @@ TestLikeHigh::runSubTest(unsigned int i, double& res, double& expected, std::str
 
     check(i >= 0 && i < 1, "invalid index " << i);
 
-    const long nSide = 1024;
+    const long nSide = 2048;
     const int lMaxSim = 2 * int(nSide);
 
     const int lMin = 31;
@@ -80,16 +80,7 @@ TestLikeHigh::runSubTest(unsigned int i, double& res, double& expected, std::str
     output_screen1("OK" << std::endl);
 
     //const double nl = 0.0005;
-    const double nl = 0.005;
-    std::vector<double> nlTT(lMaxSim + 1, nl);
-
-    std::ofstream outCl("slow_test_files/test_like_high_cl.txt");
-    for(int l = 0; l <= lMax; ++l)
-    {
-        const double factor = l * (l + 1) / (2 * Math::pi);
-        outCl << l << '\t' << clTT[l] * factor << '\t' << nlTT[l] * factor << std::endl;
-    }
-    outCl.close();
+    double nl = 0.005;
 
     std::vector<double> beam(lMaxSim + 1);
     Utils::readPixelWindowFunction(beam, nSide, lMaxSim, fwhm);
@@ -101,11 +92,18 @@ TestLikeHigh::runSubTest(unsigned int i, double& res, double& expected, std::str
 
     Healpix_Map<double>& mask = uniformMask;
 
+    const double omegaPixel = 4 * Math::pi / mask.Npix();
+    const double w = omegaPixel / nl;
+
     // mask out some stuff
+    std::stringstream maskFileName1;
+    maskFileName1 << "slow_test_files/test_highl_mask_ap_" << i << ".fits";
+    Healpix_Map<double> apodizedMask;
+    /*
     output_screen1("Masking out some regions..." << std::endl);
-    int nRegions = 50;
+    int nRegions = 25;
     time_t seed1 = 1000000;
-    Math::UniformRealGenerator thetaGen(seed1, pi / 100, pi - pi / 100), phiGen(seed1 + 1, 0, 2 * pi), angleGen(seed1 + 2, pi / 60, pi / 30);
+    Math::UniformRealGenerator thetaGen(seed1, pi / 50, pi - pi / 50), phiGen(seed1 + 1, 0, 2 * pi), angleGen(seed1 + 2, pi / 60, pi / 40);
     std::vector<double> maskTheta(nRegions), maskPhi(nRegions), maskAngle(nRegions);
     for(int i = 0; i < nRegions; ++i)
     {
@@ -134,26 +132,67 @@ TestLikeHigh::runSubTest(unsigned int i, double& res, double& expected, std::str
 
     output_screen1("Apodizing the mask..." << std::endl);
     MaskApodizer ap(mask);
-    Healpix_Map<double> apodizedMask;
     const double apAngle = 30.0 / 60.0 / 180.0 * pi;
     ap.apodize(MaskApodizer::COSINE_APODIZATION, apAngle, apodizedMask);
     output_screen1("OK" << std::endl);
 
     fitshandle outMaskHandle1;
-    std::stringstream maskFileName1;
-    maskFileName1 << "slow_test_files/test_highl_mask_ap_" << i << ".fits";
     outMaskHandle1.create(maskFileName1.str().c_str());
     write_Healpix_map_to_fits(outMaskHandle1, apodizedMask, PLANCK_FLOAT64);
     outMaskHandle1.close();
+    */
+
+    read_Healpix_map_from_fits(maskFileName1.str(), apodizedMask);
+    //read_Healpix_map_from_fits("comb_mask_ap.fits", apodizedMask);
+    //apodizedMask.swap_scheme();
+    check(apodizedMask.Nside() == nSide, "");
+
+    Healpix_Map<double> noiseWeight, noiseInvMat;
+    noiseWeight.SetNside(nSide, RING);
+    noiseInvMat.SetNside(nSide, RING);
+
+    double nwAvg = 0;
+
+    for(unsigned long i = 0; i < noiseWeight.Npix(); ++i)
+    {
+        double theta, phi;
+        pix2ang_ring(nSide, i, &theta, &phi);
+
+        noiseInvMat[i] = w * (1 + 0.2 * std::sin(theta) + 0.1 * std::cos(phi));
+        nwAvg += 1.0 / noiseInvMat[i];
+
+        noiseWeight[i] = noiseInvMat[i] * apodizedMask[i];
+    }
+
+    nwAvg /= noiseWeight.Npix();
+    check(nwAvg > 0, "");
+
+    nl = omegaPixel * nwAvg;
+
+    std::vector<double> nlTT(lMaxSim + 1, nl);
+
+    std::ofstream outCl("slow_test_files/test_like_high_cl.txt");
+    for(int l = 0; l <= lMax; ++l)
+    {
+        const double factor = l * (l + 1) / (2 * Math::pi);
+        outCl << l << '\t' << clTT[l] * factor << '\t' << nlTT[l] * factor << std::endl;
+    }
+    outCl.close();
 
     std::stringstream couplingKernelFileName;
     couplingKernelFileName << "slow_test_files/" << "test_highl_uniform_mask_cc.txt";
+    std::stringstream noiseCouplingKernelFileName;
+    noiseCouplingKernelFileName << "slow_test_files/" << "test_highl_noise_cc.txt";
 
     output_screen1("Calculating mask coupling kernel..." << std::endl);
-    Master::calculateCouplingKernel(apodizedMask, lMax, couplingKernelFileName.str().c_str());
+    //Master::calculateCouplingKernel(apodizedMask, lMax + 500, couplingKernelFileName.str().c_str());
     output_screen1("OK" << std::endl);
 
-    Master master(apodizedMask, couplingKernelFileName.str().c_str(), beam, NULL, lMax); 
+    output_screen1("Calculating noise coupling kernel..." << std::endl);
+    Master::calculateCouplingKernel(noiseWeight, lMax + 500, noiseCouplingKernelFileName.str().c_str());
+    output_screen1("OK" << std::endl);
+
+    Master master(apodizedMask, couplingKernelFileName.str().c_str(), beam, NULL, lMax + 500); 
 
     output_screen1("Starting simulations..." << std::endl);
 
@@ -170,14 +209,27 @@ TestLikeHigh::runSubTest(unsigned int i, double& res, double& expected, std::str
 
     Math::Histogram<double> chi2Hist;
 
+    Healpix_Map<double> noiseMap;
+    noiseMap.SetNside(nSide, RING);
+
     ProgressMeter meter(n);
     for(int i = 0; i < n; ++i)
     {
         Alm<xcomplex<double> > alm, noiseAlm;
         Simulate::simulateAlm(clTT, alm, lMaxSim, seed);
         ++seed;
-        Simulate::simulateAlm(nlTT, noiseAlm, lMaxSim, seed);
+        //Simulate::simulateAlm(nlTT, noiseAlm, lMaxSim, seed);
+        Math::GaussianGenerator noiseGen(seed, 0.0, 1.0);
+        for(unsigned long j = 0; j < noiseMap.Npix(); ++j)
+        {
+            check(noiseInvMat[j] > 0, "");
+            const double r = noiseGen.generate();
+            noiseMap[j] = r * std::sqrt(1.0 / noiseInvMat[j]);
+        }
         ++seed;
+        noiseAlm.Set(lMaxSim, lMaxSim);
+        arr<double> weight(2 * noiseMap.Nside(), 1);
+        map2alm(noiseMap, noiseAlm, weight);
         for(int l = 0; l <= lMaxSim; ++l)
         {
             for(int m = 0; m <= l; ++m)
@@ -191,6 +243,11 @@ TestLikeHigh::runSubTest(unsigned int i, double& res, double& expected, std::str
         map.SetNside(nSide, RING);
         alm2map(alm, map);
 
+        /*
+        for(unsigned long j = 0; j < map.Npix(); ++j)
+            map[j] += noiseMap[j];
+        */
+
         master.calculate(map);
         std::vector<double> clSim(lMax + 1);
         for(int l = 0; l <= lMax; ++l)
@@ -201,7 +258,7 @@ TestLikeHigh::runSubTest(unsigned int i, double& res, double& expected, std::str
             clSim[l] = ps[double(l)] * lFactor - nlTT[l];
         }
 
-        LikelihoodHigh likelihood(clSim, nlTT, couplingKernelFileName.str().c_str(), lMin, lMax);
+        LikelihoodHigh likelihood(clSim, nlTT, couplingKernelFileName.str().c_str(), lMin, lMax, noiseCouplingKernelFileName.str().c_str());
         double like;
         like = likelihood.calculate(clTT);
         outLike << like << std::endl;

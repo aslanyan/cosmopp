@@ -13,8 +13,13 @@ int main(int argc, char *argv[])
     try {
         StandardException exc;
 
+        // Create the likelihood
         PlanckLikelihood like(true, true, true, false);
-        MnScanner scanner(20, like, 300, std::string("planck_multinest_"));
+
+        // Create the Multinest scanner with 20 parameters and 300 live points
+        MnScanner scanner(20, like, 300, std::string("example_files/planck_multinest_"));
+
+        // Set the parameter names and ranges
         scanner.setParam(0, std::string("ombh2"), 0.02, 0.025);
         scanner.setParam(1, std::string("omch2"), 0.1, 0.2);
         scanner.setParam(2, std::string("h"), 0.55, 0.85);
@@ -37,6 +42,7 @@ int main(int argc, char *argv[])
         scanner.setParam(18, "A_ksz", 0, 10);
         scanner.setParam(19, "Bm_1_1", -20, 20);
 
+        // Run the scanner. The Results will be output in corresponding files at the end
         scanner.run();
     } catch (std::exception& e)
     {

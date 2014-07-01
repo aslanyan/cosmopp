@@ -258,7 +258,7 @@ public:
     /// \param couplingKernelFileName The name of the file containig the coupling kernel for the mask. This is produced when running Master.
     /// \param lMin The minimum value of l to include in the calculation.
     /// \param lMax The maximum value of l to include in the calculation.
-    LikelihoodHigh(const std::vector<double>& cl, const std::vector<double>& nl, const char* couplingKernelFileName, int lMin, int lMax);
+    LikelihoodHigh(const std::vector<double>& cl, const std::vector<double>& nl, const char* couplingKernelFileName, int lMin, int lMax, const char* noiseCouplingKernelFileName = 0);
 
     /// Constructor.
     /// \param dataClFileName The name of the file containing data Cl-s. The units should be muK^2. The format is each row should contain l followed by Cl.
@@ -266,7 +266,7 @@ public:
     /// \param couplingKernelFileName The name of the file containig the coupling kernel for the mask. This is produced when running Master.
     /// \param lMin The minimum value of l to include in the calculation.
     /// \param lMax The maximum value of l to include in the calculation.
-    LikelihoodHigh(const char* dataClFileName, const char* noiseClFileName, const char* couplingKernelFileName, int lMin, int lMax);
+    LikelihoodHigh(const char* dataClFileName, const char* noiseClFileName, const char* couplingKernelFileName, int lMin, int lMax, const char* noiseCouplingKernelFileName = 0);
 
     /// Calculate the likelihood for given Cl-s.
     /// \param cl Model Cl-s in muK^2. The index of the vector is l.
@@ -279,11 +279,12 @@ public:
     double calculate(const char* clFileName) const;
 
 private:
-    void construct(const char* couplingKernelFileName);
+    void readCouplingKernel(const char* couplingKernelFileName, std::vector<std::vector<double> > & coupling);
 
 private:
     std::vector<double> cl_, nl_;
     std::vector<std::vector<double> > coupling_;
+    std::vector<std::vector<double> > noiseCoupling_;
     const int lMin_, lMax_;
     const double offset_;
 };

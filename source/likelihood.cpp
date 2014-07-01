@@ -793,7 +793,7 @@ void readClFromFile(const char* fileName, std::vector<double>& cl, int lMax)
 }
 
 void
-LikelihoodHigh::construct(const char* couplingKernelFileName)
+LikelihoodHigh::readCouplingKernel(const char* couplingKernelFileName, std::vector<std::vector<double> >& coupling)
 {
     StandardException exc;
     std::ifstream in(couplingKernelFileName);
@@ -805,27 +805,29 @@ LikelihoodHigh::construct(const char* couplingKernelFileName)
         throw exc;
     }
 
+    coupling.clear();
+
     int lMaxCK;
     in >> lMaxCK;
     if(lMaxCK < lMax_)
     {
         std::stringstream exceptionStr;
-        exceptionStr << "The coupling kernel has lMax = " << lMaxCK << ", needed up to lMax = " << lMax_ << ".";
+        exceptionStr << "The coupling kernel " << couplingKernelFileName << " has lMax = " << lMaxCK << ", needed up to lMax = " << lMax_ << ".";
         exc.set(exceptionStr.str());
         throw exc;
     }
 
-    coupling_.resize(lMaxCK + 1);
+    coupling.resize(lMaxCK + 1);
     for(int l1 = 0; l1 <= lMaxCK; ++l1)
     {
-        coupling_[l1].resize(lMaxCK + 1);
+        coupling[l1].resize(lMaxCK + 1);
         for(int l2 = 0; l2 <= lMaxCK; ++l2)
-            in >> coupling_[l1][l2];
+            in >> coupling[l1][l2];
     }
     in.close();
 }
 
-LikelihoodHigh::LikelihoodHigh(const std::vector<double>& cl, const std::vector<double>& nl, const char* couplingKernelFileName, int lMin, int lMax) : lMin_(lMin), lMax_(lMax), offset_((lMax_ - lMin_ + 1) * std::log(2 * Math::pi)), cl_(cl), nl_(nl)
+LikelihoodHigh::LikelihoodHigh(const std::vector<double>& cl, const std::vector<double>& nl, const char* couplingKernelFileName, int lMin, int lMax, const char* noiseCouplingKernelFileName) : lMin_(lMin), lMax_(lMax), offset_((lMax_ - lMin_ + 1) * std::log(2 * Math::pi)), cl_(cl), nl_(nl)
 {
     check(lMin_ >= 0, "invalid lMin");
     check(lMax_ >= lMin_, "invalid lMax");
@@ -833,10 +835,12 @@ LikelihoodHigh::LikelihoodHigh(const std::vector<double>& cl, const std::vector<
     check(cl_.size() - 1 >= lMax_, "");
     check(nl_.size() - 1 >= lMax_, "");
 
-    construct(couplingKernelFileName);
+    readCouplingKernel(couplingKernelFileName, coupling_);
+    if(noiseCouplingKernelFileName)
+        readCouplingKernel(noiseCouplingKernelFileName, noiseCoupling_);
 }
 
-LikelihoodHigh::LikelihoodHigh(const char* dataClFileName, const char* noiseClFileName, const char* couplingKernelFileName, int lMin, int lMax) : lMin_(lMin), lMax_(lMax), offset_((lMax_ - lMin_ + 1) * std::log(2 * Math::pi))
+LikelihoodHigh::LikelihoodHigh(const char* dataClFileName, const char* noiseClFileName, const char* couplingKernelFileName, int lMin, int lMax, const char* noiseCouplingKernelFileName) : lMin_(lMin), lMax_(lMax), offset_((lMax_ - lMin_ + 1) * std::log(2 * Math::pi))
 {
     check(lMin_ >= 0, "invalid lMin");
     check(lMax_ >= lMin_, "invalid lMax");
@@ -844,7 +848,9 @@ LikelihoodHigh::LikelihoodHigh(const char* dataClFileName, const char* noiseClFi
     readClFromFile(dataClFileName, cl_, lMax_);
     readClFromFile(noiseClFileName, nl_, lMax_);
 
-    construct(couplingKernelFileName);
+    readCouplingKernel(couplingKernelFileName, coupling_);
+    if(noiseCouplingKernelFileName)
+        readCouplingKernel(noiseCouplingKernelFileName, noiseCoupling_);
 }
 
 double
@@ -863,26 +869,35 @@ LikelihoodHigh::calculate(const std::vector<double>& cl) const
     double res = 0.0;
     std::vector<double> resVec(lMax_ + 1, 0);
 
+    double noiseFactor;
+    if(!noiseCoupling_.empty())
+        noiseFactor = noiseCoupling_[0][0] / coupling_[0][0];
+
+
 #pragma omp parallel for default(shared)
     for(int l1 = lMin_; l1 <= lMax_; ++l1)
     {
         const double clTot1 = cl[l1] + nl_[l1];
         check(clTot1 != 0, "");
         const double deltaCl1 = cl[l1] - cl_[l1];
-        //const double deltaLn1 = (cl_[l1] + nl_[l1] > 0 ? std::log(cl_[l1] + nl_[l1]) - std::log(clTot1) : 0.0);
         for(int l2 = lMin_; l2 <= lMax_; ++l2)
         {
             const double clTot2 = cl[l2] + nl_[l2];
             check(clTot2 != 0, "");
             const double deltaCl2 = cl[l2] - cl_[l2];
-            //const double deltaLn2 = (cl_[l2] + nl_[l2] > 0 ? std::log(cl_[l2] + nl_[l2]) - std::log(clTot2) : 0.0);
 
-            const double f = double(2 * l1 + 1) * coupling_[l1][l2] / (2.0 * clTot1 * clTot2);
-            //const double lnF = f * clTot1 * clTot2;
-            //const double alpha = 1.0; //(deltaLn1 != 0 && deltaLn2 != 0 ? 1.0 / 3.0 : 1.0);
-            //chi2 += alpha * deltaCl1 * deltaCl2 * f + (1 - alpha) * deltaLn1 * deltaLn2 * lnF;
+            const double fSig = double(2 * l1 + 1) * coupling_[l1][l2];
+            double fNoise = fSig;
+            
+            if(!noiseCoupling_.empty())
+                fNoise = double(2 * l1 + 1) * noiseCoupling_[l1][l2] / noiseFactor;
+
+            const double fAvg = (cl[l1] * std::sqrt(fSig) + nl_[l1] * std::sqrt(fNoise)) * (cl[l2] * std::sqrt(fSig) + nl_[l2] * std::sqrt(fNoise)) / (clTot1 * clTot2);
+
+            const double f = fAvg / (2.0 * clTot1 * clTot2);
+
+            //const double f = double(2 * l1 + 1) * coupling_[l1][l2] / (2.0 * clTot1 * clTot2);
             resVec[l1] += deltaCl1 * deltaCl2 * f;
-            //output_screen(l1 << ' ' << l2 << ' ' << ' ' << coupling_[l1][l2] << ' ' << clTot1 << ' ' << clTot2 << ' ' << ' ' << deltaCl1 << ' ' << deltaCl2 << ' ' << chi2 << std::endl);
         }
     }
 

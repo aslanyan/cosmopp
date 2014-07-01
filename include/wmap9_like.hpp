@@ -106,6 +106,8 @@ private:
     bool useLowlT_, useHighlT_, useLowlP_, useHighlP_, useGibbs_, useTTBeam_;
     double lowlTChi2_, lowlTDet_, highlT_, teChi2_, teDet_, lowlPChi2_, lowlPDet_, tbChi2_, tbDet_, ttBeam_;
     static bool initialized_;
+    std::vector<double> cosmoParams_;
+    bool prevCosmoCalculated_;
 };
 
 #endif

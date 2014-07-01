@@ -35,6 +35,12 @@ public:
     /// \param sigma The sigma of the prior
     void setParamGauss(int i, const std::string& name, double mean, double sigma);
 
+    /// Define a given parameter to have a general prior. One of the parameter setting functions must be called for each parameter before the run.
+    /// \param i The index of the parameter, 0 <= i < number of parameters.
+    /// \param name The name of the parameter.
+    /// \param min The minimum value of the parameter (the lower bound for the prior).
+    /// \param max The maximum value of the parameter (the upper bound for the prior).
+    /// \param distrib The prior function. This function should be valid between min and max.
     void setParamGeneral(int i, const std::string& name, double min, double max, const Math::RealFunction& distrib);
 
     /// Get the name of a parameter.
