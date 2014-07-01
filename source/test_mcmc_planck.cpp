@@ -31,21 +31,21 @@ TestMCMCPlanck::runSubTest(unsigned int i, double& res, double& expected, std::s
     std::string root = "slow_test_files/mcmc_planck_test";
     MetropolisHastings mh(20, planckLike, root);
 
-    mh.setParam(0, "ombh2", 0.005, 0.1, 0.022, 0.0003, 0.0002);
-    mh.setParam(1, "omch2", 0.001, 0.99, 0.12, 0.003, 0.002);
-    mh.setParam(2, "h", 0.2, 1.0, 0.7, 0.02, 0.01);
-    mh.setParam(3, "tau", 0.01, 0.8, 0.1, 0.02, 0.01);
+    mh.setParam(0, "ombh2", 0.005, 0.1, 0.022, 0.0003, 0.0001);
+    mh.setParam(1, "omch2", 0.001, 0.99, 0.12, 0.003, 0.0005);
+    mh.setParam(2, "h", 0.2, 1.0, 0.7, 0.02, 0.002);
+    mh.setParam(3, "tau", 0.01, 0.8, 0.1, 0.02, 0.005);
     mh.setParam(4, "ns", 0.9, 1.1, 1.0, 0.01, 0.005);
-    mh.setParam(5, "As", 2.7, 4.0, 3.0, 0.01, 0.005);
+    mh.setParam(5, "As", 2.7, 4.0, 3.0, 0.01, 0.001);
 
     mh.setParam(6, "A_ps_100", 0, 360, 100, 100, 60);
     mh.setParam(7, "A_ps_143", 0, 270, 50, 20, 13);
     mh.setParam(8, "A_ps_217", 0, 450, 100, 30, 16);
     mh.setParam(9, "A_cib_143", 0, 20, 10, 10, 5);
-    mh.setParam(10, "A_cib_217", 0, 80, 30, 15, 7);
+    mh.setParam(10, "A_cib_217", 0, 80, 30, 15, 3);
     mh.setParam(11, "A_sz", 0, 10, 5, 5, 2.7);
     mh.setParam(12, "r_ps", 0.0, 1.0, 0.9, 0.2, 0.08);
-    mh.setParam(13, "r_cib", 0.0, 1.0, 0.4, 0.4, 0.2);
+    mh.setParam(13, "r_cib", 0.0, 1.0, 0.4, 0.4, 0.1);
     mh.setParam(14, "n_Dl_cib", -2, 2, 0.5, 0.2, 0.1);
     mh.setParam(15, "cal_100", 0.98, 1.02, 1.0, 0.0008, 0.0004);
     mh.setParam(16, "cal_127", 0.95, 1.05, 1.0, 0.003, 0.0013);
@@ -53,14 +53,17 @@ TestMCMCPlanck::runSubTest(unsigned int i, double& res, double& expected, std::s
     mh.setParam(18, "A_ksz", 0, 10, 5, 6, 3);
     mh.setParam(19, "Bm_1_1", -20, 20, 0.5, 1.0, 0.6);
 
-    std::vector<int> blocks(3);
-    blocks[0] = 4;
-    blocks[1] = 6;
-    blocks[2] = 20;
-    //mh.specifyParameterBlocks(blocks);
+    std::vector<int> blocks(17);
+    blocks[0] = 3;
+    blocks[1] = 4;
+    blocks[2] = 6;
+    for(int i = 3; i < 17; ++i)
+        blocks[i] = i + 4;
+
+    mh.specifyParameterBlocks(blocks);
 
     const unsigned long burnin = 200;
-    const int nChains = mh.run(10000, 1, burnin, MetropolisHastings::GELMAN_RUBIN, 0.01);
+    const int nChains = mh.run(25000, 1, burnin, MetropolisHastings::GELMAN_RUBIN, 0.01);
     
     subTestName = std::string("standard_param_limits");
     res = 1;
@@ -69,12 +72,21 @@ TestMCMCPlanck::runSubTest(unsigned int i, double& res, double& expected, std::s
     if(!isMaster())
         return;
 
-    MarkovChain chain(nChains, root.c_str(), burnin);
+    const unsigned int thin = 10;
+    MarkovChain chain(nChains, root.c_str(), burnin, thin);
 
     const int nPoints = 1000;
 
     const double expectedMedian[6] = {0.02217, 0.1186, 0.679, 0.089, 0.9635, 3.085};
     const double expectedSigma[6] = {0.00033, 0.0031, 0.015, 0.032, 0.0094, 0.057};
+
+    std::vector<double> smoothingScale(20, 0.0);
+    smoothingScale[0] = 0.00003;
+    smoothingScale[1] = 0.0003;
+    smoothingScale[2] = 0.0015;
+    smoothingScale[3] = 0.003;
+    smoothingScale[4] = 0.0009;
+    smoothingScale[5] = 0.006;
 
     std::ofstream outParamLimits("slow_test_files/mcmc_planck_param_limits.txt");
     for(int i = 0; i < 20; ++i)
@@ -82,7 +94,7 @@ TestMCMCPlanck::runSubTest(unsigned int i, double& res, double& expected, std::s
         const std::string& paramName = mh.getParamName(i);
         std::stringstream fileName;
         fileName << "slow_test_files/mcmc_planck_" << paramName << ".txt";
-        Posterior1D* p = chain.posterior(i);
+        Posterior1D* p = chain.posterior(i, Posterior1D::GAUSSIAN_SMOOTHING, smoothingScale[i]);
 
         std::ofstream out(fileName.str().c_str());
         const double delta = (p->max() - p->min()) / nPoints;
