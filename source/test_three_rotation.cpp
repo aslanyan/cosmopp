@@ -7,7 +7,7 @@
 std::string
 TestThreeRotation::name() const
 {
-    return std::string("CMB TESTER");
+    return std::string("THREE ROTATION TESTER");
 }
 
 unsigned int
