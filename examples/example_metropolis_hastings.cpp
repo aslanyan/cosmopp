@@ -1,6 +1,10 @@
 #include <string>
 #include <fstream>
 
+#ifdef COSMO_MPI
+#include <mpi.h>
+#endif
+
 #include <macros.hpp>
 #include <exception_handler.hpp>
 #include <mcmc.hpp>
@@ -35,6 +39,19 @@ int main(int argc, char *argv[])
 
         using namespace Math;
 
+        // Check if this is the master MPI process
+        bool isMaster = true;
+#ifdef COSMO_MPI
+        int hasMpiInitialized;
+        MPI_Initialized(&hasMpiInitialized);
+        if(!hasMpiInitialized)
+            MPI_Init(NULL, NULL);
+        int rank;
+        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+        if(rank != 0)
+            isMaster = false;
+#endif
+
         // Create the likelihood
         ExampleMHLikelihood like;
         std::string root = "example_files/metropolis_hastings";
@@ -44,47 +61,64 @@ int main(int argc, char *argv[])
 
         // Assign parameter names and ranges
         const double xMin = -10, xMax = 10, yMin = -10, yMax = 10;
-        mh.setParam(0, "x", xMin, xMax, 0, 5, 1, 0.05);
-        mh.setParam(1, "y", yMin, yMax, 0, 5, 1, 0.05);
+        mh.setParam(0, "x", xMin, xMax, 0, 5, 0.5, 0.05);
+        mh.setParam(1, "y", yMin, yMax, 0, 5, 0.5, 0.05);
+
+        // Set the Metropolis-Hastings sampler to vary both parameters together as one block
+        std::vector<int> blocks(1, 2);
+        mh.specifyParameterBlocks(blocks);
 
         // Choose the burin and run
         const unsigned long burnin = 1000;
-        const int nChains = mh.run(100000, 0, burnin, MetropolisHastings::GELMAN_RUBIN, 0.001);
+        const int nChains = mh.run(1000000, 0, burnin, MetropolisHastings::GELMAN_RUBIN, 0.001);
 
-        // Read the resulting chain(s) without thinning
-        const unsigned int thin = 1;
-        MarkovChain chain(nChains, root.c_str(), burnin, thin);
-
-        // Get the one dimensional marginalized posterior distributions, Gaussian smoothed with a scale of 0.3
-        Posterior1D* px = chain.posterior(0, Posterior1D::GAUSSIAN_SMOOTHING, 0.2);
-        Posterior1D* py = chain.posterior(1, Posterior1D::GAUSSIAN_SMOOTHING, 0.2);
-
-        // Get the two dimensional posterior distribution, gaussian smoothed with a scale of 0.25
-        Posterior2D* pxy = chain.posterior(0, 1, 0.2, 0.2);
-
-        // Write the distributions into text files
-        px->writeIntoFile("example_files/mh_px.txt");
-        py->writeIntoFile("example_files/mh_py.txt");
-        pxy->writeIntoFile("example_files/mh_pxy.txt", 5000);
-
-        // Write the contour levels for the 2D distribution into a text file. This can be used later to make contour plots
-        std::ofstream out("example_files/mh_contour_levels.txt");
-        if(!out)
+        // Only the master process will analyze the results
+        if(isMaster)
         {
-            std::stringstream exceptionStr;
-            exceptionStr << "Cannot write into file example_files/mh_contour_levels.txt.";
-            exc.set(exceptionStr.str());
-            throw exc;
+            // Read the resulting chain(s) with thinning
+            const unsigned int thin = 10;
+            MarkovChain chain(nChains, root.c_str(), burnin, thin);
+
+            // Get the one dimensional marginalized posterior distributions, Gaussian smoothed with a scale of 0.3
+            Posterior1D* px = chain.posterior(0, Posterior1D::GAUSSIAN_SMOOTHING);
+            Posterior1D* py = chain.posterior(1, Posterior1D::GAUSSIAN_SMOOTHING);
+
+            // Get the two dimensional posterior distribution, gaussian smoothed with a scale of 0.25
+            Posterior2D* pxy = chain.posterior(0, 1);
+
+            // Write the distributions into text files
+
+            output_screen("Writing the distributions into text files..." << std::endl);
+            px->writeIntoFile("example_files/mh_px.txt");
+            py->writeIntoFile("example_files/mh_py.txt");
+            pxy->writeIntoFile("example_files/mh_pxy.txt");
+            output_screen("OK" << std::endl);
+
+            // Write the contour levels for the 2D distribution into a text file. This can be used later to make contour plots
+            std::ofstream out("example_files/mh_contour_levels.txt");
+            if(!out)
+            {
+                std::stringstream exceptionStr;
+                exceptionStr << "Cannot write into file example_files/mh_contour_levels.txt.";
+                exc.set(exceptionStr.str());
+                throw exc;
+            }
+
+            out << pxy->get1SigmaLevel() << std::endl;
+            out.close();
+
+            // Delete the posterior distributions
+            delete px;
+            delete py;
+            delete pxy;
         }
-
-        out << pxy->get1SigmaLevel() << std::endl << pxy->get2SigmaLevel() << std::endl;
-        out.close();
-
-        // Delete the posterior distributions
-        delete px;
-        delete py;
-        delete pxy;
-
+        // Finalize MPI if not done so yet
+#ifdef COSMO_MPI
+        int hasMpiFinalized;
+        MPI_Finalized(&hasMpiFinalized);
+        if(!hasMpiFinalized)
+            MPI_Finalize();
+#endif
     } catch (std::exception& e)
     {
         output_screen("EXCEPTION CAUGHT!!! " << std::endl << e.what() << std::endl);

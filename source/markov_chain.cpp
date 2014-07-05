@@ -39,11 +39,31 @@ Posterior1D::generate(SmoothingMethod method, double scale)
     check(max_ > min_, "at least 2 different data points need to be added before generating");
 
     check(scale >= 0, "invalid scale " << scale);
-    int resolution = 5 * (int)std::floor(std::sqrt(double(points_.size())));
-    if(scale != 0)
-        resolution = 5 * (int)std::floor((max_ - min_) / scale);
+
+    std::vector<double> pointsSorted = points_;
+    std::sort(pointsSorted.begin(), pointsSorted.end());
+
+    unsigned int q1 = (unsigned int) (0.25 * pointsSorted.size());
+    if(q1 > pointsSorted.size())
+        q1 = 0;
+    unsigned int q3 = (unsigned int) (0.75 * pointsSorted.size());
+    if(q3 > pointsSorted.size())
+        q3 = pointsSorted.size() - 1;
+
+    const double iqr = pointsSorted[q3] - pointsSorted[q1];
+    const double myBinSize = 2 * iqr * std::pow(double(pointsSorted.size()), -1.0 / 3.0);
+
+    int resolution;
+    if(myBinSize == 0 || pointsSorted.size() < 5)
+        resolution = 1;
     else
-        scale = 5 * (max_ - min_) / resolution;
+        resolution = (max_ - min_) / myBinSize;
+
+    if(scale == 0)
+    {
+        check(iqr > 0, "cannot determine smmoothing scale because iqr = 0");
+        scale = iqr / 8;
+    }
 
     check(resolution > 0, "");
 
@@ -204,17 +224,49 @@ Posterior2D::addPoint(double x1, double x2, double prob, double like)
 void
 Posterior2D::generate(double scale1, double scale2)
 {
-    const int res = 10 * (int)std::ceil(std::sqrt(std::sqrt(double(points1_.size()))));
-    int res1 = res, res2 = res;
-    if(scale1 == 0)
-        scale1 = 5 * (max1_ - min1_) / res1;
+    std::vector<double> points1Sorted = points1_;
+    std::sort(points1Sorted.begin(), points1Sorted.end());
+
+    unsigned int q1 = (unsigned int) (0.25 * points1Sorted.size());
+    if(q1 > points1Sorted.size())
+        q1 = 0;
+    unsigned int q3 = (unsigned int) (0.75 * points1Sorted.size());
+    if(q3 > points1Sorted.size())
+        q3 = points1Sorted.size() - 1;
+
+    const double iqr1 = points1Sorted[q3] - points1Sorted[q1];
+    const double myBinSize1 = 2 * iqr1 * std::pow(double(points1Sorted.size()), -1.0 / 3.0);
+
+    int res1, res2;
+    if(myBinSize1 == 0 || points1Sorted.size() < 5)
+        res1 = 1;
     else
-        res1 = 5 * (int)std::floor((max1_ - min1_) / scale1);
+        res1 = (max1_ - min1_) / myBinSize1;
+
+    if(scale1 == 0)
+    {
+        check(iqr1 > 0, "cannot determine smmoothing scale because iqr = 0");
+        scale1 = iqr1 / 8;
+    }
+
+    std::vector<double> points2Sorted = points2_;
+    std::sort(points2Sorted.begin(), points2Sorted.end());
+
+    check(points2Sorted.size() == points1Sorted.size(), "");
+
+    const double iqr2 = points2Sorted[q3] - points2Sorted[q1];
+    const double myBinSize2 = 2 * iqr2 * std::pow(double(points2Sorted.size()), -1.0 / 3.0);
+
+    if(myBinSize2 == 0 || points2Sorted.size() < 5)
+        res2 = 1;
+    else
+        res2 = (max2_ - min2_) / myBinSize2;
 
     if(scale2 == 0)
-        scale2 = 5 * (max2_ - min2_) / res2;
-    else
-        res2 = 5 * (int)std::floor((max2_ - min2_) / scale2);
+    {
+        check(iqr2 > 0, "cannot determine smmoothing scale because iqr = 0");
+        scale2 = iqr2 / 8;
+    }
 
     check(res1 > 0, "");
     check(res2 > 0, "");
@@ -264,19 +316,9 @@ Posterior2D::generate(double scale1, double scale2)
         delete cumulInv_;
     }
 
-    std::vector<double> pointsX1, pointsX2, pointsY;
-    for(int i = 0; i < x1.size(); ++i)
-    {
-        for(int j = 0; j < x2.size(); ++j)
-        {
-            pointsX1.push_back(x1[i]);
-            pointsX2.push_back(x2[j]);
-            pointsY.push_back(y[i][j]);
-        }
-    }
+    smooth_ = new Math::GaussSmooth2D(x1, x2, y, scale1, scale2);
 
-    smooth_ = new Math::GaussSmooth2D(pointsX1, pointsX2, pointsY, scale1, scale2);
-    const int N1 = 10 * res1, N2 = 10 * res2;
+    const int N1 = 1000, N2 = 1000;
     const double delta1 = (x1[x1.size() - 1] - x1[0]) / N1;
     const double delta2 = (x2[x2.size() - 1] - x2[0]) / N2;
 

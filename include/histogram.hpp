@@ -5,6 +5,7 @@
 #include <map>
 #include <limits>
 #include <cmath>
+#include <algorithm>
 
 namespace Math
 {
@@ -49,7 +50,7 @@ public:
     /// \return The data size.
     int getDataSize() const { return data_.size(); }
     
-    /// This function creates an actual histogram out of the data given. Calling without any arguments creates a histogram on the whole range of data with an optimal number of bins.
+    /// This function creates an actual histogram out of the data given. Calling without any arguments creates a histogram on the whole range of data with an optimal number of bins. The optimal number is determined using the Freedman-Diaconis rule.
     /// \param min The minimum of the range to be used.
     /// \param max The maximum of the range to be used.
     /// \param nBins The number of bins to be used.
@@ -100,7 +101,24 @@ void Histogram<T>::createHistogram(VariableType min, VariableType max, int nBins
     check(max > min, "");
     
     if(nBins == 0)
-        nBins = (int)std::ceil(std::sqrt((double)data_.size()));
+    {
+        //nBins = (int)std::ceil(std::sqrt((double)data_.size()));
+        std::sort(data_.begin(), data_.end());
+        unsigned int q1 = (unsigned int) (0.25 * data_.size());
+        unsigned int q3 = (unsigned int) (0.75 * data_.size());
+        if(q1 > data_.size())
+            q1 = 0;
+        if(q3 > data_.size())
+            q3 = data_.size() - 1;
+
+        const double iqr = data_[q3] - data_[q1];
+
+        const double binSize = 2 * iqr * std::pow(double(data_.size()), -1.0 / 3.0);
+        if(binSize == 0 || data_.size() < 5)
+            nBins = 1;
+        else
+            nBins = (int) ((max_ - min_) / binSize);
+    }
     
     check(nBins > 0, "The number of bins must be positive.");
     

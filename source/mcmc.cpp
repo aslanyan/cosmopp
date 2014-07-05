@@ -82,13 +82,13 @@ MetropolisHastings::~MetropolisHastings()
 
     if(!isMaster())
     {
-        MPI_Status st;
-        MPI_Wait((MPI_Request*) haveStoppedMesReq_, &st);
+        //MPI_Status st;
+        //MPI_Wait((MPI_Request*) haveStoppedMesReq_, &st);
 
         for(int i = 0; i < updateRequests_.size(); ++i)
         {
-            MPI_Status updateSt;
-            MPI_Wait((MPI_Request*) updateRequests_[i], &updateSt);
+            //MPI_Status updateSt;
+            //MPI_Wait((MPI_Request*) updateRequests_[i], &updateSt);
             delete (MPI_Request*) updateRequests_[i];
         }
     }

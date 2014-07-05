@@ -22,7 +22,7 @@ for i in xrange(len(lines)):
         expected = np.exp(- xVal * xVal / 10) / np.sqrt(10 * math.pi)
         y1.append(expected)
 
-plt.plot(x, y, 'b', linewidth = 2)
+plt.plot(x, y, 'r', linewidth = 2)
 plt.plot(x, y1, 'g--', linewidth = 2)
 plt.xlabel('$x$', fontsize = 20)
 #plt.ylabel('$y$', fontsize = 15)

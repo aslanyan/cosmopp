@@ -27,6 +27,7 @@
 #include <test_planck_like.hpp>
 #include <test_wmap9_like.hpp>
 #include <test_like_high.hpp>
+#include <test_like_low.hpp>
 #include <test_inflation.hpp>
 #include <test_wigner_3j.hpp>
 #include <test_table_function.hpp>
@@ -77,6 +78,8 @@ TestFramework* createTest(const std::string& name)
         test = new TestCMBGibbs;
     else if(name == "like_high")
         test = new TestLikeHigh;
+    else if(name == "like_low")
+        test = new TestLikeLow;
 #endif
 #endif
 #endif
@@ -194,6 +197,7 @@ int main(int argc, char *argv[])
 #ifdef COSMO_CLASS
         slowTests.insert("cmb_gibbs");
         slowTests.insert("like_high");
+        slowTests.insert("like_low");
 #endif
 #endif
 #endif

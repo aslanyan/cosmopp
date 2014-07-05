@@ -25,6 +25,9 @@ for l1 in lines1:
 x = []
 y = []
 
+x1 = np.arange(-8, 8, 0.05)
+y1 = np.arange(-8, 8, 0.05)
+
 s = lines[0].split()
 for ss in s:
         x.append(float(ss))
@@ -34,7 +37,7 @@ for ss in s:
         y.append(float(ss))
 
 z = np.zeros((len(x), len(y)))
-z1 = np.zeros((len(x), len(y)))
+z1 = np.zeros((len(x1), len(y1)))
 
 if len(lines) - 2 != len(x):
         print 'Disaster'
@@ -47,13 +50,17 @@ for i in xrange(2, len(lines)):
                 exit(1)
         for j in xrange(len(s)):
                 z[i - 2, j] = float(s[j])
-                xVal = x[i - 2]
-                yVal = y[j]
+
+for i in xrange(len(x1)):
+        for j in xrange(len(y1)):
+                xVal = x1[i]
+                yVal = y1[j]
                 x1Val = (xVal + yVal) / 2
                 y1Val = (xVal - yVal) / 2
-                z1[i - 2, j] = np.exp(-x1Val * x1Val / 2) / np.sqrt(2 * math.pi) * np.exp(-y1Val * y1Val / 8) / np.sqrt(8 * math.pi)
+                z1[i, j] = np.exp(-x1Val * x1Val / 2) / np.sqrt(2 * math.pi) * np.exp(-y1Val * y1Val / 8) / np.sqrt(8 * math.pi)
 
 X, Y = np.meshgrid(x, y)
+X1, Y1 = np.meshgrid(x1, y1)
 
 plt.figure()
 
@@ -62,17 +69,20 @@ plt.figure()
 #plt.colorbar()
 
 #pre-calculated for the example likelihood used in the analysis
-levels1 = [0.025, 0.0008915]
+#levels1 = [0.025, 0.0008915]
+levels1 = [0.025]
 
 #plot the contours
-plt.contour(X, Y, z, levels, colors = ('r', 'b'), linewidths = 2)
-plt.contour(X, Y, z1, levels1, colors = ('g'), linestyles = ('--'), linewidths = 2)
+plt.contour(X, Y, z, levels, colors = ('r'), linewidths = 2)
+plt.contour(X1, Y1, z1, levels1, colors = ('g'), linestyles = ('--'), linewidths = 2)
 
 #put labels on the contours
 #plt.clabel(CS, inline=1, fontsize=10)
 
 plt.xlabel('$x$', fontsize = 20)
 plt.ylabel('$y$', fontsize = 20)
+
+plt.axis([-5,5,-5,5])
 
 #plt.show()
 
