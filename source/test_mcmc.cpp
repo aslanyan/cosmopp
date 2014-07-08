@@ -15,7 +15,7 @@ TestMCMCFast::name() const
 unsigned int
 TestMCMCFast::numberOfSubtests() const
 {
-    return 1;
+    return 2;
 }
 
 class MCMCFastTestLikelihood : public Math::LikelihoodFunction
@@ -46,35 +46,47 @@ private:
 void
 TestMCMCFast::runSubTest(unsigned int i, double& res, double& expected, std::string& subTestName)
 {
-    check(i >= 0 && i < 1, "invalid index " << i);
+    check(i >= 0 && i < 2, "invalid index " << i);
     
     using namespace Math;
 
     MCMCFastTestLikelihood l1(5, -4, 2, 3);
-    std::string root1 = "test_files/mcmc_fast_test";
-    MetropolisHastings mh1(2, l1, root1);
+    MCMCFastTestLikelihood l2(5, -4, 2, 3);
+    std::stringstream root1;
+    root1 << "test_files/mcmc_fast_test_" << i;
+    MetropolisHastings mh1(2, l1, root1.str());
 
     const double xMin = -20, xMax = 20, yMin = -20, yMax = 20;
     mh1.setParam(0, "x", xMin, xMax, 0, 4, 2, 0.1);
     mh1.setParam(1, "y", yMin, yMax, 0, 6, 3, 0.1);
     const unsigned long burnin = 100;
     const unsigned int thin = 2;
+
+    if(i == 1)
+        mh1.setFastDrag(1, l2, 10);
+
     const int nChains = mh1.run(1000000, 0, burnin, MetropolisHastings::GELMAN_RUBIN, 0.001);
 
     subTestName = std::string("2_param_gauss");
+
+    if(i == 1)
+        subTestName = std::string("2_param_gauss_fast_drag");
+
     res = 1;
     expected = 1;
 
     if(!isMaster())
         return;
 
-    MarkovChain chain(nChains, root1.c_str(), burnin, thin);
+    MarkovChain chain(nChains, root1.str().c_str(), burnin, thin);
     Posterior1D* px = chain.posterior(0);
     Posterior1D* py = chain.posterior(1);
 
     const int nPoints = 1000;
 
-    std::ofstream outPx("test_files/mcmc_fast_px.txt");
+    std::stringstream pxFileName;
+    pxFileName << "test_files/mcmc_fast_px_" << i << ".txt";
+    std::ofstream outPx(pxFileName.str().c_str());
     const double xDelta = (px->max() - px->min()) / nPoints;
     for(int i = 0; i <= nPoints; ++i)
     {
@@ -85,7 +97,9 @@ TestMCMCFast::runSubTest(unsigned int i, double& res, double& expected, std::str
     }
     outPx.close();
 
-    std::ofstream outPy("test_files/mcmc_fast_py.txt");
+    std::stringstream pyFileName;
+    pyFileName << "test_files/mcmc_fast_py_" << i << ".txt";
+    std::ofstream outPy(pyFileName.str().c_str());
     const double yDelta = (py->max() - py->min()) / nPoints;
     for(int i = 0; i <= nPoints; ++i)
     {
@@ -123,17 +137,17 @@ TestMCMCFast::runSubTest(unsigned int i, double& res, double& expected, std::str
         res = 0;
     }
 
-    if(!Math::areEqual(-4.0, yMedian, 0.4))
+    if(i == 0 && !Math::areEqual(-4.0, yMedian, 0.4))
     {
         output_screen("FAIL: Expected y median is -4, the result is " << yMedian << std::endl);
         res = 0;
     }
-    if(!Math::areEqual(-7.0, yLower, 0.4))
+    if(i == 0 && !Math::areEqual(-7.0, yLower, 0.4))
     {
         output_screen("FAIL: Expected y lower limit is -7, the result is " << yLower << std::endl);
         res = 0;
     }
-    if(!Math::areEqual(-1.0, yUpper, 0.8))
+    if(i == 0 && !Math::areEqual(-1.0, yUpper, 0.8))
     {
         output_screen("FAIL: Expected y upper limit is -1, the result is " << yUpper << std::endl);
         res = 0;

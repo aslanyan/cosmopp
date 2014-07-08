@@ -105,6 +105,8 @@ public:
     /// \param blocks A vector defining the indices of the parameters in each block. Each element of the vector is the index following the end of the corresponding block. There are as many elements as there are blocks. For example, if all of the parameters are to belong to one block, the vector should contain one element with value equal to the number of the parameters.
     void specifyParameterBlocks(const std::vector<int>& blocks);
 
+    void setFastDrag(int i, LikelihoodFunction& spareLike, int n = 1);
+
     /// Set an external prior function for all of the parameters. The values set by setParam or setParamGauss will then be ignored. 
     /// One of these functions still needs to be called for each parameter to set their names, starting values, sampling widths, and accuracies.
     /// \param prior A pointer to the external prior function.
@@ -159,7 +161,8 @@ private:
     
 private:
     int n_;
-    LikelihoodFunction& like_;
+    LikelihoodFunction* like_;
+    LikelihoodFunction* spareLike_;
     std::string fileRoot_, resumeFileName_;
     std::vector<double> param1_, param2_, starting_, samplingWidth_, accuracy_;
     std::vector<PRIOR_MODE> priorMods_;
@@ -168,6 +171,10 @@ private:
     PriorFunctionBase* externalPrior_;
     ProposalFunctionBase* externalProposal_;
     std::vector<int> blocks_;
+
+    bool fastDrag_;
+    int fastIndex_;
+    int numDrag_;
 
     std::vector<double> rGelmanRubin_;
 
@@ -362,6 +369,8 @@ MetropolisHastings::checkStoppingCrit()
 
     const bool synchronized = synchronizeCommInfo();
     std::list<CommunicationInfo>::const_iterator firstIt;
+
+    const int nParamsToCheck = (fastDrag_ ? fastIndex_ : n_);
         
     switch(cd_)
     {
@@ -390,7 +399,7 @@ MetropolisHastings::checkStoppingCrit()
         if(total < 100)
             return false;
 
-        for(int i = 0; i < n_; ++i)
+        for(int i = 0; i < nParamsToCheck; ++i)
         {
             totalMean = 0;
             for(int j = 0; j < nChains_; ++j)
@@ -422,7 +431,7 @@ MetropolisHastings::checkStoppingCrit()
         }
         break;
     case ACCURACY:
-        for(int i = 0; i < n_; ++i)
+        for(int i = 0; i < nParamsToCheck; ++i)
         {
             s = 0;
             for(int j = 0; j < nChains_; ++j)

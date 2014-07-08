@@ -67,8 +67,8 @@ public:
     double calculate(double* params, int nPar);
 
 private:
-    void* commander_, *camspec_, *pol_, *actspt_;
-    void* lens_;
+    static void* commander_, *camspec_, *pol_, *actspt_;
+    static void* lens_;
     int commanderLMax_, camspecLMax_, lensingLMax_, polLMax_, actSptLMax_, lMax_;
     CMB cmb_;
     std::vector<std::string> spectraNames_;

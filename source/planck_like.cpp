@@ -12,7 +12,13 @@
 #define MY_STRINGIZE(P) MY_STRINGIZE1(P)
 #define PLANCK_DATA_DIR_STR MY_STRINGIZE(PLANCK_DATA_DIR)
 
-PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useLensing, bool usePol, bool useActSpt, bool includeTensors) : commander_(NULL), camspec_(NULL), lens_(NULL), pol_(NULL), actspt_(NULL), spectraNames_(6), cosmoParams_(6), prevCosmoCalculated_(false)
+void* PlanckLikelihood::commander_ = NULL;
+void* PlanckLikelihood::camspec_ = NULL;
+void* PlanckLikelihood::lens_ = NULL;
+void* PlanckLikelihood::pol_ = NULL;
+void* PlanckLikelihood::actspt_ = NULL;
+
+PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useLensing, bool usePol, bool useActSpt, bool includeTensors) : spectraNames_(6), cosmoParams_(6), prevCosmoCalculated_(false)
 {
     check(useCommander || useCamspec || useLensing || usePol, "at least one likelihood must be specified");
 
@@ -37,7 +43,7 @@ PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useL
     lensingLMax_ = 0;
     actSptLMax_ = 0;
 
-    if(useCommander)
+    if(useCommander && !commander_)
     {
         std::stringstream commanderPath;
         commanderPath << planckLikeDir << "/commander_v4.1_lm49.clik";
@@ -69,7 +75,7 @@ PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useL
         */
     }
 
-    if(useCamspec)
+    if(useCamspec && !camspec_)
     {
         std::stringstream camspecPath;
         camspecPath << planckLikeDir << "/CAMspec_v6.2TN_2013_02_26_dist.clik";
@@ -101,7 +107,7 @@ PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useL
         */
     }
 
-    if(usePol)
+    if(usePol && !pol_)
     {
         std::stringstream polPath;
         polPath << planckLikeDir << "/lowlike_v222.clik";
@@ -133,7 +139,7 @@ PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useL
         */
     }
 
-    if(useLensing)
+    if(useLensing && !lens_)
     {
         std::stringstream lensPath;
         lensPath << planckLikeDir << "/lensing_likelihood_v4_ref.clik_lensing";
@@ -159,7 +165,7 @@ PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useL
         */
     }
 
-    if(useActSpt)
+    if(useActSpt && !actspt_)
     {
         std::stringstream actSptPath;
         actSptPath << planckLikeDir << "/actspt_2013_01.clik";
