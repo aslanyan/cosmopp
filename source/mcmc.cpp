@@ -494,6 +494,8 @@ MetropolisHastings::run(unsigned long maxChainLength, int writeResumeInformation
                     
                     const double q = uniformGen_->generate(); 
 
+                    //output_screen2("Fast drag round " << k << ": p = " << p << ", q = " << q << std::endl);
+
                     if(q > p)
                     {
                         for(int j = fastIndex_; j < n_; ++j)
@@ -525,6 +527,7 @@ MetropolisHastings::run(unsigned long maxChainLength, int writeResumeInformation
                     p = 1;
                 
                 const double q = uniformGen_->generate(); 
+                //output_screen2("Moving slow parameters: p = " << p << ", q = " << q << std::endl);
                 if(q <= p)
                 {
                     currentPrior_ = priorsNew[numDrag_];

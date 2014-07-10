@@ -354,7 +354,7 @@ obj/mode_directions.o: source/mode_directions.cpp $(MACROS_HPP) $(EXCEPTION_HAND
 	$(CC) $(CFLAGS) source/mode_directions.cpp -o $@
 
 ifdef PLANCKDIR
-obj/planck_like.o: source/planck_like.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(PLANCK_LIKE_HPP)
+obj/planck_like.o: source/planck_like.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(PLANCK_LIKE_HPP) $(TIMER_HPP)
 	$(CC) $(CFLAGS) source/planck_like.cpp -o $@
 endif
 
