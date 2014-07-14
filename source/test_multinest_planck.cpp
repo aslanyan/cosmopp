@@ -100,7 +100,7 @@ TestMultinestPlanck::runSubTest(unsigned int i, double& res, double& expected, s
         // check the standard cosmological parameter limits
         if(i < 6)
         {
-            if(std::abs(expectedMedian[i] - median) > expectedSigma[i] / 2)
+            if(std::abs(expectedMedian[i] - median) > expectedSigma[i])
             {
                 output_screen("FAIL: Expected " << paramName << " median is " << expectedMedian[i] << ", the result is " << median << std::endl);
                 res = 0;
