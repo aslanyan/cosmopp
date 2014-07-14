@@ -27,21 +27,21 @@ TestMCMCPlanck::runSubTest(unsigned int i, double& res, double& expected, std::s
     
     using namespace Math;
 
-    PlanckLikelihood planckLike(true, true, true, false, false, false);
-    PlanckLikelihood planckLike1(true, true, true, false, false, false);
+    PlanckLikelihood planckLike(true, true, false, true, false, false);
+    PlanckLikelihood planckLike1(true, true, false, true, false, false);
     std::string root = "slow_test_files/mcmc_planck_test";
     MetropolisHastings mh(20, planckLike, root);
 
-    mh.setParam(0, "ombh2", 0.005, 0.1, 0.022, 0.0003, 0.00003);
-    mh.setParam(1, "omch2", 0.001, 0.99, 0.12, 0.003, 0.0003);
+    mh.setParam(0, "ombh2", 0.005, 0.1, 0.022, 0.0003, 0.00002);
+    mh.setParam(1, "omch2", 0.001, 0.99, 0.12, 0.003, 0.0002);
     mh.setParam(2, "h", 0.2, 1.0, 0.7, 0.02, 0.001);
-    mh.setParam(3, "tau", 0.01, 0.8, 0.1, 0.03, 0.003);
+    mh.setParam(3, "tau", 0.01, 0.8, 0.1, 0.01, 0.001);
     mh.setParam(4, "ns", 0.9, 1.1, 1.0, 0.01, 0.001);
     mh.setParam(5, "As", 2.7, 4.0, 3.0, 0.1, 0.001);
 
     mh.setParam(6, "A_ps_100", 0, 360, 100, 100, 5);
     mh.setParam(7, "A_ps_143", 0, 270, 50, 20, 1);
-    mh.setParam(8, "A_ps_217", 0, 450, 100, 30, 1);
+    mh.setParam(8, "A_ps_217", 0, 450, 100, 30, 2);
     mh.setParam(9, "A_cib_143", 0, 20, 10, 10, 0.5);
     mh.setParam(10, "A_cib_217", 0, 80, 30, 15, 0.5);
     mh.setParam(11, "A_sz", 0, 10, 5, 5, 0.3);
@@ -70,8 +70,8 @@ TestMCMCPlanck::runSubTest(unsigned int i, double& res, double& expected, std::s
 
     mh.setFastDrag(6, planckLike1, 2);
 
-    const unsigned long burnin = 500;
-    const int nChains = mh.run(25000, 1, burnin, MetropolisHastings::GELMAN_RUBIN, 0.01);
+    const unsigned long burnin = 1000;
+    const int nChains = mh.run(500000, 1, burnin, MetropolisHastings::GELMAN_RUBIN, 0.1);
     
     subTestName = std::string("standard_param_limits");
     res = 1;
@@ -85,8 +85,10 @@ TestMCMCPlanck::runSubTest(unsigned int i, double& res, double& expected, std::s
 
     const int nPoints = 1000;
 
-    const double expectedMedian[6] = {0.02217, 0.1186, 0.679, 0.089, 0.9635, 3.085};
-    const double expectedSigma[6] = {0.00033, 0.0031, 0.015, 0.032, 0.0094, 0.057};
+    //const double expectedMedian[6] = {0.02217, 0.1186, 0.679, 0.089, 0.9635, 3.085};
+    //const double expectedSigma[6] = {0.00033, 0.0031, 0.015, 0.032, 0.0094, 0.057};
+    const double expectedMedian[6] = {0.02205, 0.1199, 0.673, 0.089, 0.9603, 3.089};
+    const double expectedSigma[6] = {0.00028, 0.0027, 0.012, 0.013, 0.0073, 0.025};
 
     std::vector<double> smoothingScale(20, 0.0);
     smoothingScale[0] = 0.00003;
