@@ -28,7 +28,7 @@ TestMultinestPlanck::runSubTest(unsigned int i, double& res, double& expected, s
     
     using namespace Math;
 
-    PlanckLikelihood planckLike(true, true, true, false, false, false);
+    PlanckLikelihood planckLike(true, true, false, true, false, false);
     std::string root = "slow_test_files/multinest_planck_test";
     MnScanner mn(20, planckLike, 300, root);
 
@@ -67,8 +67,10 @@ TestMultinestPlanck::runSubTest(unsigned int i, double& res, double& expected, s
 
     const int nPoints = 1000;
 
-    const double expectedMedian[6] = {0.02217, 0.1186, 0.679, 0.089, 0.9635, 3.085};
-    const double expectedSigma[6] = {0.00033, 0.0031, 0.015, 0.032, 0.0094, 0.057};
+    //const double expectedMedian[6] = {0.02217, 0.1186, 0.679, 0.089, 0.9635, 3.085};
+    //const double expectedSigma[6] = {0.00033, 0.0031, 0.015, 0.032, 0.0094, 0.057};
+    const double expectedMedian[6] = {0.02205, 0.1199, 0.673, 0.089, 0.9603, 3.089};
+    const double expectedSigma[6] = {0.00028, 0.0027, 0.012, 0.013, 0.0073, 0.025};
 
     std::ofstream outParamLimits("slow_test_files/multinest_planck_param_limits.txt");
     for(int i = 0; i < 20; ++i)

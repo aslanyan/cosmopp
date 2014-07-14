@@ -209,7 +209,7 @@ PlanckLikelihood::setCosmoParams(const CosmologicalParams& params)
     bool wantPol = (pol_ != NULL);
     bool wantLens = (lens_ != NULL);
 
-    cmb_.initialize(params, wantT, wantPol, wantLens);
+    cmb_.initialize(params, wantT, wantPol, true);
 }
 
 void

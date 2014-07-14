@@ -1,9 +1,9 @@
-#include <string>
-#include <fstream>
-
 #ifdef COSMO_MPI
 #include <mpi.h>
 #endif
+
+#include <string>
+#include <fstream>
 
 #include <macros.hpp>
 #include <exception_handler.hpp>
