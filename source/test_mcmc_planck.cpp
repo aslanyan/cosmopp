@@ -70,7 +70,7 @@ TestMCMCPlanck::runSubTest(unsigned int i, double& res, double& expected, std::s
 
     mh.setFastDrag(6, planckLike1, 2);
 
-    const unsigned long burnin = 1000;
+    const unsigned long burnin = 5000;
     const int nChains = mh.run(500000, 1, burnin, MetropolisHastings::GELMAN_RUBIN, 0.1);
     
     subTestName = std::string("standard_param_limits");
@@ -126,7 +126,7 @@ TestMCMCPlanck::runSubTest(unsigned int i, double& res, double& expected, std::s
         // check the standard cosmological parameter limits
         if(i < 6)
         {
-            if(std::abs(expectedMedian[i] - median) > expectedSigma[i] / 2)
+            if(std::abs(expectedMedian[i] - median) > expectedSigma[i])
             {
                 output_screen("FAIL: Expected " << paramName << " median is " << expectedMedian[i] << ", the result is " << median << std::endl);
                 res = 0;
