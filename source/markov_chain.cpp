@@ -621,8 +621,8 @@ MarkovChain::getRange(std::vector<Element*>& container, double pUpper, double pL
     while(total <= pUpper && it != chain_.end())
     {
         total += (*it)->prob;
-        ++it;
         if(total > pLower)
             container.push_back(*it);
+        ++it;
     }
 }
