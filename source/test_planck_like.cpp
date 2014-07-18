@@ -45,6 +45,6 @@ TestPlanckLike::runSubTest(unsigned int i, double& res, double& expected, std::s
 
     subTestName = std::string("LCDM");
     res = like.likelihood();
-    expected = 10041; // calculated by running the Planck likelihood code itself on the same cl values
+    expected = 10038.47; // calculated by running the Planck likelihood code itself on the same cl values
 }
 

@@ -28,7 +28,6 @@
 #include <test_wmap9_like.hpp>
 #include <test_like_high.hpp>
 #include <test_like_low.hpp>
-#include <test_inflation.hpp>
 #include <test_wigner_3j.hpp>
 #include <test_table_function.hpp>
 #include <test_cubic_spline.hpp>
@@ -99,8 +98,6 @@ TestFramework* createTest(const std::string& name)
         test = new TestWMAP9Like;
 #endif
 #endif
-    else if(name == "inflation")
-        test = new TestInflation;
     else if(name == "wigner_3j")
         test = new TestWigner3J;
     else if(name == "table_function")
@@ -178,7 +175,6 @@ int main(int argc, char *argv[])
         fastTests.insert("wmap9_like");
 #endif
 #endif
-        fastTests.insert("inflation");
         fastTests.insert("wigner_3j");
         fastTests.insert("table_function");
         fastTests.insert("cubic_spline");

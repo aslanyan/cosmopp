@@ -56,5 +56,5 @@ TestWMAP9Like::runSubTest(unsigned int i, double& res, double& expected, std::st
     output_screen1("high-l TE chi2 = " << like.TEChi2() << ", det = " << like.TEDet() << ", total = " << like.TELike() << std::endl);
     output_screen1("high-l TB chi2 = " << like.TBChi2() << ", det = " << like.TBDet() << ", total = " << like.TBLike() << std::endl);
 
-    expected = 7592.002623; // calculated by running the WMAP9 likelihood code itself on the same cl values
+    expected = 7593.042; // calculated by running the WMAP9 likelihood code itself on the same cl values
 }

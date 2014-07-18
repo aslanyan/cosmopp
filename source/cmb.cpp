@@ -431,7 +431,16 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
         }
     }
 
-    if(transfer_init(pr_, br_, th_, pt_, tr_) == _FAILURE_)
+    if(nonlinear_init(pr_, br_, th_, pt_, pm_, nl_) == _FAILURE_)
+    {
+        std::stringstream exceptionStr;
+        exceptionStr << "CLASS: nonlinear_init failed!" << std::endl << nl_->error_message;
+        exc.set(exceptionStr.str());
+        throw exc;
+    }
+
+
+    if(transfer_init(pr_, br_, th_, pt_, nl_, tr_) == _FAILURE_)
     {
         std::stringstream exceptionStr;
         exceptionStr << "CLASS: transfer_init failed!" << std::endl << tr_->error_message;
@@ -448,7 +457,7 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
     sp_->has_tp = (wantT && wantLensing);
     sp_->has_ep = (wantPol && wantLensing);
 
-    if(spectra_init(pr_, br_, pt_, tr_, pm_, sp_) == _FAILURE_)
+    if(spectra_init(pr_, br_, pt_, pm_, nl_, tr_, sp_) == _FAILURE_)
     {
         std::stringstream exceptionStr;
         exceptionStr << "CLASS: spectra_init failed!" << std::endl << sp_->error_message;
@@ -460,14 +469,6 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
 
     if(wantLensing)
     {
-        if(nonlinear_init(pr_, br_, th_, pt_, tr_, pm_, sp_, nl_) == _FAILURE_)
-        {
-            std::stringstream exceptionStr;
-            exceptionStr << "CLASS: nonlinear_init failed!" << std::endl << nl_->error_message;
-            exc.set(exceptionStr.str());
-            throw exc;
-        }
-
         le_->has_lensed_cls = true;
         le_->has_tt = wantT;
         le_->has_ee = wantPol;
