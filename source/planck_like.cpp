@@ -13,13 +13,49 @@
 #define MY_STRINGIZE(P) MY_STRINGIZE1(P)
 #define PLANCK_DATA_DIR_STR MY_STRINGIZE(PLANCK_DATA_DIR)
 
-void* PlanckLikelihood::commander_ = NULL;
-void* PlanckLikelihood::camspec_ = NULL;
-void* PlanckLikelihood::lens_ = NULL;
-void* PlanckLikelihood::pol_ = NULL;
-void* PlanckLikelihood::actspt_ = NULL;
+struct PlanckLikelihoodContainer
+{
+    PlanckLikelihoodContainer() : commander(NULL), camspec(NULL), lens(NULL), pol(NULL), actspt(NULL)
+    {
+    }
 
-PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useLensing, bool usePol, bool useActSpt, bool includeTensors) : spectraNames_(6), cosmoParams_(6), prevCosmoCalculated_(false)
+    ~PlanckLikelihoodContainer()
+    {
+        if(commander)
+        {
+            clik_cleanup(&commander);
+            commander = NULL;
+        }
+        if(camspec)
+        {
+            clik_cleanup(&camspec);
+            camspec = NULL;
+        }
+        if(pol)
+        {
+            clik_cleanup(&pol);
+            pol = NULL;
+        }
+        if(actspt)
+        {
+            clik_cleanup(&actspt);
+            actspt = NULL;
+        }
+        if(lens)
+        {
+            clik_lensing_cleanup(&lens);
+            lens = NULL;
+        }
+    }
+
+    void* commander;
+    void* camspec;
+    void* lens;
+    void* pol;
+    void* actspt;
+};
+
+PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useLensing, bool usePol, bool useActSpt, bool includeTensors) : spectraNames_(6), cosmoParams_(6), prevCosmoCalculated_(false), commander_(NULL), camspec_(NULL), lens_(NULL), pol_(NULL), actspt_(NULL)
 {
     check(useCommander || useCamspec || useLensing || usePol || useActSpt, "at least one likelihood must be specified");
 
@@ -44,13 +80,16 @@ PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useL
     lensingLMax_ = 0;
     actSptLMax_ = 0;
 
+    static PlanckLikelihoodContainer cont;
+
     if(useCommander)
     {
         std::stringstream commanderPath;
         commanderPath << planckLikeDir << "/commander_v4.1_lm49.clik";
         char commanderPathCStr[100];
         std::strcpy(commanderPathCStr, commanderPath.str().c_str());
-        if(!commander_) commander_ = clik_init(commanderPathCStr, NULL);
+        if(!cont.commander) cont.commander = clik_init(commanderPathCStr, NULL);
+        commander_ = cont.commander;
 
         clik_get_has_cl(commander_, hasCl, NULL);
         clik_get_lmax(commander_, lMax, NULL);
@@ -82,7 +121,8 @@ PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useL
         camspecPath << planckLikeDir << "/CAMspec_v6.2TN_2013_02_26_dist.clik";
         char camspecPathCStr[100];
         std::strcpy(camspecPathCStr, camspecPath.str().c_str());
-        if(!camspec_) camspec_ = clik_init(camspecPathCStr, NULL);
+        if(!cont.camspec) cont.camspec = clik_init(camspecPathCStr, NULL);
+        camspec_ = cont.camspec;
 
         clik_get_has_cl(camspec_, hasCl, NULL);
         clik_get_lmax(camspec_, lMax, NULL);
@@ -114,7 +154,8 @@ PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useL
         polPath << planckLikeDir << "/lowlike_v222.clik";
         char polPathCStr[100];
         std::strcpy(polPathCStr, polPath.str().c_str());
-        if(!pol_) pol_ = clik_init(polPathCStr, NULL);
+        if(!cont.pol) cont.pol = clik_init(polPathCStr, NULL);
+        pol_ = cont.pol;
 
         clik_get_has_cl(pol_, hasCl, NULL);
         clik_get_lmax(pol_, lMax, NULL);
@@ -146,7 +187,8 @@ PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useL
         lensPath << planckLikeDir << "/lensing_likelihood_v4_ref.clik_lensing";
         char lensPathCStr[100];
         std::strcpy(lensPathCStr, lensPath.str().c_str());
-        if(!lens_) lens_ = clik_lensing_init(lensPathCStr, NULL);
+        if(!cont.lens) cont.lens = clik_lensing_init(lensPathCStr, NULL);
+        lens_ = cont.lens;
 
         lensingLMax_ = clik_lensing_get_lmax(lens_,NULL);
         if(lensingLMax_ > lMax_)
@@ -172,7 +214,8 @@ PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useL
         actSptPath << planckLikeDir << "/actspt_2013_01.clik";
         char actSptPathCStr[100];
         std::strcpy(actSptPathCStr, actSptPath.str().c_str());
-        if(!actspt_) actspt_ = clik_init(actSptPathCStr, NULL);
+        if(!cont.actspt) cont.actspt = clik_init(actSptPathCStr, NULL);
+        actspt_ = cont.actspt;
 
         clik_get_has_cl(actspt_, hasCl, NULL);
         clik_get_lmax(actspt_, lMax, NULL);
@@ -456,30 +499,5 @@ PlanckLikelihood::likelihood()
 
 PlanckLikelihood::~PlanckLikelihood()
 {
-    if(commander_)
-    {
-        clik_cleanup(&commander_);
-        commander_ = NULL;
-    }
-    if(camspec_)
-    {
-        clik_cleanup(&camspec_);
-        camspec_ = NULL;
-    }
-    if(pol_)
-    {
-        clik_cleanup(&pol_);
-        pol_ = NULL;
-    }
-    if(actspt_)
-    {
-        clik_cleanup(&actspt_);
-        actspt_ = NULL;
-    }
-    if(lens_)
-    {
-        clik_lensing_cleanup(&lens_);
-        lens_ = NULL;
-    }
 }
 

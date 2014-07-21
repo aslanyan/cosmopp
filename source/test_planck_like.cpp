@@ -10,7 +10,7 @@ TestPlanckLike::name() const
 unsigned int
 TestPlanckLike::numberOfSubtests() const
 {
-    return 1;
+    return 2;
 }
 
 void
@@ -34,17 +34,22 @@ TestPlanckLike::runSubTest(unsigned int i, double& res, double& expected, std::s
     const double sumMNu = 0.0;
 
     LambdaCDMParams paramsLCDM(omBH2, omCH2, h, tau, ns, as, pivot);
-    //LCDMWithTensorParams paramsLCDMTens(omBH2, omCH2, h, tau, ns, as, pivot, r, nt, pivot); 
+    LCDMWithTensorParams paramsLCDMTens(omBH2, omCH2, h, tau, ns, as, pivot, r, nt, pivot); 
 
-    PlanckLikelihood like(true, true, true, true, false, false);
+    PlanckLikelihood like(true, true, true, true, false, bool(i));
 
-    like.setCosmoParams(paramsLCDM);
+    if(i == 0)
+        like.setCosmoParams(paramsLCDM);
+    else
+        like.setCosmoParams(paramsLCDMTens);
     like.setCamspecExtraParams(153, 54.9, 55.8, 4, 55.5, 4, 0.91, 0.63, 0.6, 1, 1, 0.1, 1, 0.3);
 
     like.calculateCls();
 
     subTestName = std::string("LCDM");
+    if(i == 1)
+        subTestName = std::string("LCDM+Tensor");
     res = like.likelihood();
-    expected = 10038.47; // calculated by running the Planck likelihood code itself on the same cl values
+    expected = (i == 0 ? 10038.47 : 10048.5); // calculated by running the Planck likelihood code itself on the same cl values
 }
 
