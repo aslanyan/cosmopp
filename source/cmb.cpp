@@ -3,6 +3,8 @@
 #include <iomanip>
 #include <fstream>
 #include <cmath>
+#include <cstring>
+#include <cstdlib>
 
 #include <macros.hpp>
 #include <exception_handler.hpp>
@@ -43,7 +45,7 @@ CMB::deAllocate()
 }
 
 void
-CMB::preInitialize(int lMax, bool wantAllL, bool primordialInitialize, bool includeTensors, int lMaxTensors)
+CMB::preInitialize(int lMax, bool wantAllL, bool primordialInitialize, bool includeTensors, int lMaxTensors, double kPerDecade, double kMin, double kMax)
 {
     StandardException exc;
     check(lMax >= 2, "invalid lMax = " << lMax);
@@ -62,7 +64,16 @@ CMB::preInitialize(int lMax, bool wantAllL, bool primordialInitialize, bool incl
     primordialInitialize_ = primordialInitialize;
 
     if(primordialInitialize)
-        pr_->k_per_decade_primordial = 100;
+    {
+        check(kPerDecade >= 1, "");
+        check(kMin > 0, "");
+        check(kMax > kMin, "");
+
+        pr_->k_per_decade_primordial = kPerDecade;
+        kPerDecade_ = kPerDecade;
+        kMin_ = kMin;
+        kMax_ = kMax;
+    }
 
     if(wantAllL)
     {
@@ -380,6 +391,43 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
         pm_->n_t = params.getNt();
     }
 
+    if(primordialInitialize_)
+    {
+        std::string pkFileName = "cosmo_pk.txt";
+        std::ofstream outPk(pkFileName.c_str());
+        if(!outPk)
+        {
+            std::stringstream exceptionStr;
+            exceptionStr << "Cannot output the primordial power spectrum into the file " << pkFileName << ".";
+            exc.set(exceptionStr.str());
+            throw exc;
+        }
+
+        const double decades = std::log(kMax_ / kMin_) / std::log(10.0);
+        check(decades > 0, "");
+        const int nPoints = int(decades * kPerDecade_);
+        check(nPoints > 0, "");
+        const double kDelta = (std::log(kMax_) - std::log(kMin_)) / nPoints;
+
+        for(int i = 0; i <= nPoints; ++i)
+        {
+            const double k = (i == nPoints ? kMax_ : (i == 0 ? kMin_ : std::exp(std::log(kMin_) + i * kDelta)));
+            outPk << k << ' ' << params.powerSpectrum().evaluate(k);
+            
+            if(includeTensors_)
+                outPk << ' ' << params.powerSpectrumTensor().evaluate(k);
+            outPk << std::endl;
+        }
+        outPk.close();
+
+        std::stringstream classCommand;
+        classCommand << "cat " << pkFileName;
+
+        pm_->primordial_spec_type = external_Pk;
+        pm_->command = (char *) malloc(classCommand.str().size() + 1);
+        std::strcpy(pm_->command, classCommand.str().c_str());
+    }
+
     if(primordial_init(pr_, pt_, pm_) == _FAILURE_)
     {
         std::stringstream exceptionStr;
@@ -388,6 +436,7 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
         throw exc;
     }
 
+    /*
     if(primordialInitialize_)
     {
         // Altering the primordial power spectrum
@@ -430,6 +479,7 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
             }
         }
     }
+    */
 
     if(nonlinear_init(pr_, br_, th_, pt_, pm_, nl_) == _FAILURE_)
     {

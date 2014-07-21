@@ -132,6 +132,8 @@ TestLikeLow::runSubTest(unsigned int i, double& res, double& expected, std::stri
     long nSideMask;
     Utils::readMask(maskFileName.str().c_str(), nSideMask, goodPixels);
 
+    output_screen1(goodPixels.size() << " pixels left after masking." << std::endl);
+
     check(nSideMask == nSide, "");
 
     std::vector<LaVectorDouble> t(n);

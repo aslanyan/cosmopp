@@ -37,7 +37,10 @@ public:
     /// \param primordialInitialize If the primordial power spectrum is determined by only A_s and n_s this flag can be set to false. If the primordial power spectrum has some shape that requires calls to the function for each k, set this to true (true by default).
     /// \param includeTensors Specifies if tensor modes should be included in calculations.
     /// \param lMaxTensors Maximum l value for tensor modes. Only matters if includeTensors is true.
-    void preInitialize(int lMax, bool wantAllL = false, bool primordialInitialize = true, bool includeTensors = false, int lMaxTensors = 0);
+    /// \param kPerDecade Used only if primordialInitialize is true. Determines how many k points per decade need to be used for initializing the primordial power spectrum.
+    /// \param kMin Used only if primordialInitialize is true. This is the lower end for initializing the primordial power spectrum.
+    /// \param kMax Used only if primordialInitialize is true. This is the upper end for initializing the primordial power spectrum.
+    void preInitialize(int lMax, bool wantAllL = false, bool primordialInitialize = true, bool includeTensors = false, int lMaxTensors = 0, double kPerDecade = 100, double kMin = 1e-6, double kMax = 1.0);
 
     /// Initialization routine. Must be called after pre-initialization. Can be called multiple times in a row.
     /// \param params The cosmological parameters to use.
@@ -107,6 +110,9 @@ private:
     
     bool includeTensors_;
     int lMaxTensors_;
+    double kPerDecade_;
+    double kMin_;
+    double kMax_;
 };
 
 #endif
