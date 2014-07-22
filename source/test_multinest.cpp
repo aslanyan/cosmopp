@@ -14,7 +14,7 @@ TestMultinestFast::name() const
 unsigned int
 TestMultinestFast::numberOfSubtests() const
 {
-    return 1;
+    return 2;
 }
 
 class MultinestFastTestLikelihood : public Math::LikelihoodFunction
@@ -45,16 +45,21 @@ private:
 void
 TestMultinestFast::runSubTest(unsigned int i, double& res, double& expected, std::string& subTestName)
 {
-    check(i >= 0 && i < 1, "invalid index " << i);
+    check(i >= 0 && i < numberOfSubtests(), "invalid index " << i);
     
     using namespace Math;
 
     MultinestFastTestLikelihood l1(5, -4, 2, 3);
-    std::string root1 = "test_files/multinest_fast_test";
+    std::stringstream root1str;
+    root1str << "test_files/multinest_fast_test_" << i;
+    std::string root1 = root1str.str();
     MnScanner mn1(2, l1, 300, root1);
 
     const double xMin = -20, xMax = 20, yMin = -20, yMax = 20;
-    mn1.setParam(0, "x", xMin, xMax);
+    if(i == 0)
+        mn1.setParam(0, "x", xMin, xMax);
+    else
+        mn1.setParam(0, "x", 5, 5);
     mn1.setParam(1, "y", yMin, yMax);
     mn1.run(false);
 
@@ -65,24 +70,44 @@ TestMultinestFast::runSubTest(unsigned int i, double& res, double& expected, std
     if(!isMaster())
         return;
     
-    MarkovChain chain("test_files/multinest_fast_test.txt");
-    Posterior1D* px = chain.posterior(0);
-    Posterior1D* py = chain.posterior(1);
+    std::stringstream chainName;
+    chainName << root1 << ".txt";
+    MarkovChain chain(chainName.str().c_str());
+    Posterior1D* px;
+    Posterior1D* py;
+
+    if(i == 0)
+    {
+        px = chain.posterior(0);
+        py = chain.posterior(1);
+    }
+    else
+    {
+        px = NULL;
+        py = chain.posterior(0);
+    }
 
     const int nPoints = 1000;
 
-    std::ofstream outPx("test_files/multinest_fast_px.txt");
-    const double xDelta = (px->max() - px->min()) / nPoints;
-    for(int i = 0; i <= nPoints; ++i)
+    if(i == 0)
     {
-        double t = px->min() + i * xDelta;
-        if(i == nPoints)
-            t = px->max();
-        outPx << t << ' ' << px->evaluate(t) << std::endl;
+        std::stringstream pxFileName;
+        pxFileName << root1 << "_px.txt";
+        std::ofstream outPx(pxFileName.str().c_str());
+        const double xDelta = (px->max() - px->min()) / nPoints;
+        for(int i = 0; i <= nPoints; ++i)
+        {
+            double t = px->min() + i * xDelta;
+            if(i == nPoints)
+                t = px->max();
+            outPx << t << ' ' << px->evaluate(t) << std::endl;
+        }
+        outPx.close();
     }
-    outPx.close();
 
-    std::ofstream outPy("test_files/multinest_fast_py.txt");
+    std::stringstream pyFileName;
+    pyFileName << root1 << "_py.txt";
+    std::ofstream outPy(pyFileName.str().c_str());
     const double yDelta = (py->max() - py->min()) / nPoints;
     for(int i = 0; i <= nPoints; ++i)
     {
@@ -94,8 +119,11 @@ TestMultinestFast::runSubTest(unsigned int i, double& res, double& expected, std
     outPy.close();
 
     double xLower, xUpper, xMedian;
-    xMedian = px->median();
-    px->get1SigmaTwoSided(xLower, xUpper);
+    if(i == 0)
+    {
+        xMedian = px->median();
+        px->get1SigmaTwoSided(xLower, xUpper);
+    }
 
     double yLower, yUpper, yMedian;
     yMedian = py->median();
@@ -104,17 +132,17 @@ TestMultinestFast::runSubTest(unsigned int i, double& res, double& expected, std
     delete px;
     delete py;
 
-    if(!Math::areEqual(5.0, xMedian, 0.4))
+    if(i == 0 && !Math::areEqual(5.0, xMedian, 0.4))
     {
         output_screen("FAIL: Expected x median is 5, the result is " << xMedian << std::endl);
         res = 0;
     }
-    if(!Math::areEqual(3.0, xLower, 0.4))
+    if(i == 0 && !Math::areEqual(3.0, xLower, 0.4))
     {
         output_screen("FAIL: Expected x lower limit is 3, the result is " << xLower << std::endl);
         res = 0;
     }
-    if(!Math::areEqual(7.0, xUpper, 0.4))
+    if(i == 0 && !Math::areEqual(7.0, xUpper, 0.4))
     {
         output_screen("FAIL: Expected x upper limit is 7, the result is " << xUpper << std::endl);
         res = 0;

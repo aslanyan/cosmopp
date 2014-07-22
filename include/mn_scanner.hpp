@@ -43,6 +43,12 @@ public:
     /// \param distrib The prior function. This function should be valid between min and max.
     void setParamGeneral(int i, const std::string& name, double min, double max, const Math::RealFunction& distrib);
 
+    /// Define a given parameter to be fixed to a given value.
+    /// \param i The index of the parameter, 0 <= i < number of parameters.
+    /// \param name The name of the parameter.
+    /// \param val The fixed value of the parameter.
+    void setParamFixed(int i, const std::string& name, double val);
+
     /// Get the name of a parameter.
     /// \param i The index of the parameter.
     /// \return The name of the parameter.
@@ -64,6 +70,8 @@ private:
     std::vector<double> paramsStarting_, paramsMean_, paramsStd_, paramsBest_, paramsCurrent_;
     std::vector<std::string> paramNames_;
     std::vector<Math::TableFunction<double, double> > paramPriors_;
+    std::vector<double> paramsFixed_;
+    int nFixed_;
     int n_, nLive_;
     std::string fileRoot_;
     bool accurateEvidence_;

@@ -105,7 +105,7 @@ TestCMBGibbs::runSubTest(unsigned int i, double& res, double& expected, std::str
 
     StandardException exc;
     std::stringstream originalClFileName;
-    originalClFileName << "test_files/cmb_gibbs_" << i << "_cl_original.txt";
+    originalClFileName << "slow_test_files/cmb_gibbs_" << i << "_cl_original.txt";
     std::ofstream out(originalClFileName.str().c_str());
     if(!out)
     {
@@ -134,7 +134,7 @@ TestCMBGibbs::runSubTest(unsigned int i, double& res, double& expected, std::str
     alm2map(almSim, map);
 
     if(i == 4)
-        read_Healpix_map_from_fits(std::string("test_files/mask1.fits"), mask);
+        read_Healpix_map_from_fits(std::string("slow_test_files/mask1.fits"), mask);
 
     noiseMap.SetNside(nSide, RING);
     uniformMask.SetNside(nSide, RING);
@@ -152,7 +152,7 @@ TestCMBGibbs::runSubTest(unsigned int i, double& res, double& expected, std::str
     CMBGibbsSampler gibbs(map, noiseMap, (i < 4 ? uniformMask : mask), pixelNoise, lMaxGibbs, fwhm, clStarting, int(gen.generate()));
 
     std::stringstream chainFileName;
-    chainFileName << "test_files/cmb_gibbs_" << i << "_chain.txt";
+    chainFileName << "slow_test_files/cmb_gibbs_" << i << "_chain.txt";
     out.open(chainFileName.str().c_str());
     if(!out)
     {
@@ -182,7 +182,7 @@ TestCMBGibbs::runSubTest(unsigned int i, double& res, double& expected, std::str
     MarkovChain chain(chainFileName.str().c_str(), burnin);
 
     std::stringstream statsFileName;
-    statsFileName << "test_files/cmb_gibbs_" << i << "_stats.txt";
+    statsFileName << "slow_test_files/cmb_gibbs_" << i << "_stats.txt";
     out.open(statsFileName.str().c_str());
     if(!out)
     {
@@ -234,7 +234,7 @@ TestCMBGibbs::runSubTest(unsigned int i, double& res, double& expected, std::str
         if(l >= 2)
         {
             std::stringstream postFileName;
-            postFileName << "test_files/cmb_gibbs_" << i << "_c_" << l << ".txt";
+            postFileName << "slow_test_files/cmb_gibbs_" << i << "_c_" << l << ".txt";
             std::ofstream outPost(postFileName.str().c_str());
             if(!outPost)
             {

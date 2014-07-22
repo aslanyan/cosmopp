@@ -15,7 +15,7 @@
 #include <multinest.h>
 
 
-MnScanner::MnScanner(int nPar, Math::LikelihoodFunction& like, int nLive, std::string fileRoot, bool accurateEvidence) : n_(nPar), like_(like), nLive_(nLive), paramsStarting_(nPar, 0), paramNames_(nPar), paramsBest_(nPar, 0), paramsMean_(nPar, 0), paramsStd_(nPar, 0), paramsCurrent_(nPar, 0), paramPriors_(nPar), fileRoot_(fileRoot), accurateEvidence_(accurateEvidence)
+MnScanner::MnScanner(int nPar, Math::LikelihoodFunction& like, int nLive, std::string fileRoot, bool accurateEvidence) : n_(nPar), like_(like), nLive_(nLive), paramsStarting_(nPar, 0), paramNames_(nPar), paramsBest_(nPar, 0), paramsMean_(nPar, 0), paramsStd_(nPar, 0), paramsCurrent_(nPar, 0), paramPriors_(nPar), paramsFixed_(nPar, 0), fileRoot_(fileRoot), accurateEvidence_(accurateEvidence)
 {
 }
 
@@ -23,7 +23,13 @@ void
 MnScanner::setParam(int i, const std::string& name, double min, double max)
 {
     check(i >= 0 && i < n_, "invalid index " << i);
-    check(max > min, "");
+    check(max >= min, "");
+
+    if(min == max)
+    {
+        setParamFixed(i, name, min);
+        return;
+    }
 
     paramNames_[i] = name;
     paramPriors_[i].clear();
@@ -34,10 +40,25 @@ MnScanner::setParam(int i, const std::string& name, double min, double max)
 }
 
 void
+MnScanner::setParamFixed(int i, const std::string& name, double val)
+{
+    check(i >= 0 && i < n_, "invalid index " << i);
+    paramNames_[i] = name;
+    paramPriors_[i].clear();
+    paramsFixed_[i] = val;
+}
+
+void
 MnScanner::setParamGauss(int i, const std::string& name, double mean, double sigma)
 {
     check(i >= 0 && i < n_, "invalid index " << i);
-    check(sigma > 0, "");
+    check(sigma >= 0, "");
+
+    if(sigma == 0)
+    {
+        setParamFixed(i, name, mean);
+        return;
+    }
 
     paramNames_[i] = name;
 
@@ -126,18 +147,28 @@ void myLogLike(double *cube, int &ndim, int &npars, double &lnew, void *context)
 void
 MnScanner::logLike(double *cube, int &ndim, int &npars, double &lnew)
 {
-    check(ndim == n_, "");
-    check(npars == n_, "");
+    check(ndim == n_ - nFixed_, "");
+    check(npars == n_ - nFixed_, "");
+
+    int j = 0;
 
     for(int i = 0; i < n_; ++i)
     {
-        const double x = paramPriors_[i].evaluate(cube[i]);
-        cube[i] = x;
+        double x;
+        if(paramPriors_[i].empty())
+        {
+            x = paramsFixed_[i];
+        }
+        else
+        {
+            x = paramPriors_[i].evaluate(cube[j]);
+            cube[j] = x;
+            ++j;
+        }
         paramsCurrent_[i] = x;
-        //output_screen(paramNames_[i] << " = " << x << std::endl);
     }
 
-    lnew = - like_.calculate(cube, n_) / 2.0;
+    lnew = - like_.calculate(&(paramsCurrent_[0]), n_) / 2.0;
 }
 
 void myDumper(int &nSamples, int &nlive, int &nPar, double **physLive, double **posterior, double **paramConstr, double &maxLogLike, double &logZ, double &logZerr, void *context)
@@ -150,7 +181,7 @@ void
 MnScanner::dumper(int &nSamples, int &nlive, int &nPar, double **physLive, double **posterior, double **paramConstr, double &maxLogLike, double &logZ, double &logZerr)
 {
     StandardException exc;
-    check(nPar == n_, "");
+    check(nPar == n_ - nFixed_, "");
 
 	// convert the 2D Fortran arrays to C++ arrays
 	
@@ -210,11 +241,22 @@ MnScanner::dumper(int &nSamples, int &nlive, int &nPar, double **physLive, doubl
     outConstr << "Constraints from " << nSamples << " samples:" << std::endl;
     outConstr << "log(Z) = " << logZ << "+-" << logZerr << std::endl;
 	// parameter constraints
+    j = 0;
     for(i = 0; i < n_; ++i)
     {
-        paramsMean_[i] = paramConstr[0][i];
-        paramsStd_[i] = paramConstr[0][n_ + i];
-        paramsBest_[i] = paramConstr[0][2 * n_ + i];
+        if(paramPriors_[i].empty())
+        {
+            paramsMean_[i] = paramsFixed_[i];
+            paramsStd_[i] = 0.0;
+            paramsBest_[i] = paramsFixed_[i];
+        }
+        else
+        {
+            paramsMean_[i] = paramConstr[0][j];
+            paramsStd_[i] = paramConstr[0][nPar + j];
+            paramsBest_[i] = paramConstr[0][2 * nPar + j];
+            ++j;
+        }
         
         outConstr << paramNames_[i] << ":   " << paramsBest_[i] << "    " << paramsMean_[i] << "+-" << paramsStd_[i] << std::endl;
     }
@@ -226,14 +268,23 @@ MnScanner::run(bool res)
 {
     StandardException exc;
 
+    nFixed_ = 0;
+    for(int i = 0; i < n_; ++i)
+    {
+        if(paramPriors_[i].empty())
+            ++nFixed_;
+    }
+
+    check(nFixed_ < n_, "cannot have all of the parameters fixed");
+
 	int IS = 1;					// do Nested Importance Sampling?
 	int mmodal = 0;					// do mode separation?
 	int ceff = (accurateEvidence_ ? 0 : 1); 	// run in constant efficiency mode?
 	double efr = (accurateEvidence_ ? 0.3 : 0.8);  // set the required efficiency
 	double tol = 0.5;				// tol, defines the stopping criteria
-	int ndims = n_;					// dimensionality (no. of free parameters)
-	int nPar = n_;					// total no. of parameters including free & derived parameters
-	int nClsPar = n_;				// no. of parameters to do mode separation on
+	int ndims = n_ - nFixed_;					// dimensionality (no. of free parameters)
+	int nPar = n_ - nFixed_;					// total no. of parameters including free & derived parameters
+	int nClsPar = n_ - nFixed_;				// no. of parameters to do mode separation on
 	int updInt = 100;				// after how many iterations feedback is required & the output files should be updated
 							// note: posterior files are updated & dumper routine is called after every updInt*10 iterations
 	double Ztol = -1E90;				// all the modes with logZ < Ztol are ignored
