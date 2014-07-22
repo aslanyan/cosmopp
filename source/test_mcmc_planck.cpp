@@ -54,23 +54,16 @@ TestMCMCPlanck::runSubTest(unsigned int i, double& res, double& expected, std::s
     mh.setParam(18, "A_ksz", 0, 10, 5, 6, 0.3);
     mh.setParam(19, "Bm_1_1", -20, 20, 0.5, 1.0, 0.05);
 
-    /*
-    std::vector<int> blocks(16);
-    blocks[0] = 3;
-    blocks[1] = 6;
-    for(int i = 2; i < 16; ++i)
-        blocks[i] = i + 5;
-    */
-
-    std::vector<int> blocks(2);
+    std::vector<int> blocks(15);
     blocks[0] = 6;
-    blocks[1] = 20;
+    for(int i = 1; i < 15; ++i)
+        blocks[i] = i + 6;
 
     //mh.specifyParameterBlocks(blocks);
 
-    mh.setFastDrag(6, planckLike1, 2);
+    //mh.setFastDrag(6, planckLike1, 2);
 
-    const unsigned long burnin = 5000;
+    const unsigned long burnin = 1000;
     const int nChains = mh.run(500000, 1, burnin, MetropolisHastings::GELMAN_RUBIN, 0.1);
     
     subTestName = std::string("standard_param_limits");
