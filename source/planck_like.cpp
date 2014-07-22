@@ -55,7 +55,7 @@ struct PlanckLikelihoodContainer
     void* actspt;
 };
 
-PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useLensing, bool usePol, bool useActSpt, bool includeTensors) : spectraNames_(6), cosmoParams_(6), prevCosmoCalculated_(false), commander_(NULL), camspec_(NULL), lens_(NULL), pol_(NULL), actspt_(NULL)
+PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useLensing, bool usePol, bool useActSpt, bool includeTensors, double kPerDecade) : spectraNames_(6), cosmoParams_(6), prevCosmoCalculated_(false), commander_(NULL), camspec_(NULL), lens_(NULL), pol_(NULL), actspt_(NULL)
 {
     check(useCommander || useCamspec || useLensing || usePol || useActSpt, "at least one likelihood must be specified");
 
@@ -242,7 +242,7 @@ PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useL
     }
 
     output_screen1("Total l_max = " << lMax_ << std::endl);
-    cmb_.preInitialize(lMax_ + 1000, false, true, includeTensors, lMax_ + 1000);
+    cmb_.preInitialize(lMax_ + 1000, false, true, includeTensors, lMax_ + 1000, kPerDecade);
 }
 
 void

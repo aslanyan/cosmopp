@@ -27,8 +27,8 @@ TestMCMCPlanck::runSubTest(unsigned int i, double& res, double& expected, std::s
     
     using namespace Math;
 
-    PlanckLikelihood planckLike(true, true, false, true, false, false);
-    PlanckLikelihood planckLike1(true, true, false, true, false, false);
+    PlanckLikelihood planckLike(true, true, false, true, false, false, 5);
+    PlanckLikelihood planckLike1(true, true, false, true, false, false, 5);
     std::string root = "slow_test_files/mcmc_planck_test";
     MetropolisHastings mh(20, planckLike, root);
 
