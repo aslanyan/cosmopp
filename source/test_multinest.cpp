@@ -1,4 +1,5 @@
 #include <fstream>
+#include <sstream>
 
 #include <test_multinest.hpp>
 #include <mn_scanner.hpp>
