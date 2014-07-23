@@ -13,7 +13,7 @@ TestSphericalHarmonics::name() const
 unsigned int
 TestSphericalHarmonics::numberOfSubtests() const
 {
-    return 7;
+    return 10;
 }
 
 void
@@ -36,9 +36,9 @@ TestSphericalHarmonics::runSubTest(unsigned int i, double& res, double& expected
         expected = 0.4886025119;
         break;
     case 2:
-        subTestName = "5_-2";
-        res = std::real(sh.calculate(5, -2, 1.5, 3.0));
-        expected = -0.11281320034;
+        subTestName = "5_-5";
+        res = std::real(sh.calculate(5, -5, 1.5, 3.0));
+        expected = -0.348201411;
         break;
     case 3:
         subTestName = "10_-7";
@@ -56,9 +56,24 @@ TestSphericalHarmonics::runSubTest(unsigned int i, double& res, double& expected
         expected = -0.005033405177;
         break;
     case 6:
-        subTestName = "1000_100";
-        res = std::real(sh.calculate(1000, 100, 1.0, 0.0));
-        expected = -2.39271937016e28;
+        subTestName = "500_100";
+        res = std::real(sh.calculate(500, 100, 1.0, 0.0));
+        expected = -0.3233047434;
+        break;
+    case 7:
+        subTestName = "500_-250";
+        res = std::imag(sh.calculate(500, -250, 1.0, 5.0));
+        expected = 0.12618613645;
+        break;
+    case 8:
+        subTestName = "1000_901";
+        res = std::imag(sh.calculate(1000, 901, 1.0, 0.0));
+        expected = -4.50073913e-14;
+        break;
+    case 9:
+        subTestName = "10000_-101";
+        res = std::imag(sh.calculate(10000, -101, 3.0, 0.1));
+        expected = 0.495898;
         break;
     default:
         check(false, "");
