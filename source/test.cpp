@@ -17,6 +17,7 @@
 #include <test_conjugate_gradient.hpp>
 #include <test_polynomial.hpp>
 #include <test_legendre.hpp>
+#include <test_spherical_harmonics.hpp>
 #include <test_mcmc.hpp>
 #include <test_multinest.hpp>
 #include <test_mcmc_planck.hpp>
@@ -50,6 +51,8 @@ TestFramework* createTest(const std::string& name)
         test = new TestPolynomial;
     else if(name == "legendre")
         test = new TestLegendre;
+    else if(name == "spherical_harmonics")
+        test = new TestSphericalHarmonics;
     else if(name == "mcmc_fast")
         test = new TestMCMCFast;
 #ifdef COSMO_MULTINEST
@@ -155,6 +158,7 @@ int main(int argc, char *argv[])
         fastTests.insert("conjugate_gradient");
         fastTests.insert("polynomial");
         fastTests.insert("legendre");
+        fastTests.insert("spherical_harmonics");
         fastTests.insert("mcmc_fast");
 #ifdef COSMO_MULTINEST
         fastTests.insert("multinest_fast");

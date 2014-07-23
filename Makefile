@@ -213,6 +213,7 @@ PARAMETRIC_FUNCTION_HPP = include/parametric_function.hpp $(MACROS_HPP) $(FUNCTI
 FIT_HPP = include/fit.hpp $(MACROS_HPP) $(PARAMETRIC_FUNCTION_HPP)
 POLYNOMIAL_HPP = include/polynomial.hpp $(PARAMETRIC_FUNCTION_HPP)
 LEGENDRE_HPP = include/legendre.hpp
+SPHERICAL_HARMONICS_HPP = include/spherical_harmonics.hpp $(MACROS_HPP) $(COMPLEX_TYPES_HPP) $(LEGENDRE_HPP) $(MATH_CONSTANTS_HPP)
 TABLE_FUNCTION_HPP = include/table_function.hpp $(MACROS_HPP) $(FUNCTION_HPP)
 CUBIC_SPLINE_HPP = include/cubic_spline.hpp $(MACROS_HPP) $(FUNCTION_HPP)
 GAUSS_SMOOTH_HPP = include/gauss_smooth.hpp $(MACROS_HPP) $(FUNCTION_HPP)
@@ -248,6 +249,7 @@ TEST_INTEGRAL_HPP = include/test_integral.hpp $(TEST_FRAMEWORK_HPP)
 TEST_CONJUGATE_GRADIENT_HPP = include/test_conjugate_gradient.hpp $(TEST_FRAMEWORK_HPP)
 TEST_POLYNOMIAL_HPP = include/test_polynomial.hpp $(TEST_FRAMEWORK_HPP)
 TEST_LEGENDRE_HPP = include/test_legendre.hpp $(TEST_FRAMEWORK_HPP)
+TEST_SPHERICAL_HARMONICS_HPP = include/test_spherical_harmonics.hpp $(TEST_FRAMEWORK_HPP)
 TEST_MCMC_HPP = include/test_mcmc.hpp $(TEST_FRAMEWORK_HPP)
 TEST_MULTINEST_HPP = include/test_multinest.hpp $(TEST_FRAMEWORK_HPP)
 TEST_MCMC_PLANCK_HPP = include/test_mcmc_planck.hpp $(TEST_FRAMEWORK_HPP)
@@ -275,7 +277,7 @@ OBJ_LIBRARY = $(GENERAL_OBJ) $(HEALPIX_OBJ) $(HEALPIX_AND_LAPACKPP_OBJ) $(CLASS_
 lib/libcosmopp.a: $(OBJ_LIBRARY)
 	ar rcs $@ $(OBJ_LIBRARY)
 
-GENERAL_TEST_OBJ = obj/test.o obj/test_unit_conversions.o obj/test_int_operations.o obj/test_integral.o obj/test_conjugate_gradient.o obj/test_polynomial.o obj/test_legendre.o obj/test_mcmc.o obj/test_wigner_3j.o obj/test_table_function.o obj/test_cubic_spline.o obj/test_three_rotation.o
+GENERAL_TEST_OBJ = obj/test.o obj/test_unit_conversions.o obj/test_int_operations.o obj/test_integral.o obj/test_conjugate_gradient.o obj/test_polynomial.o obj/test_legendre.o obj/test_spherical_harmonics.o obj/test_mcmc.o obj/test_wigner_3j.o obj/test_table_function.o obj/test_cubic_spline.o obj/test_three_rotation.o
 
 OBJ_TEST = $(OBJ_LIBRARY) $(GENERAL_TEST_OBJ) $(MULTINEST_TEST_OBJ) $(PLANCK_TEST_OBJ) $(PLANCK_AND_MULTINEST_AND_CLASS_TEST_OBJ) $(CLASS_TEST_OBJ) $(PLANCK_AND_CLASS_TEST_OBJ) $(HEALPIX_TEST_OBJ) $(HEALPIX_AND_LAPACK_AND_CLASS_TEST_OBJ) $(MINUIT_TEST_OBJ) $(WMAP_AND_CLASS_TEST_OBJ)
 bin/test: $(OBJ_TEST)
@@ -367,7 +369,7 @@ obj/scale_factor.o: source/scale_factor.cpp $(UNIT_CONVERSIONS_HPP) $(TABLE_FUNC
 obj/simulate.o: source/simulate.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(NUMERICS_HPP) $(WHOLE_MATRIX_HPP) $(RANDOM_HPP) $(SIMULATE_HPP)
 	$(CC) $(CFLAGS) source/simulate.cpp -o $@
 
-obj/test.o: source/test.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(TEST_FRAMEWORK_HPP) $(TEST_UNIT_CONVERSIONS_HPP) $(TEST_INT_OPERATIONS_HPP) $(TEST_INTEGRAL_HPP) $(TEST_CONJUGATE_GRADIENT_HPP) $(TEST_POLYNOMIAL_HPP) $(TEST_LEGENDRE_HPP) $(TEST_MCMC_HPP) $(TEST_MULTINEST_HPP) $(TEST_MCMC_PLANCK_HPP) $(TEST_CMB_HPP) $(TEST_CMB_GIBBS_HPP) $(TEST_FIT_HPP) $(TEST_PLANCK_LIKE_HPP) $(TEST_WMAP9_LIKE_HPP) $(TEST_LIKE_HIGH_HPP) $(TEST_LIKE_LOW_HPP) $(TEST_WIGNER_3J_HPP) $(TEST_TABLE_FUNCTION_HPP) $(TEST_CUBIC_SPLINE_HPP) $(TEST_THREE_ROTATION_HPP) $(TEST_MASK_APODIZER_HPP)
+obj/test.o: source/test.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(TEST_FRAMEWORK_HPP) $(TEST_UNIT_CONVERSIONS_HPP) $(TEST_INT_OPERATIONS_HPP) $(TEST_INTEGRAL_HPP) $(TEST_CONJUGATE_GRADIENT_HPP) $(TEST_POLYNOMIAL_HPP) $(TEST_LEGENDRE_HPP) $(TEST_SPHERICAL_HARMONICS_HPP) $(TEST_MCMC_HPP) $(TEST_MULTINEST_HPP) $(TEST_MCMC_PLANCK_HPP) $(TEST_CMB_HPP) $(TEST_CMB_GIBBS_HPP) $(TEST_FIT_HPP) $(TEST_PLANCK_LIKE_HPP) $(TEST_WMAP9_LIKE_HPP) $(TEST_LIKE_HIGH_HPP) $(TEST_LIKE_LOW_HPP) $(TEST_WIGNER_3J_HPP) $(TEST_TABLE_FUNCTION_HPP) $(TEST_CUBIC_SPLINE_HPP) $(TEST_THREE_ROTATION_HPP) $(TEST_MASK_APODIZER_HPP)
 	$(CC) $(CFLAGS) source/test.cpp -o $@
 
 obj/test_framework.o: source/test_framework.cpp $(MACROS_HPP) $(NUMERICS_HPP) $(TEST_FRAMEWORK_HPP)
@@ -423,6 +425,9 @@ obj/test_polynomial.o: source/test_polynomial.cpp $(TEST_POLYNOMIAL_HPP) $(POLYN
 
 obj/test_legendre.o: source/test_legendre.cpp $(MACROS_HPP) $(TEST_LEGENDRE_HPP) $(LEGENDRE_HPP)
 	$(CC) $(CFLAGS) source/test_legendre.cpp -o $@
+
+obj/test_spherical_harmonics.o: source/test_spherical_harmonics.cpp $(MACROS_HPP) $(TEST_SPHERICAL_HARMONICS_HPP) $(SPHERICAL_HARMONICS_HPP)
+	$(CC) $(CFLAGS) source/test_spherical_harmonics.cpp -o $@
 
 obj/test_mcmc.o: source/test_mcmc.cpp $(TEST_MCMC_HPP) $(MCMC_HPP) $(MARKOV_CHAIN_HPP) $(NUMERICS_HPP)
 	$(CC) $(CFLAGS) source/test_mcmc.cpp -o $@
