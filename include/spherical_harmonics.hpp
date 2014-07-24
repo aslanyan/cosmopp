@@ -10,13 +10,23 @@
 namespace Math
 {
 
+/// Spherical Harmonics calculator.
 class SphericalHarmonics
 {
 public:
-    SphericalHarmonics() {}
+    /// Constructor.
+    SphericalHarmonics() : vals_(10000, 1.0) {}
+
+    /// Destructor.
     ~SphericalHarmonics() {}
 
-    ComplexDouble calculate(unsigned int l, int m, double theta, double phi)
+    /// Calculate a given spherical harmonic.
+    /// \param l The index l of the spherical harmonic.
+    /// \param m The index m of the spherical harmonic.
+    /// \param theta The argument theta of the spherical harmonic.
+    /// \param phi The argument phi of the spherical harmonic.
+    /// \return The value of the spherical harmonic.
+    ComplexDouble calculate(unsigned int l, int m, double theta, double phi) const
     {
         if(int(l) < m || int(l) < -m)
             return 0;
@@ -27,7 +37,7 @@ public:
     }
 
 private:
-    double modifiedAssociatedLeg(unsigned int l, int m, double x)
+    double modifiedAssociatedLeg(unsigned int l, int m, double x) const
     {
         if(int(l) < m || int(l) < -m)
             return 0;
@@ -43,26 +53,26 @@ private:
         }
 
         if(vals_.size() < l + 1)
-            vals_.resize(l + 1);
+            (*const_cast<std::vector<double>*>(&vals_)).resize(l + 1);
 
         if(int(l) == m)
         {
 
             const double f = 1.0 - x * x;
 
-            vals_[0] = 1.0;
+            (*const_cast<std::vector<double>*>(&vals_))[0] = 1.0;
 
             for(int l1 = 1; l1 <= l; ++l1)
-                vals_[l1] = -std::sqrt(f * (1.0 - 1.0 / double(2 * l1))) * vals_[l1 - 1];
+                (*const_cast<std::vector<double>*>(&vals_))[l1] = -std::sqrt(f * (1.0 - 1.0 / double(2 * l1))) * vals_[l1 - 1];
 
             return vals_[l];
         }
 
-        vals_[m] = modifiedAssociatedLeg(m, m, x);
-        vals_[m + 1] = std::sqrt(2 * m + 1) * x * vals_[m];
+        (*const_cast<std::vector<double>*>(&vals_))[m] = modifiedAssociatedLeg(m, m, x);
+        (*const_cast<std::vector<double>*>(&vals_))[m + 1] = std::sqrt(2 * m + 1) * x * vals_[m];
         
         for(int l1 = m + 2; l1 <= l; ++l1)
-            vals_[l1] = std::sqrt(double(4 * l1 * l1 - 4 * l1 + 1) / double(l1 * l1 - m * m)) * x * vals_[l1 - 1] - std::sqrt((1.0 - 1.0 / double(l1 + m)) * (1.0 - 1.0 / double(l1 - m))) * vals_[l1 - 2];
+            (*const_cast<std::vector<double>*>(&vals_))[l1] = std::sqrt(double(4 * l1 * l1 - 4 * l1 + 1) / double(l1 * l1 - m * m)) * x * vals_[l1 - 1] - std::sqrt((1.0 - 1.0 / double(l1 + m)) * (1.0 - 1.0 / double(l1 - m))) * vals_[l1 - 2];
         
         return vals_[l];
     }

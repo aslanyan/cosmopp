@@ -240,6 +240,36 @@ CMatrixGenerator::clToCMatrix(const char* clFileName, long nSide, int lMax, doub
 }
 
 void
+CMatrixGenerator::clToWholeMatrix(const std::vector<double>& cl, WholeMatrix& wm)
+{
+    const int lMin = wm.getLMin(), lMax = wm.getLMax();
+
+    check(cl.size() >= lMax + 1, "");
+
+#ifdef CHECKS_ON
+    for(int l1 = lMin; l1 <= lMax; ++l1)
+    {
+        for(int m1 = -l1; m1 <= l1; ++m1)
+        {
+            for(int l = lMin; l <= lMax; ++l)
+            {
+                for(int m = -l; m <= l; ++m)
+                {
+                    check(wm.element(l1, m1, l, m) == 0, "");
+                }
+            }
+        }
+    }
+#endif
+
+    for(int l = lMin; l <= lMax; ++l)
+    {
+        for(int m = -l; m <= l; ++m)
+            wm.element(l, m, l, m) = cl[l];
+    }
+}
+
+void
 CMatrixGenerator::clToWholeMatrix(const char* clFileName, WholeMatrix& tt, WholeMatrix& te, WholeMatrix& ee)
 {
     const int lMin = tt.getLMin(), lMax = tt.getLMax();
@@ -295,9 +325,9 @@ CMatrixGenerator::clToWholeMatrix(const char* clFileName, WholeMatrix& tt, Whole
         
         for(int m = -l; m <= l; ++m)
         {
-            tt.element(l, m, l, m) = ttL * 2 * Math::pi / (l * (l + 1));
-            te.element(l, m, l, m) = teL * 2 * Math::pi / (l * (l + 1));
-            ee.element(l, m, l, m) = eeL * 2 * Math::pi / (l * (l + 1));
+            tt.element(l, m, l, m) = ttL;
+            te.element(l, m, l, m) = teL;
+            ee.element(l, m, l, m) = eeL;
         }
     }
     inCl.close();

@@ -63,15 +63,23 @@ public:
     /// \param lp A pointer to a container of Legendre polynomials, NULL makes it calculate them by itself.
     /// \return A pointer to the generated covariance matrix. The units are mK. It must be deleted after using.
     static CMatrix* clToCMatrix(const char* clFileName, long nSide, int lMax, double fwhm, const std::vector<int>* goodPixels = NULL, const LegendrePolynomialContainer* lp = NULL);
+
+    /// Generates a whole matrix from given C_l values.
+
+    /// This function takes given C_l values and writes them into a whole matrix.
+    /// The l range is determined from the whole matrix upon input.
+    /// \param cl A vector containing the C_l values. Needs to contain at least up to the l_max of the whole matrix wm.
+    /// \param wm The whole matrix where the corresponding C_l values will be written upon return. Off diagonal elements will be 0.
+    static void clToWholeMatrix(const std::vector<double>& cl, WholeMatrix& wm);
     
     /// Generates TT, TE, and EE whole matrices from C_l values read from a text file.
     
     /// This function reads a C_l file and writes the corresponding values into TT, TE, and EE whole matrices.
     /// The l range is determined from the whole matrices upon input (they must have the same lMin and lMax).
-    /// \param clFileName The name of the file to read the C_l values from. The format is the same as CAMB output (see camb.info/readme.html).
-    /// \param tt The TT whole matrix where the corresponding c_l values will be written upon return. Off diagonal elements will be 0.
-    /// \param te The TE whole matrix where the corresponding c_l values will be written upon return. Off diagonal elements will be 0.
-    /// \param ee The EE whole matrix where the corresponding c_l values will be written upon return. Off diagonal elements will be 0.
+    /// \param clFileName The name of the file to read the C_l values from. Each row of the file should contain l followed by TT, TE, and EE C_l values.
+    /// \param tt The TT whole matrix where the corresponding C_l values will be written upon return. Off diagonal elements will be 0.
+    /// \param te The TE whole matrix where the corresponding C_l values will be written upon return. Off diagonal elements will be 0.
+    /// \param ee The EE whole matrix where the corresponding C_l values will be written upon return. Off diagonal elements will be 0.
     static void clToWholeMatrix(const char* clFileName, WholeMatrix& tt, WholeMatrix& te, WholeMatrix& ee);
     
     /// Convert temperature-temperature WholeMatrix to CMatrix.
