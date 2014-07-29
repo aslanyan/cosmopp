@@ -11,7 +11,7 @@ LAPACKPPINCDIR = /Users/aslanyan/C++/library/lapackpp-2.5.4/include
 CLASSDIR = /Users/aslanyan/programs/class_v2.3.2
 
 MINUIT = /usr/local
-MULTINEST = /Users/aslanyan/programs/MultiNest_v3.2_CMake/multinest
+MULTINEST = /Users/aslanyan/programs/MultiNest_v3.2_CMake/multinest # if Multinest is compiled with MPI then make sure to compile Cosmo++ with MPI as well (specify MPI_COMP above)
 PLANCKDIR = /Users/aslanyan/programs/planck/COM_Code_Likelihood-v1.0_R1.10.ext/plc-1.0
 PLANCKDATADIR = /Users/aslanyan/programs/planck
 PLANCKCOMPILEFLAGS = -D LAPACK_CLIK

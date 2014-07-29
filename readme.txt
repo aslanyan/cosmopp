@@ -37,6 +37,8 @@ No changes to the Makefile should be required. Just run “make” in the main d
 
 If no MPI compiler is specified then by default the gcc compiler will be used. If you need to use a different compiler but would rather not compile with MPI then you have to modify the CC variable in the Makefile.
 
+If MULTINEST is included and compiled with MPI then Cosmo++ needs to be compiled with MPI as well for compatibility.
+
 The main compiler flags (such as optimization and debugging flags) are defined in the COMPILER_FLAGS variable in make.inc. The library will compile with most options, however the C++11 standard needs to be turned on to make sure that Cosmo++ compiles. The C++ compiler version needs to be recent enough to fully support the C++11 standard.
 
 |---------|
