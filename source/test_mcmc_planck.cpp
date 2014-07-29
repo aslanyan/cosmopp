@@ -61,8 +61,6 @@ TestMCMCPlanck::runSubTest(unsigned int i, double& res, double& expected, std::s
 
     //mh.specifyParameterBlocks(blocks);
 
-    //mh.setFastDrag(6, planckLike1, 2);
-
     const unsigned long burnin = 1000;
     const int nChains = mh.run(500000, 1, burnin, MetropolisHastings::GELMAN_RUBIN, 0.1);
     

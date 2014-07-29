@@ -15,7 +15,7 @@ TestMCMCFast::name() const
 unsigned int
 TestMCMCFast::numberOfSubtests() const
 {
-    return 2;
+    return 1;
 }
 
 class MCMCFastTestLikelihood : public Math::LikelihoodFunction
@@ -46,7 +46,7 @@ private:
 void
 TestMCMCFast::runSubTest(unsigned int i, double& res, double& expected, std::string& subTestName)
 {
-    check(i >= 0 && i < 2, "invalid index " << i);
+    check(i >= 0 && i < 1, "invalid index " << i);
     
     using namespace Math;
 
@@ -62,15 +62,9 @@ TestMCMCFast::runSubTest(unsigned int i, double& res, double& expected, std::str
     const unsigned long burnin = 100;
     const unsigned int thin = 2;
 
-    if(i == 1)
-        mh1.setFastDrag(1, l2, 10);
-
     const int nChains = mh1.run(1000000, 0, burnin, MetropolisHastings::GELMAN_RUBIN, 0.001);
 
     subTestName = std::string("2_param_gauss");
-
-    if(i == 1)
-        subTestName = std::string("2_param_gauss_fast_drag");
 
     res = 1;
     expected = 1;
@@ -137,17 +131,17 @@ TestMCMCFast::runSubTest(unsigned int i, double& res, double& expected, std::str
         res = 0;
     }
 
-    if(i == 0 && !Math::areEqual(-4.0, yMedian, 0.4))
+    if(!Math::areEqual(-4.0, yMedian, 0.4))
     {
         output_screen("FAIL: Expected y median is -4, the result is " << yMedian << std::endl);
         res = 0;
     }
-    if(i == 0 && !Math::areEqual(-7.0, yLower, 0.4))
+    if(!Math::areEqual(-7.0, yLower, 0.4))
     {
         output_screen("FAIL: Expected y lower limit is -7, the result is " << yLower << std::endl);
         res = 0;
     }
-    if(i == 0 && !Math::areEqual(-1.0, yUpper, 0.8))
+    if(!Math::areEqual(-1.0, yUpper, 0.8))
     {
         output_screen("FAIL: Expected y upper limit is -1, the result is " << yUpper << std::endl);
         res = 0;

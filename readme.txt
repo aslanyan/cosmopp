@@ -21,7 +21,13 @@ Cosmo++ can be compiled by itself without any other libraries. However, some of 
 7. PLANCK likelihood code and data files: Please download from http://pla.esac.esa.int/pla/aio/planckProducts.html then compile and install the likelihood code.
 8. WMAP9 likelihood code and data files: Please download from http://lambda.gsfc.nasa.gov/product/map/current/likelihood_get.cfm then compile.
 
-You need to create a file make.inc and give the references to the directories of the libraries described above. Some (or all) of the entries can be left empty. An example file is included, make_template.inc. If the HEALPIX library is included then you must also include CFITSIO. If the Planck likelihood is included, you need to specify the location of a directory containing all of the Planck likelihood files you are planning to use. Please define this in PLANCKDATADIR in make.inc before compiling the library. If the WMAP9 likelihood is included (this should be included using the WMAP9DIR flag) then you need to also specify the compiler used for it (currently supported gfortran or ifort) using the WMAP9COMPILER flag, and the library linking flags using WMAP9LIBFLAGS. The library flags should include whatever is needed for linking to the WMAP9 likelihood code (e.g. lapack, blas), as well as the WMAP9 library file (-lwmap9) which needs to be made when compiling the WMAP9 likelihood code.
+You need to create a file make.inc and give the references to the directories of the libraries described above. Some (or all) of the entries can be left empty. An example file is included, make_template.inc.
+
+If the HEALPIX library is included then you must also include CFITSIO.
+
+If the Planck likelihood is included, you need to specify the location of a directory containing all of the Planck likelihood files you are planning to use. Please define this in PLANCKDATADIR in make.inc before compiling the library. You may also specify Planck likelihood compiler flags using PLANCKCOMPILEFLAGS. You may need to specify some flags that define which lapack library is used, etc.
+
+If the WMAP9 likelihood is included (this should be included using the WMAP9DIR flag) then you need to also specify the compiler used for it (currently supported gfortran or ifort) using the WMAP9COMPILER flag, and the library linking flags using WMAP9LIBFLAGS. The library flags should include whatever is needed for linking to the WMAP9 likelihood code (e.g. lapack, blas), as well as the WMAP9 library file (-lwmap9) which needs to be made when compiling the WMAP9 likelihood code.
 
 In order to turn on OpenMP you need to specify the OMP_FLAG in make.inc (this is usually -fopenmp). If this is left empty then the library will be compiled without OpenMP.
 
@@ -29,7 +35,9 @@ In order to compile Cosmo++ with MPI you need to specify the MPI_COMP flag in ma
 
 No changes to the Makefile should be required. Just run “make” in the main directory.
 
-The gcc compiler is needed.
+If no MPI compiler is specified then by default the gcc compiler will be used. If you need to use a different compiler but would rather not compile with MPI then you have to modify the CC variable in the Makefile.
+
+The main compiler flags (such as optimization and debugging flags) are defined in the COMPILER_FLAGS variable in make.inc. The library will compile with most options, however the C++11 standard needs to be turned on to make sure that Cosmo++ compiles. The C++ compiler version needs to be recent enough to fully support the C++11 standard.
 
 |---------|
 | TESTING |

@@ -9,7 +9,7 @@
 namespace Math
 {
 
-MetropolisHastings::MetropolisHastings(int nPar, LikelihoodFunction& like, std::string fileRoot, time_t seed) : n_(nPar), like_(&like), spareLike_(NULL), fastDrag_(false), fastIndex_(0), fileRoot_(fileRoot), paramNames_(nPar), param1_(nPar, 0), param2_(nPar, 0), starting_(nPar, std::numeric_limits<double>::max()), current_(nPar), prev_(nPar), samplingWidth_(nPar, 0), accuracy_(nPar, 0), paramSum_(nPar, 0), paramSquaredSum_(nPar, 0), corSum_(nPar, 0), priorMods_(nPar, PRIOR_MODE_MAX), externalPrior_(NULL), externalProposal_(NULL), resumeCode_(123456), nChains_(1), currentChainI_(0), stop_(false), stopRequestMessage_(111222), stopRequestTag_(0), stopRequestSent_(false), stopMessageRequested_(false), haveStoppedMessage_(476901), haveStoppedMessageTag_(100000), updateReqTag_(200000), firstUpdateRequested_(false), reachedSigma_(nPar, -1), rGelmanRubin_(nPar, -1)
+MetropolisHastings::MetropolisHastings(int nPar, LikelihoodFunction& like, std::string fileRoot, time_t seed) : n_(nPar), like_(&like), spareLike_(NULL), fileRoot_(fileRoot), paramNames_(nPar), param1_(nPar, 0), param2_(nPar, 0), starting_(nPar, std::numeric_limits<double>::max()), current_(nPar), prev_(nPar), samplingWidth_(nPar, 0), accuracy_(nPar, 0), paramSum_(nPar, 0), paramSquaredSum_(nPar, 0), corSum_(nPar, 0), priorMods_(nPar, PRIOR_MODE_MAX), externalPrior_(NULL), externalProposal_(NULL), resumeCode_(123456), nChains_(1), currentChainI_(0), stop_(false), stopRequestMessage_(111222), stopRequestTag_(0), stopRequestSent_(false), stopMessageRequested_(false), haveStoppedMessage_(476901), haveStoppedMessageTag_(100000), updateReqTag_(200000), firstUpdateRequested_(false), reachedSigma_(nPar, -1), rGelmanRubin_(nPar, -1)
 {
 #ifdef COSMO_MPI
     int hasMpiInitialized;
@@ -391,217 +391,64 @@ MetropolisHastings::run(unsigned long maxChainLength, int writeResumeInformation
         openOut(false);
     }
 
-    std::vector<unsigned long> accepted(fastDrag_ ? 1 : blocks_.size(), 0);
+    std::vector<unsigned long> accepted(blocks_.size(), 0);
     unsigned long currentIter = 0;
     while(!stop())
     {
-        if(fastDrag_)
+        int blockBegin = 0;
+        for(int i = 0; i < blocks_.size(); ++i)
         {
-            check(fastIndex_ > 0 && fastIndex_ < n_, "");
-            check(spareLike_, "");
-            check(numDrag_ > 0, "");
+            int blockEnd = blocks_[i];
 
-            std::vector<double> slowBlock(fastIndex_);
+            std::vector<double> block(blockEnd - blockBegin);
 
             if(externalProposal_)
-                externalProposal_->generate(&(current_[0]), n_, &(slowBlock[0]), 0);
+                externalProposal_->generate(&(current_[0]), n_, &(block[0]), i);
             else
             {
-                for(int j = 0; j < fastIndex_; ++j)
-                    slowBlock[j] = generateNewPoint(j);
+                for(int j = blockBegin; j < blockEnd; ++j)
+                    block[j - blockBegin] = generateNewPoint(j);
             }
 
-            std::vector<double> slowOld(fastIndex_);
-            for(int j = 0; j < fastIndex_; ++j)
-                slowOld[j] = current_[j];
-
-            std::vector<double> priorsOld(numDrag_ + 1), priorsNew(numDrag_ + 1), likesOld(numDrag_ + 1, 0), likesNew(numDrag_ + 1, 0);
-            priorsOld[0] = currentPrior_;
-            likesOld[0] = currentLike_;
-
             std::vector<double> currentOld = current_;
+            for(int j = blockBegin; j < blockEnd; ++j)
+                current_[j] = block[j - blockBegin];
 
-            for(int j = 0; j < fastIndex_; ++j)
-                current_[j] = slowBlock[j];
-            
-            priorsNew[0] = calculatePrior();
-            if(priorsNew[0] != 0)
+            const double newPrior = calculatePrior();
+            const double oldLike = currentLike_;
+            if(newPrior != 0)
+                currentLike_ = like_->calculate(&(current_[0]), n_);
+
+            double p = newPrior / currentPrior_;
+            const double deltaLike = currentLike_ - oldLike;
+            p *= std::exp(-deltaLike / 2.0);
+
+            if(externalProposal_ && !externalProposal_->isSymmetric(i))
             {
-                likesNew[0] = spareLike_->calculate(&(current_[0]), n_);
-                
-                for(int k = 1; k <= numDrag_; ++k)
-                {
-                    std::vector<double> fastBlock(n_ - fastIndex_);
+                std::vector<double> oldBlock(blockEnd - blockBegin);
+                for(int j = blockBegin; j < blockEnd; ++j)
+                    oldBlock[j - blockBegin] = currentOld[j];
 
-                    if(externalProposal_)
-                        externalProposal_->generate(&(current_[0]), n_, &(fastBlock[0]), 1);
-                    else
-                    {
-                        for(int j = fastIndex_; j < n_; ++j)
-                            fastBlock[j - fastIndex_] = generateNewPoint(j);
-                    }
+                p *= externalProposal_->calculate(&(current_[0]), n_, &(oldBlock[0]), i);
+                p /= externalProposal_->calculate(&(currentOld[0]), n_, &(block[0]), i);
+            }
+            if(p > 1)
+                p = 1;
+            
+            const double q = uniformGen_->generate(); 
 
-                    std::vector<double> fastOld(n_ - fastIndex_);
-                    for(int j = fastIndex_; j < n_; ++j)
-                    {
-                        fastOld[j - fastIndex_] = current_[j];
-                        current_[j] = fastBlock[j - fastIndex_];
-                    }
-
-                    priorsNew[k] = calculatePrior();
-                    if(priorsNew[k] != 0)
-                        likesNew[k] = spareLike_->calculate(&(current_[0]), n_);
-
-                    for(int j = 0; j < fastIndex_; ++j)
-                        current_[j] = slowOld[j];
-
-                    priorsOld[k] = calculatePrior();
-                    if(priorsOld[k] != 0)
-                        likesOld[k] = like_->calculate(&(current_[0]), n_);
-
-                    for(int j = 0; j < fastIndex_; ++j)
-                        current_[j] = slowBlock[j];
-
-                    if(priorsOld[k] == 0 || priorsNew[k] == 0)
-                    {
-                        for(int j = fastIndex_; j < n_; ++j)
-                            current_[j] = fastOld[j - fastIndex_];
-
-                        priorsNew[k] = priorsNew[k - 1];
-                        priorsOld[k] = priorsOld[k - 1];
-                        likesNew[k] = likesNew[k - 1];
-                        likesOld[k] = likesOld[k - 1];
-
-                        continue;
-                    }
-
-                    const double deltaOld = (likesOld[k] - likesOld[k - 1]) / 2.0 - (std::log(priorsOld[k]) - std::log(priorsOld[k - 1]));
-                    const double deltaNew = (likesNew[k] - likesNew[k - 1]) / 2.0 - (std::log(priorsNew[k]) - std::log(priorsNew[k - 1]));
-                    double p = std::exp(-(1.0 - double(k) / (numDrag_ + 1)) * deltaOld + (double(k) / (numDrag_ + 1)) * deltaNew);
-
-                    if(externalProposal_ && !externalProposal_->isSymmetric(1))
-                    {
-                        p *= externalProposal_->calculate(&(current_[0]), n_, &(fastOld[0]), 1);
-                        std::vector<double> oldCur = current_;
-
-                        for(int j = fastIndex_; j < n_; ++j)
-                            oldCur[j] = fastOld[j - fastIndex_];
-
-                        p /= externalProposal_->calculate(&(oldCur[0]), n_, &(fastBlock[0]), 1);
-                    }
-                    if(p > 1)
-                        p = 1;
-                    
-                    const double q = uniformGen_->generate(); 
-
-                    //output_screen2("Fast drag round " << k << ": p = " << p << ", q = " << q << std::endl);
-
-                    if(q > p)
-                    {
-                        for(int j = fastIndex_; j < n_; ++j)
-                            current_[j] = fastOld[j - fastIndex_];
-
-                        priorsNew[k] = priorsNew[k - 1];
-                        priorsOld[k] = priorsOld[k - 1];
-                        likesNew[k] = likesNew[k - 1];
-                        likesOld[k] = likesOld[k - 1];
-                    }
-                }
-
-                double delta = 0;
-                for(int k = 0; k <= numDrag_; ++k)
-                {
-                    delta += (likesOld[k] / 2.0 - std::log(priorsOld[k]));
-                    delta -= (likesNew[k] / 2.0 - std::log(priorsNew[k]));
-                }
-
-                delta /= (numDrag_ + 1);
-                double p = std::exp(delta);
-
-                if(externalProposal_ && !externalProposal_->isSymmetric(0))
-                {
-                    p *= externalProposal_->calculate(&(current_[0]), n_, &(slowOld[0]), 0);
-                    p /= externalProposal_->calculate(&(currentOld[0]), n_, &(slowBlock[0]), 0);
-                }
-                if(p > 1)
-                    p = 1;
-                
-                const double q = uniformGen_->generate(); 
-                //output_screen2("Moving slow parameters: p = " << p << ", q = " << q << std::endl);
-                if(q <= p)
-                {
-                    currentPrior_ = priorsNew[numDrag_];
-                    currentLike_ = likesNew[numDrag_];
-                    ++accepted[0];
-                    std::swap(like_, spareLike_);
-                }
-                else
-                {
-                    current_ = currentOld;
-                }
+            if(q <= p)
+            {
+                currentPrior_ = newPrior;
+                ++accepted[i];
             }
             else
             {
                 current_ = currentOld;
+                currentLike_ = oldLike;
             }
-        }
-        else
-        {
-            int blockBegin = 0;
-            for(int i = 0; i < blocks_.size(); ++i)
-            {
-                int blockEnd = blocks_[i];
 
-                std::vector<double> block(blockEnd - blockBegin);
-
-                if(externalProposal_)
-                    externalProposal_->generate(&(current_[0]), n_, &(block[0]), i);
-                else
-                {
-                    for(int j = blockBegin; j < blockEnd; ++j)
-                        block[j - blockBegin] = generateNewPoint(j);
-                }
-
-                std::vector<double> currentOld = current_;
-                for(int j = blockBegin; j < blockEnd; ++j)
-                    current_[j] = block[j - blockBegin];
-
-                const double newPrior = calculatePrior();
-                const double oldLike = currentLike_;
-                if(newPrior != 0)
-                    currentLike_ = like_->calculate(&(current_[0]), n_);
-
-                double p = newPrior / currentPrior_;
-                const double deltaLike = currentLike_ - oldLike;
-                p *= std::exp(-deltaLike / 2.0);
-
-                if(externalProposal_ && !externalProposal_->isSymmetric(i))
-                {
-                    std::vector<double> oldBlock(blockEnd - blockBegin);
-                    for(int j = blockBegin; j < blockEnd; ++j)
-                        oldBlock[j - blockBegin] = currentOld[j];
-
-                    p *= externalProposal_->calculate(&(current_[0]), n_, &(oldBlock[0]), i);
-                    p /= externalProposal_->calculate(&(currentOld[0]), n_, &(block[0]), i);
-                }
-                if(p > 1)
-                    p = 1;
-                
-                const double q = uniformGen_->generate(); 
-
-                if(q <= p)
-                {
-                    currentPrior_ = newPrior;
-                    ++accepted[i];
-                }
-                else
-                {
-                    current_ = currentOld;
-                    currentLike_ = oldLike;
-                }
-
-                blockBegin = blockEnd;
-            }
+            blockBegin = blockEnd;
         }
 
         writeChainElement();
@@ -701,17 +548,6 @@ MetropolisHastings::specifyParameterBlocks(const std::vector<int>& blocks)
 #endif
 
     blocks_ = blocks;
-}
-
-void
-MetropolisHastings::setFastDrag(int i, LikelihoodFunction& spareLike, int n)
-{
-    check(i > 0 && i < n_, "invalid i");
-    check(n > 0, "invalid n");
-    fastDrag_ = true;
-    fastIndex_ = i;
-    spareLike_ = &spareLike;
-    numDrag_ = n;
 }
 
 bool
