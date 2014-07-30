@@ -47,6 +47,8 @@ public:
     /// \param wantT A flag specifying if the T mode (temperature) should be calculated.
     /// \param wantPol A flag specifying if polarization modes (E and B) should be calculated.
     /// \param wantLensing A flag specifying if lensing potential and lensed Cl-s should be calculated.
+    /// \param wantMatterPs A flag specifying if the matter power spectrum should be calculated.
+    /// \param zMaxPk The redshift up to which the matter power spectrum is needed. This parameter matters only if wantMatterPs is true.
     void initialize(const CosmologicalParams& params, bool wantT = true, bool wantPol = false, bool wantLensing = false, bool wantMatterPs = false, double zMaxPk = 0);
 
     /// Retrieves the values of the calculated CMB power spectra.
@@ -73,10 +75,18 @@ public:
     /// \param p A pointer to a map where the the lensing potential transfer function should be stored. Give NULL if not wanted. NOTE: Can only be requested if lensing has been calculated during initialization.
     void getTransfer(int l, Math::TableFunction<double, double>* t, Math::TableFunction<double, double>* e = NULL, Math::TableFunction<double, double>* p = NULL);
 
+    /// Retrieves the matter power spectrum. Should not be called unless wantMatterPs is set to true in initialize.
+    /// \param z The redshift at which the matter power spectrum is wanted. Should not exceed zMaxPk of initialize.
+    /// \param ps A pointer to a map where the matter power spectrum will be written.
     void getMatterPs(double z, Math::TableFunction<double, double>* ps);
 
+    /// Retrieves the matter transfer function. Should not be called unless wantMatterPs is set to true in initialize.
+    /// \param z The redshift at which the matter transfer function is wanted. Should not exceed zMaxPk of initialize.
+    /// \param tk A pointer to a map where the matter transfer function will be written.
     void getMatterTransfer(double z, Math::TableFunction<double, double>* tk);
 
+    /// Calculates sigma_8. Should not be called unless wantMatterPs is set to true in initialize.
+    /// \return The sigma_8 value.
     double sigma8();
 
 private:
