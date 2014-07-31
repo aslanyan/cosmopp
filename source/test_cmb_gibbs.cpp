@@ -85,7 +85,7 @@ TestCMBGibbs::runSubTest(unsigned int i, double& res, double& expected, std::str
     if(i == 3)
         pixelNoise = 50.0;
 
-    double comparisonScale = 0.25;
+    double comparisonScale = 0.4;
     int comparisonLMax = lMaxGibbs;
     if(i == 2)
         comparisonScale = 0.5;
@@ -204,7 +204,7 @@ TestCMBGibbs::runSubTest(unsigned int i, double& res, double& expected, std::str
     res = 1;
     expected = 1;
 
-    for(int l = 0; l <= lMaxGibbs; ++l)
+    for(int l = 2; l <= lMaxGibbs; ++l)
     {
         double smoothScale = 0;
         if(l >= 2)
