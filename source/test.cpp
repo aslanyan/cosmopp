@@ -117,7 +117,7 @@ TestFramework* createTest(const std::string& name)
 #ifdef COSMO_CLASS
 #ifdef COSMO_LAPACKPP
     else if(name == "matter_likelihood")
-        test = new TestMatterLikelihood;
+        test = new TestMatterLikelihood(1e-3);
 #endif
 #endif
 

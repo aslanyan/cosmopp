@@ -6,6 +6,7 @@
 class TestMatterLikelihood : public TestFramework
 {
 public:
+    TestMatterLikelihood(double precision = 1e-5) : TestFramework(precision) {}
     ~TestMatterLikelihood() {}
 
 protected:
