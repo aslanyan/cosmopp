@@ -28,7 +28,7 @@ ScaleFactorFunctionClass::initialize(const CosmologicalParams& params)
 	double a = 1;
 	double t = 0;
 	
-	output_screen1("Calculating the scale factor..." << std::endl);
+	output_screen2("Calculating the scale factor..." << std::endl);
     
     std::set<double> aSet;
 	
@@ -50,7 +50,7 @@ ScaleFactorFunctionClass::initialize(const CosmologicalParams& params)
 		omegaK_ /= aFactorSq;
 	}
 	
-	output_screen1("Scale factor determined at " << tableFunction_.size() << " points!" << std::endl);
+	output_screen2("Scale factor determined at " << tableFunction_.size() << " points!" << std::endl);
 	
 	tCut_ = t;
 	aCut_ = a;
