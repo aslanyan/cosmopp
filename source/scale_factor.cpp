@@ -17,7 +17,7 @@ ScaleFactorFunctionClass::initialize(const CosmologicalParams& params)
 	omegaR_ = params.getOmR();
 	omegaK_ = params.getOmK();
 	h0_ = params.getHubbleUnitless();
-	
+
 	const double deltaAFactor = double(1) / 10000;
 	const double aFactor = 1 - deltaAFactor;
 	const double aFactorSq = aFactor * aFactor;
@@ -28,7 +28,7 @@ ScaleFactorFunctionClass::initialize(const CosmologicalParams& params)
 	double a = 1;
 	double t = 0;
 	
-	output_screen("Calculating the scale factor..." << std::endl);
+	output_screen1("Calculating the scale factor..." << std::endl);
     
     std::set<double> aSet;
 	
@@ -50,13 +50,19 @@ ScaleFactorFunctionClass::initialize(const CosmologicalParams& params)
 		omegaK_ /= aFactorSq;
 	}
 	
-	output_screen("Scale factor determined at " << tableFunction_.size() << " points!" << std::endl);
+	output_screen1("Scale factor determined at " << tableFunction_.size() << " points!" << std::endl);
 	
 	tCut_ = t;
 	aCut_ = a;
 	
 	radDomCoeff_ = std::sqrt(2 * h0_ * aCut_ * aCut_ * std::sqrt(omegaR_));
 	tRadDom_ = 1 / (2 * h0_ * std::sqrt(omegaR_));
+
+	omegaM_ = params.getOmM();
+	omegaLambda_ = params.getOmLambda();
+	omegaR_ = params.getOmR();
+	omegaK_ = params.getOmK();
+	h0_ = params.getHubbleUnitless();
     
     double gf = growthFactorUnnormalizedRadDom(aCut_);
     growthFactor_[aCut_] = gf;

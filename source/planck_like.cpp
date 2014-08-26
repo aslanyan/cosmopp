@@ -243,6 +243,8 @@ PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useL
 
     output_screen1("Total l_max = " << lMax_ << std::endl);
     cmb_.preInitialize(lMax_ + 1000, false, true, includeTensors, lMax_ + 1000, kPerDecade);
+
+    useCMB_ = &cmb_;
 }
 
 void
@@ -320,10 +322,10 @@ PlanckLikelihood::calculateCls()
     std::vector<double>* ee = (wantPol ? &clEE_ : NULL);
     std::vector<double>* te = (wantPol ? &clTE_ : NULL);
     
-    cmb_.getLensedCl(tt, ee, te);
+    useCMB_->getLensedCl(tt, ee, te);
 
     if(wantLens)
-        cmb_.getCl(NULL, NULL, NULL, &clPP_, NULL, NULL);
+        useCMB_->getCl(NULL, NULL, NULL, &clPP_, NULL, NULL);
 }
 
 double
@@ -432,6 +434,8 @@ PlanckLikelihood::calculate(double* params, int nPar)
 {
     //Timer timer("Planck likelihood timer");
     //timer.start();
+    check(useCMB_ == &cmb_, "");
+
     check(nPar == (6 + (camspec_ ? 14 : 0) + (actspt_ ? 24 : 0)), "");
     const double pivot = 0.05;
 

@@ -23,6 +23,10 @@ public:
     /// Destructor.
     ~PlanckLikelihood();
 
+    /// Sets a reference to a CMB object which will be used to get the power spectra. If this is set then setCosmoParams should not be used any more (will not affect the likelihood).
+    /// \param cmb A reference to the CMB object.
+    void setCMB(CMB& cmb) { useCMB_ = &cmb; }
+
     /// Set cosmological parameters. Needs to be called before calculateCls.
     /// \param params The cosmological parameters.
     void setCosmoParams(const CosmologicalParams& params);
@@ -71,6 +75,7 @@ private:
     void* lens_;
     int commanderLMax_, camspecLMax_, lensingLMax_, polLMax_, actSptLMax_, lMax_;
     CMB cmb_;
+    CMB* useCMB_;
     std::vector<std::string> spectraNames_;
     std::vector<double> camspecExtra_, actSptExtra_;
     std::vector<double> clTT_, clEE_, clTE_, clPP_;

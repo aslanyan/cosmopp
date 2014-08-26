@@ -16,6 +16,9 @@ HEALPIX_AND_LAPACKPP_TARGET = bin/generate_white_noise
 
 HEALPIX_AND_LAPACK_AND_CLASS_TEST_OBJ = obj/test_cmb_gibbs.o obj/test_like_high.o obj/test_like_low.o
 
+CLASS_AND_LAPACK_OBJ = obj/matter_likelihood.o
+CLASS_AND_LAPACK_TEST_OBJ = obj/test_matter_likelihood.o
+
 PLANCK_AND_CLASS_OBJ = obj/planck_like.o
 PLANCK_AND_CLASS_TEST_OBJ = obj/test_planck_like.o obj/test_mcmc_planck.o
 PLANCK_AND_CLASS_TARGET = bin/example_planck
@@ -66,6 +69,8 @@ LAPACKPP_INCLUDE_FLAGS =
 LAPACKPP_COMPILE_FLAGS =
 LAPACKPP_LIB_FLAGS1 =
 LAPACKPP_LIB_FLAGS2 =
+CLASS_AND_LAPACK_OBJ =
+CLASS_AND_LAPACK_TEST_OBJ =
 HEALPIX_AND_LAPACKPP_OBJ =
 HEALPIX_AND_LAPACKPP_TARGET =
 HEALPIX_AND_LAPACK_AND_CLASS_TEST_OBJ =
@@ -87,6 +92,8 @@ CLASS_LIB_FLAGS2 =
 CLASS_OBJ =
 CLASS_TEST_OBJ =
 CLASS_TARGET =
+CLASS_AND_LAPACK_OBJ =
+CLASS_AND_LAPACK_TEST_OBJ =
 PLANCK_AND_CLASS_OBJ =
 PLANCK_AND_CLASS_TEST_OBJ =
 PLANCK_AND_CLASS_TARGET =
@@ -244,6 +251,7 @@ WMAP9_LIKE_HPP = include/wmap9_like.hpp $(MACROS_HPP) $(LIKELIHOOD_FUNCTION_HPP)
 SCALE_FACTOR_HPP = include/scale_factor.hpp $(MACROS_HPP) $(TABLE_FUNCTION_HPP) $(COSMOLOGICAL_PARAMS_HPP)
 CMB_GIBBS_HPP = include/cmb_gibbs.hpp $(RANDOM_HPP)
 MASK_APODIZER_HPP = include/mask_apodizer.hpp
+MATTER_LIKELIHOOD_HPP = include/matter_likelihood.hpp $(FUNCTION_HPP) $(COSMOLOGICAL_PARAMS_HPP)
 
 TEST_UNIT_CONVERSIONS_HPP = include/test_unit_conversions.hpp $(TEST_FRAMEWORK_HPP)
 TEST_INT_OPERATIONS_HPP = include/test_int_operations.hpp $(TEST_FRAMEWORK_HPP)
@@ -268,6 +276,7 @@ TEST_TABLE_FUNCTION_HPP = include/test_table_function.hpp $(TEST_FRAMEWORK_HPP)
 TEST_CUBIC_SPLINE_HPP = include/test_cubic_spline.hpp $(TEST_FRAMEWORK_HPP)
 TEST_THREE_ROTATION_HPP = include/test_three_rotation.hpp $(TEST_FRAMEWORK_HPP)
 TEST_MASK_APODIZER_HPP = include/test_mask_apodizer.hpp $(TEST_FRAMEWORK_HPP)
+TEST_MATTER_LIKELIHOOD_HPP = include/test_matter_likelihood.hpp $(TEST_FRAMEWORK_HPP)
 
 GENERAL_TARGET = bin/example_metropolis_hastings
 
@@ -275,13 +284,13 @@ all: lib/libcosmopp.a bin/test $(GENERAL_TARGET) $(HEALPIX_AND_LAPACKPP_TARGET) 
 
 GENERAL_OBJ = obj/macros.o obj/test_framework.o obj/mcmc.o obj/whole_matrix.o obj/scale_factor.o obj/markov_chain.o
 
-OBJ_LIBRARY = $(GENERAL_OBJ) $(HEALPIX_OBJ) $(HEALPIX_AND_LAPACKPP_OBJ) $(CLASS_OBJ) $(MULTINEST_OBJ) $(PLANCK_OBJ) $(PLANCK_AND_CLASS_OBJ) $(WMAP_OBJ) $(WMAP_AND_CLASS_OBJ)
+OBJ_LIBRARY = $(GENERAL_OBJ) $(HEALPIX_OBJ) $(CLASS_AND_LAPACK_OBJ) $(HEALPIX_AND_LAPACKPP_OBJ) $(CLASS_OBJ) $(MULTINEST_OBJ) $(PLANCK_OBJ) $(PLANCK_AND_CLASS_OBJ) $(WMAP_OBJ) $(WMAP_AND_CLASS_OBJ)
 lib/libcosmopp.a: $(OBJ_LIBRARY)
 	ar rcs $@ $(OBJ_LIBRARY)
 
 GENERAL_TEST_OBJ = obj/test.o obj/test_unit_conversions.o obj/test_int_operations.o obj/test_integral.o obj/test_conjugate_gradient.o obj/test_polynomial.o obj/test_legendre.o obj/test_spherical_harmonics.o obj/test_mcmc.o obj/test_wigner_3j.o obj/test_table_function.o obj/test_cubic_spline.o obj/test_three_rotation.o
 
-OBJ_TEST = $(OBJ_LIBRARY) $(GENERAL_TEST_OBJ) $(MULTINEST_TEST_OBJ) $(PLANCK_TEST_OBJ) $(PLANCK_AND_MULTINEST_AND_CLASS_TEST_OBJ) $(CLASS_TEST_OBJ) $(PLANCK_AND_CLASS_TEST_OBJ) $(HEALPIX_TEST_OBJ) $(HEALPIX_AND_LAPACK_AND_CLASS_TEST_OBJ) $(MINUIT_TEST_OBJ) $(WMAP_AND_CLASS_TEST_OBJ)
+OBJ_TEST = $(OBJ_LIBRARY) $(GENERAL_TEST_OBJ) $(MULTINEST_TEST_OBJ) $(PLANCK_TEST_OBJ) $(PLANCK_AND_MULTINEST_AND_CLASS_TEST_OBJ) $(CLASS_TEST_OBJ) $(CLASS_AND_LAPACK_TEST_OBJ) $(PLANCK_AND_CLASS_TEST_OBJ) $(HEALPIX_TEST_OBJ) $(HEALPIX_AND_LAPACK_AND_CLASS_TEST_OBJ) $(MINUIT_TEST_OBJ) $(WMAP_AND_CLASS_TEST_OBJ)
 bin/test: $(OBJ_TEST)
 	$(CC) $(LFLAGS1) -o $@ $(OBJ_TEST) $(LFLAGS2)
 
@@ -371,7 +380,7 @@ obj/scale_factor.o: source/scale_factor.cpp $(UNIT_CONVERSIONS_HPP) $(TABLE_FUNC
 obj/simulate.o: source/simulate.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(NUMERICS_HPP) $(WHOLE_MATRIX_HPP) $(RANDOM_HPP) $(SIMULATE_HPP)
 	$(CC) $(CFLAGS) source/simulate.cpp -o $@
 
-obj/test.o: source/test.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(TEST_FRAMEWORK_HPP) $(TEST_UNIT_CONVERSIONS_HPP) $(TEST_INT_OPERATIONS_HPP) $(TEST_INTEGRAL_HPP) $(TEST_CONJUGATE_GRADIENT_HPP) $(TEST_POLYNOMIAL_HPP) $(TEST_LEGENDRE_HPP) $(TEST_SPHERICAL_HARMONICS_HPP) $(TEST_MCMC_HPP) $(TEST_MULTINEST_HPP) $(TEST_MCMC_PLANCK_HPP) $(TEST_CMB_HPP) $(TEST_CMB_GIBBS_HPP) $(TEST_FIT_HPP) $(TEST_PLANCK_LIKE_HPP) $(TEST_WMAP9_LIKE_HPP) $(TEST_LIKE_HIGH_HPP) $(TEST_LIKE_LOW_HPP) $(TEST_WIGNER_3J_HPP) $(TEST_TABLE_FUNCTION_HPP) $(TEST_CUBIC_SPLINE_HPP) $(TEST_THREE_ROTATION_HPP) $(TEST_MASK_APODIZER_HPP)
+obj/test.o: source/test.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(TEST_FRAMEWORK_HPP) $(TEST_UNIT_CONVERSIONS_HPP) $(TEST_INT_OPERATIONS_HPP) $(TEST_INTEGRAL_HPP) $(TEST_CONJUGATE_GRADIENT_HPP) $(TEST_POLYNOMIAL_HPP) $(TEST_LEGENDRE_HPP) $(TEST_SPHERICAL_HARMONICS_HPP) $(TEST_MCMC_HPP) $(TEST_MULTINEST_HPP) $(TEST_MCMC_PLANCK_HPP) $(TEST_CMB_HPP) $(TEST_CMB_GIBBS_HPP) $(TEST_FIT_HPP) $(TEST_PLANCK_LIKE_HPP) $(TEST_WMAP9_LIKE_HPP) $(TEST_LIKE_HIGH_HPP) $(TEST_LIKE_LOW_HPP) $(TEST_WIGNER_3J_HPP) $(TEST_TABLE_FUNCTION_HPP) $(TEST_CUBIC_SPLINE_HPP) $(TEST_THREE_ROTATION_HPP) $(TEST_MASK_APODIZER_HPP) $(TEST_MATTER_LIKELIHOOD_HPP)
 	$(CC) $(CFLAGS) source/test.cpp -o $@
 
 obj/test_framework.o: source/test_framework.cpp $(MACROS_HPP) $(NUMERICS_HPP) $(TEST_FRAMEWORK_HPP)
@@ -402,6 +411,11 @@ obj/mask_apodizer.o: source/mask_apodizer.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_
 ifdef HEALPIX_TARGET
 obj/apodize_mask.o: source/apodize_mask.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(MASK_APODIZER_HPP)
 	$(CC) $(CFLAGS) source/apodize_mask.cpp -o $@
+endif
+
+ifdef CLASS_AND_LAPACK_OBJ
+obj/matter_likelihood.o: source/matter_likelihood.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(SCALE_FACTOR_HPP) $(UNIT_CONVERSIONS_HPP) $(MATTER_LIKELIHOOD_HPP)
+	$(CC) $(CFLAGS) source/matter_likelihood.cpp -o $@
 endif
 
 obj/mcmc.o: source/mcmc.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(MCMC_HPP)
@@ -478,6 +492,9 @@ obj/test_three_rotation.o: source/test_three_rotation.cpp $(THREE_ROTATION_HPP) 
 
 obj/test_mask_apodizer.o: source/test_mask_apodizer.cpp $(MACROS_HPP) $(MASK_APODIZER_HPP) $(MATH_CONSTANTS_HPP) $(TEST_MASK_APODIZER_HPP)
 	$(CC) $(CFLAGS) source/test_mask_apodizer.cpp -o $@
+
+obj/test_matter_likelihood.o: source/test_matter_likelihood.cpp $(MACROS_HPP) $(CMB_HPP) $(MATTER_LIKELIHOOD_HPP) $(TEST_MATTER_LIKELIHOOD_HPP)
+	$(CC) $(CFLAGS) source/test_matter_likelihood.cpp -o $@
 
 obj/example_metropolis_hastings.o: examples/example_metropolis_hastings.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(MCMC_HPP) $(MARKOV_CHAIN_HPP)
 	$(CC) $(CFLAGS) examples/example_metropolis_hastings.cpp -o $@
