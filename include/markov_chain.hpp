@@ -14,7 +14,7 @@ public:
     enum SmoothingMethod { GAUSSIAN_SMOOTHING = 0, SPLINE_SMOOTHING, SMOOTHING_MAX };
 public:
     ///Constructior.
-    Posterior1D() : smooth_(NULL), cumul_(NULL), cumulInv_(NULL), min_(std::numeric_limits<double>::max()), max_(std::numeric_limits<double>::min()), minLike_(std::numeric_limits<double>::max()) {}
+    Posterior1D() : smooth_(NULL), cumul_(NULL), cumulInv_(NULL), min_(std::numeric_limits<double>::max()), max_(-std::numeric_limits<double>::max()), minLike_(std::numeric_limits<double>::max()) {}
 
     /// Destructor.
     ~Posterior1D() { if(smooth_) delete smooth_; if(cumul_) delete cumul_; if(cumulInv_) delete cumulInv_; }
@@ -93,7 +93,7 @@ class Posterior2D : public Math::Function2<double, double, double>
 {
 public:
     /// Constructor.
-    Posterior2D() : smooth_(NULL), cumul_(NULL), cumulInv_(NULL), min1_(std::numeric_limits<double>::max()), min2_(std::numeric_limits<double>::max()), max1_(std::numeric_limits<double>::min()), max2_(std::numeric_limits<double>::min()), minLike_(std::numeric_limits<double>::max()) {}
+    Posterior2D() : smooth_(NULL), cumul_(NULL), cumulInv_(NULL), min1_(std::numeric_limits<double>::max()), min2_(std::numeric_limits<double>::max()), max1_(-std::numeric_limits<double>::max()), max2_(-std::numeric_limits<double>::max()), minLike_(std::numeric_limits<double>::max()) {}
 
     /// Destructor.
     ~Posterior2D() { if(smooth_) delete smooth_; if(cumul_) delete cumul_; if(cumulInv_) delete cumulInv_; }
