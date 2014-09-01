@@ -710,6 +710,34 @@ CMB::getLensedCl(std::vector<double>* clTT, std::vector<double>* clEE, std::vect
         if(clBB)
             (*clBB)[l] = br_->T_cmb * br_->T_cmb * 1e12 * clTot[le_->index_lt_bb];
     }
+
+    // to be removed
+    std::stringstream nameStr;
+    nameStr << "cl_data";
+#ifdef COSMO_MPI
+    int mpif;
+    MPI_Initialized(&mpif);
+    if(mpif)
+    {
+        int n;
+        MPI_Comm_size(MPI_COMM_WORLD, &n);
+        if(n > 1)
+        {
+            int p;
+            MPI_Comm_rank(MPI_COMM_WORLD, &p);
+
+            nameStr << '_' << p;
+        }
+    }
+#endif
+    nameStr << ".txt";
+
+    std::ofstream out(nameStr.str().c_str(), std::ios::app);
+    out << params_->getOmBH2() << ' ' << params_->getOmCH2() << ' ' << params_->getH() << ' ' << params_->getTau() << ' ' << params_->getNs() << ' ' << params_->getAs();
+    for(int l = 2; l <= lMax; ++l)
+        out << '\t' << (*clTT)[l];
+    out << std::endl;
+    out.close();
 }
 
 void
