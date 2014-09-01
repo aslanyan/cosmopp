@@ -269,6 +269,11 @@ MatterLikelihood::readLogCov(const char* fileName)
     
     in.close();
 
+    std::ofstream out("matter_test.txt");
+    for(int i = 0; i < n; ++i)
+        out << kh_[i] << '\t' << data_[i] << '\t' << std::sqrt(cInv_(i, i)) << std::endl;
+    out.close();
+
     // inverting the covariance matrix
     LaVectorLongInt pivotC(n);
     LUFactorizeIP(cInv_, pivotC);
