@@ -1,6 +1,11 @@
+#ifdef COSMO_MPI
+#include <mpi.h>
+#endif
+
 #include <string>
 #include <sstream>
 #include <cstring>
+#include <fstream>
 
 #include <macros.hpp>
 #include <exception_handler.hpp>
@@ -250,6 +255,8 @@ PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useL
 void
 PlanckLikelihood::setCosmoParams(const CosmologicalParams& params)
 {
+    params_ = &params;
+
     bool wantT = true;
     bool wantPol = (pol_ != NULL);
     bool wantLens = (lens_ != NULL);
@@ -326,6 +333,64 @@ PlanckLikelihood::calculateCls()
 
     if(wantLens)
         useCMB_->getCl(NULL, NULL, NULL, &clPP_, NULL, NULL);
+
+    // to be removed
+    std::ifstream in("l_list.txt");
+    if(!in)
+    {
+        StandardException exc;
+        std::string exceptionStr = "Cannot open input file l_list.txt.";
+        exc.set(exceptionStr);
+        throw exc;
+    }
+
+    int totalNum;
+    in >> totalNum;
+    std::vector<int> lList(totalNum);
+    for(int i = 0; i < totalNum; ++i)
+        in >> lList[i];
+    in.close();
+
+    std::stringstream nameStr;
+    nameStr << "cl_data";
+#ifdef COSMO_MPI
+    int mpif;
+    MPI_Initialized(&mpif);
+    if(mpif)
+    {
+        int n;
+        MPI_Comm_size(MPI_COMM_WORLD, &n);
+        if(n > 1)
+        {
+            int p;
+            MPI_Comm_rank(MPI_COMM_WORLD, &p);
+
+            nameStr << '_' << p;
+        }
+    }
+#endif
+    nameStr << ".dat";
+
+    std::vector<double> buff;
+    buff.push_back(params_->getOmBH2());
+    buff.push_back(params_->getOmCH2());
+    buff.push_back(params_->getH());
+    buff.push_back(params_->getTau());
+    buff.push_back(params_->getNs());
+    buff.push_back(params_->getAs());
+
+    for(int i = 0; i < totalNum; ++i)
+    {
+        const int l = lList[i];
+        buff.push_back(clTT_[l]);
+        buff.push_back(clEE_[l]);
+        buff.push_back(clTE_[l]);
+        buff.push_back(clPP_[l]);
+    }
+
+    std::ofstream out(nameStr.str().c_str(), std::ios::binary | std::ios::app);
+    out.write((char*)(&(buff[0])), buff.size() * sizeof(double));
+    out.close();
 }
 
 double

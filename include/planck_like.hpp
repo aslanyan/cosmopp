@@ -81,6 +81,8 @@ private:
     std::vector<double> clTT_, clEE_, clTE_, clPP_;
     std::vector<double> cosmoParams_;
     bool prevCosmoCalculated_;
+
+    const CosmologicalParams* params_;
 };
 
 #endif

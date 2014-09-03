@@ -14,7 +14,7 @@ int main(int argc, char *argv[])
         StandardException exc;
 
         // Create the likelihood
-        PlanckLikelihood like(true, true, true, false);
+        PlanckLikelihood like(true, true, true, true);
 
         // Create the Multinest scanner with 20 parameters and 300 live points
         MnScanner scanner(20, like, 300, std::string("example_files/planck_multinest_"));

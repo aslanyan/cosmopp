@@ -89,6 +89,9 @@ public:
     /// \return The sigma_8 value.
     double sigma8();
 
+    void getLList(std::vector<double>& list) const;
+    void getLListLens(std::vector<double>& list) const;
+
 private:
     void preClean();
     void clean();
