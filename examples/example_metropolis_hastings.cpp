@@ -68,15 +68,17 @@ int main(int argc, char *argv[])
         std::vector<int> blocks(1, 2);
         mh.specifyParameterBlocks(blocks);
 
+        mh.useAdaptiveProposal();
+
         // Choose the burin and run
         const unsigned long burnin = 1000;
-        const int nChains = mh.run(1000000, 0, burnin, MetropolisHastings::GELMAN_RUBIN, 0.001);
+        const int nChains = mh.run(1000000, 0, burnin, MetropolisHastings::GELMAN_RUBIN, 0.00001);
 
         // Only the master process will analyze the results
         if(isMaster)
         {
             // Read the resulting chain(s) with thinning
-            const unsigned int thin = 10;
+            const unsigned int thin = 1;
             MarkovChain chain(nChains, root.c_str(), burnin, thin);
 
             // Get the one dimensional marginalized posterior distributions, Gaussian smoothed with a scale of 0.3
@@ -105,6 +107,7 @@ int main(int argc, char *argv[])
             }
 
             out << pxy->get1SigmaLevel() << std::endl;
+            out << pxy->get2SigmaLevel() << std::endl;
             out.close();
 
             // Delete the posterior distributions

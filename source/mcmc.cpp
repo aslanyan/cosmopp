@@ -2,6 +2,8 @@
 #include <mpi.h>
 #endif
 
+#include <blas2pp.h>
+
 #include <macros.hpp>
 #include <exception_handler.hpp>
 #include <mcmc.hpp>
@@ -9,7 +11,7 @@
 namespace Math
 {
 
-MetropolisHastings::MetropolisHastings(int nPar, LikelihoodFunction& like, std::string fileRoot, time_t seed) : n_(nPar), like_(&like), spareLike_(NULL), fileRoot_(fileRoot), paramNames_(nPar), param1_(nPar, 0), param2_(nPar, 0), starting_(nPar, std::numeric_limits<double>::max()), current_(nPar), prev_(nPar), samplingWidth_(nPar, 0), accuracy_(nPar, 0), paramSum_(nPar, 0), paramSquaredSum_(nPar, 0), corSum_(nPar, 0), priorMods_(nPar, PRIOR_MODE_MAX), externalPrior_(NULL), externalProposal_(NULL), resumeCode_(123456), nChains_(1), currentChainI_(0), stop_(false), stopRequestMessage_(111222), stopRequestTag_(0), stopRequestSent_(false), stopMessageRequested_(false), haveStoppedMessage_(476901), haveStoppedMessageTag_(100000), updateReqTag_(200000), firstUpdateRequested_(false), reachedSigma_(nPar, -1), rGelmanRubin_(nPar, -1)
+MetropolisHastings::MetropolisHastings(int nPar, LikelihoodFunction& like, std::string fileRoot, time_t seed) : n_(nPar), like_(&like), spareLike_(NULL), fileRoot_(fileRoot), paramNames_(nPar), param1_(nPar, 0), param2_(nPar, 0), starting_(nPar, std::numeric_limits<double>::max()), current_(nPar), prev_(nPar), samplingWidth_(nPar, 0), accuracy_(nPar, 0), paramSum_(nPar, 0), paramSquaredSum_(nPar, 0), corSum_(nPar, 0), priorMods_(nPar, PRIOR_MODE_MAX), externalPrior_(NULL), externalProposal_(NULL), resumeCode_(123456), nChains_(1), currentChainI_(0), stop_(false), stopRequestMessage_(111222), stopRequestTag_(0), stopRequestSent_(false), stopMessageRequested_(false), haveStoppedMessage_(476901), haveStoppedMessageTag_(100000), updateReqTag_(200000), firstUpdateRequested_(false), reachedSigma_(nPar, -1), rGelmanRubin_(nPar, -1), adapt_(false), covEpsilon_(1e-7), covFactor_(2.4 * 2.4 / nPar)
 {
 #ifdef COSMO_MPI
     int hasMpiInitialized;
@@ -103,6 +105,22 @@ MetropolisHastings::~MetropolisHastings()
         }
     }
 #endif
+}
+
+void
+MetropolisHastings::useAdaptiveProposal()
+{
+    adapt_ = true;
+    covariance_.resize(n_, n_);
+
+    paramMean_.resize(n_, 0);
+    paramMeanNew_.resize(n_, 0);
+    generatedVec_.resize(n_);
+    rotatedVec_.resize(n_);
+
+    for(int i = 0; i < n_; ++i)
+        for(int j = 0; j < n_; ++j)
+            covariance_(i, j) = (i == j ? covEpsilon_ : 0.0);
 }
 
 void
@@ -400,19 +418,37 @@ MetropolisHastings::run(unsigned long maxChainLength, int writeResumeInformation
         {
             int blockEnd = blocks_[i];
 
+            std::vector<double> currentOld = current_;
+
             std::vector<double> block(blockEnd - blockBegin);
 
-            if(externalProposal_)
-                externalProposal_->generate(&(current_[0]), n_, &(block[0]), i);
+            if(adapt_ && iteration_ > 100)
+            {
+                for(int j = 0; j < n_; ++j)
+                    generatedVec_(j) = 0;
+
+                for(int j = blockBegin; j < blockEnd; ++j)
+                    generatedVec_(j) = generator_->generate() * std::sqrt(eigenRe_(j));
+
+                Blas_Mat_Vec_Mult(eigenMat_, generatedVec_, rotatedVec_);
+
+                for(int j = 0; j < n_; ++j)
+                    current_[j] += rotatedVec_(j);
+            }
             else
             {
+                if(externalProposal_)
+                    externalProposal_->generate(&(current_[0]), n_, &(block[0]), i);
+                else
+                {
+                    for(int j = blockBegin; j < blockEnd; ++j)
+                        block[j - blockBegin] = generateNewPoint(j);
+                }
+
                 for(int j = blockBegin; j < blockEnd; ++j)
-                    block[j - blockBegin] = generateNewPoint(j);
+                    current_[j] = block[j - blockBegin];
             }
 
-            std::vector<double> currentOld = current_;
-            for(int j = blockBegin; j < blockEnd; ++j)
-                current_[j] = block[j - blockBegin];
 
             const double newPrior = calculatePrior();
             const double oldLike = currentLike_;
@@ -423,7 +459,7 @@ MetropolisHastings::run(unsigned long maxChainLength, int writeResumeInformation
             const double deltaLike = currentLike_ - oldLike;
             p *= std::exp(-deltaLike / 2.0);
 
-            if(externalProposal_ && !externalProposal_->isSymmetric(i))
+            if(!(adapt_ && iteration_ > 100) && externalProposal_ && !externalProposal_->isSymmetric(i))
             {
                 std::vector<double> oldBlock(blockEnd - blockBegin);
                 for(int j = blockBegin; j < blockEnd; ++j)

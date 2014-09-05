@@ -15,6 +15,7 @@
 #include <math_constants.hpp>
 #include <likelihood_function.hpp>
 #include <random.hpp>
+#include <simulate.hpp>
 
 namespace Math
 {
@@ -115,6 +116,8 @@ public:
     /// \param proposal A pointer to the external proposal distribution.
     void useExternalProposal(ProposalFunctionBase* proposal) { externalProposal_ = proposal; }
 
+    void useAdaptiveProposal();
+
     /// Run the scan. Should be called after all of the other necessary functions have been called to set all of the necessary settings. The resulting chain is written in the file (fileRoot).txt. The first column is the number of repetitions of the element, the second column is -2ln(likelihood), the following columns are the values of all of the parameters.
     /// \param maxChainLength The maximum length of the chain (1000000 by default). The scan will stop when the chain reaches that length, even if the required accuracy for the parameters has not been achieved. If the accuracies are achieved earlier the scan will stop earlier.
     /// \param writeResumeInformationEvery Defines if resume information should be written in a file and how often. This will allow an interrupted run to resume. 0 will mean no resume information will be written. The default setting of 1 is recommended in most cases. However, if the likelihood calculation is very fast, so that the likelihood computing time is faster or comparable to writing out a small binary file, this parameter should be set to higher value. The reason is that it will slow down the scan significantly, and the chance of the resume file being corrupt and useless will be high (this will happen if the code is stopped during writing out the resume file).
@@ -169,6 +172,15 @@ private:
     PriorFunctionBase* externalPrior_;
     ProposalFunctionBase* externalProposal_;
     std::vector<int> blocks_;
+
+    LaGenMatDouble covariance_;
+    LaVectorDouble eigenRe_, eigenIm_, generatedVec_, rotatedVec_;
+    LaGenMatDouble eigenMat_;
+    std::vector<double> paramMean_;
+    std::vector<double> paramMeanNew_;
+    const double covEpsilon_;
+    const double covFactor_;
+    bool adapt_;
 
     std::vector<double> rGelmanRubin_;
 
@@ -539,6 +551,27 @@ MetropolisHastings::update()
             corSum_[i] += current_[i] * prev_[i];
         }
     }
+
+    if(adapt_)
+    {
+        check(iteration_ > 0, "");
+        for(int i = 0; i < n_; ++i)
+            paramMeanNew_[i] = double(iteration_ - 1) / double(iteration_) * paramMean_[i] + current_[i] / double(iteration_);
+        if(iteration_ > 1)
+            for(int i = 0; i < n_; ++i)
+            {
+                for(int j = 0; j < n_; ++j)
+                {
+                    covariance_(i, j) = double(iteration_ - 2) / double(iteration_ - 1) * covariance_(i, j) + covFactor_ / double(iteration_ - 1) * ((iteration_ - 1) * paramMean_[i] * paramMean_[j] - iteration_ * paramMeanNew_[i] * paramMeanNew_[j] + current_[i] * current_[j] + (i == j ? covEpsilon_ : 0.0));
+                }
+            }
+        for(int i = 0; i < n_; ++i)
+            paramMean_[i] = paramMeanNew_[i];
+
+        if(iteration_ > 10)
+            Simulate::diagonalizeMatrix(covariance_, eigenRe_, eigenIm_, eigenMat_);
+    }
+
     prev_ = current_;
 }
 
