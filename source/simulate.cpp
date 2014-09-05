@@ -217,7 +217,7 @@ Simulate::diagonalizeMatrix(const LaGenMatDouble& matrix, LaVectorDouble& eigenv
     //output_screen("Checking that eigenvalues are real and positive..." << std::endl);
     for(int i = 0; i < matrixSize; ++i)
     {
-        check(Math::areEqual(eigenvalsIm(i), 0.0, 1e-20), "The eigenvalue imaginary part " << i << " is supposed to be 0 but it is " << eigenvalsIm(i));
+        check(Math::areEqual(eigenvalsIm(i), 0.0, 1e-10), "The eigenvalue imaginary part " << i << " is supposed to be 0 but it is " << eigenvalsIm(i));
         check(eigenvalsRe(i) >= 0, "The eigenvalue " << i << " is non-positive, it is " << eigenvalsRe(i));
     }
     //output_screen("OK" << std::endl);
@@ -233,7 +233,7 @@ Simulate::diagonalizeMatrix(const LaGenMatDouble& matrix, LaVectorDouble& eigenv
         {
             if(i == j)
             {
-                check(Math::areEqual(diag(i, i), eigenvalsRe(i), 1e-10), "The diagonal element " << i << " of the matrix " << diag(i, i) << " is not equal to the eigenvalue " << eigenvalsRe(i));
+                check(Math::areEqual(diag(i, i), eigenvalsRe(i), 1e-4), "The diagonal element " << i << " of the matrix " << diag(i, i) << " is not equal to the eigenvalue " << eigenvalsRe(i));
             }
             else
             {
@@ -253,7 +253,7 @@ Simulate::diagonalizeMatrix(const LaGenMatDouble& matrix, LaVectorDouble& eigenv
         {
             if(i == j)
             {
-                check(Math::areEqual(mat2(i, i), 1.0, 1e-10), "The diagonal element " << i << " of the matrix " << mat2(i, i) << " is not equal to 1");
+                check(Math::areEqual(mat2(i, i), 1.0, 1e-5), "The diagonal element " << i << " of the matrix " << mat2(i, i) << " is not equal to 1");
             }
             else
             {
