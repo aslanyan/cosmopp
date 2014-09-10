@@ -14,7 +14,7 @@ TestMatterLikelihood::name() const
 unsigned int
 TestMatterLikelihood::numberOfSubtests() const
 {
-    return 2;
+    return 3;
 }
 
 void
@@ -53,9 +53,16 @@ TestMatterLikelihood::runSubTest(unsigned int i, double& res, double& expected, 
     cmb.initialize(paramsFid, true, false, false, true, 0.57);
     cmb.getMatterPs(0.57, &mpkFid);
 
-    MatterLikelihood ml("data/boss_dr11_pk.dat", "data/boss_dr11_pk_cov.dat");
+    double khMin = 0, khMax = 100;
+    if(i > 1)
+    {
+        khMin = 0.03;
+        khMax = 0.12;
+    }
+
+    MatterLikelihood ml("data/boss_dr11_pk.dat", "data/boss_dr11_pk_cov.dat", khMin, khMax);
     
-    if(i == 1)
+    if(i > 0)
         ml.useScaling(paramsFid, 0.57);
 
     res = ml.calculate(mpk, paramsLCDM);
@@ -66,6 +73,12 @@ TestMatterLikelihood::runSubTest(unsigned int i, double& res, double& expected, 
     {
         expected = 191.083;
         subTestName = "scaled";
+    }
+
+    if(i == 2)
+    {
+        expected = 19.0294;
+        subTestName = "scaled_range";
     }
 
     /*

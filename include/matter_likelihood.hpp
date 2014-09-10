@@ -12,7 +12,7 @@
 class MatterLikelihood
 {
 public:
-    MatterLikelihood(const char* pkFileName, const char* covFileName);
+    MatterLikelihood(const char* pkFileName, const char* covFileName, double khMin = 0, double khMax = 100);
 
     double calculate(const Math::RealFunction& matterPk, const CosmologicalParams& params) const;
 
@@ -23,7 +23,7 @@ public:
     double DV(const CosmologicalParams& params, double z) const;
 
 private:
-    void readPk(const char* fileName);
+    void readPk(const char* fileName, double khMin = 0, double khMax = 100);
     void readLogCov(const char* fileName);
     
 
@@ -33,6 +33,8 @@ private:
     bool scale_;
     double dvFid_;
     double z_;
+
+    int nIgnored_, nTotal_;
 };
 
 #endif

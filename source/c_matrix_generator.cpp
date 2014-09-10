@@ -532,7 +532,7 @@ CMatrixGenerator::polarizationEEWholeMatrixToCMatrix(const WholeMatrix& ee, long
     
     std::vector<double> beam;
     Utils::readPixelWindowFunction(beam, nSide, lMax, fwhm);
-    
+
     //output_screen("Calculating real and imaginary parts of first conversion..." << std::endl);
     for(int l1 = 0; l1 <= lMax; ++l1)
     {
@@ -564,7 +564,7 @@ CMatrixGenerator::polarizationEEWholeMatrixToCMatrix(const WholeMatrix& ee, long
         }
     }
     //output_screen("OK" << std::endl);
-    
+
     //output_screen("Converting to pixel space for l and m..." << std::endl);
     //ProgressMeter meter1((lMax + 1) * (lMax + 1));
     for(int l1 = 0; l1 <= lMax; ++l1)
@@ -585,7 +585,7 @@ CMatrixGenerator::polarizationEEWholeMatrixToCMatrix(const WholeMatrix& ee, long
         }
     }
     //output_screen("OK" << std::endl);
-    
+
     //output_screen("Calculating real and imaginary parts of second conversion" << std::endl);
     std::vector<Alm<xcomplex<double> > > tPix(nPix), reQPix(nPix), reUPix(nPix), bPix(nPix);
 #ifdef CHECKS_ON
@@ -624,6 +624,8 @@ CMatrixGenerator::polarizationEEWholeMatrixToCMatrix(const WholeMatrix& ee, long
         }
     }
     //output_screen("OK" << std::endl);
+    
+    output_screen(reQPix[50](10, 10) << ' ' << reUPix[100](2, 0) << std::endl);
     
     //output_screen("Converting to pixel space for l' and m'..." << std::endl);
     std::vector<Healpix_Map<double> > tPixMap(nPix), reQQPixMap(nPix), reQUPixMap(nPix), reUQPixMap(nPix), reUUPixMap(nPix);
@@ -681,7 +683,7 @@ CMatrixGenerator::polarizationEEWholeMatrixToCMatrix(const WholeMatrix& ee, long
             mat->element(nPix + i, nPix + j) = reUUPixMap[i][j];
             
             check(Math::areEqual(reQQPixMap[i][j], reQQPixMap[j][i], 1e-7), reQQPixMap[i][j] << ' ' << reQQPixMap[j][i]);
-            check(Math::areEqual(reQUPixMap[i][j], reUQPixMap[j][i], 1e-7), "");
+            check(Math::areEqual(reQUPixMap[i][j], reUQPixMap[j][i], 1e-7), i << ' ' << j << ' ' << reQUPixMap[i][j] << ' ' << reUQPixMap[j][i]);
             check(Math::areEqual(reUUPixMap[i][j], reUUPixMap[j][i], 1e-7), "");
             
             check(Math::areEqual(imQQPixMap[i][j], 0.0, 1e-15), "");
