@@ -70,9 +70,9 @@ int main(int argc, char *argv[])
 
         mh.useAdaptiveProposal();
 
-        // Choose the burin and run
+        // Choose the burnin and run
         const unsigned long burnin = 1000;
-        const int nChains = mh.run(1000000, 0, burnin, MetropolisHastings::GELMAN_RUBIN, 0.00001);
+        const int nChains = mh.run(1000000, 100, burnin, MetropolisHastings::GELMAN_RUBIN, 0.00001);
 
         // Only the master process will analyze the results
         if(isMaster)
@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
             }
 
             out << pxy->get1SigmaLevel() << std::endl;
-            out << pxy->get2SigmaLevel() << std::endl;
+            //out << pxy->get2SigmaLevel() << std::endl;
             out.close();
 
             // Delete the posterior distributions

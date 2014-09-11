@@ -69,8 +69,8 @@ plt.figure()
 #plt.colorbar()
 
 #pre-calculated for the example likelihood used in the analysis
-levels1 = [0.025, 0.0008915]
-#levels1 = [0.025]
+#levels1 = [0.025, 0.0008915]
+levels1 = [0.025]
 
 #plot the contours
 plt.contour(X, Y, z, levels, colors = ('r'), linewidths = 2)

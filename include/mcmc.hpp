@@ -10,12 +10,16 @@
 #include <limits>
 #include <ctime>
 
+#include <lavd.h>
+#include <gmd.h>
+#include <sybmd.h>
+#include <sybfd.h>
+
 #include <macros.hpp>
 #include <exception_handler.hpp>
 #include <math_constants.hpp>
 #include <likelihood_function.hpp>
 #include <random.hpp>
-#include <simulate.hpp>
 
 namespace Math
 {
@@ -116,6 +120,7 @@ public:
     /// \param proposal A pointer to the external proposal distribution.
     void useExternalProposal(ProposalFunctionBase* proposal) { externalProposal_ = proposal; }
 
+    /// HIGHLY RECOMMENDED! This function will turn on the usage of the Adaptive Metropolis algorithm. The proposal distribution will be continuously updated during the run based on the covariance of the existing elements. This typically speeds up the run by about 1 order of magnitude!
     void useAdaptiveProposal();
 
     /// Run the scan. Should be called after all of the other necessary functions have been called to set all of the necessary settings. The resulting chain is written in the file (fileRoot).txt. The first column is the number of repetitions of the element, the second column is -2ln(likelihood), the following columns are the values of all of the parameters.
@@ -173,9 +178,12 @@ private:
     ProposalFunctionBase* externalProposal_;
     std::vector<int> blocks_;
 
+    unsigned long covarianceElementsNum_;
     LaGenMatDouble covariance_;
-    LaVectorDouble eigenRe_, eigenIm_, generatedVec_, rotatedVec_;
-    LaGenMatDouble eigenMat_;
+    LaVectorDouble generatedVec_, rotatedVec_;
+    LaGenMatDouble choleskyMat_;
+    LaSymmBandMatDouble cholesky_;
+    bool covarianceReady_;
     std::vector<double> paramMean_;
     std::vector<double> paramMeanNew_;
     const double covEpsilon_;
@@ -238,6 +246,8 @@ private:
 
     std::vector<std::vector<double> > sendComBuff_;
 
+    std::vector<std::vector<double> > covUpdateBuff_;
+
     const int resumeCode_;
 
     std::ofstream out_;
@@ -266,6 +276,76 @@ private:
     std::vector<void*> updateRequests_;
     bool firstUpdateRequested_;
     std::vector<void*> updateReceiveReq_;
+
+    std::vector<void*> covarianceUpdateRequests_;
+    int covUpdateReqTag_;
+
+    bool firstCovUpdateRequested_;
+    void* receiveCovUpdateRequest_;
+    std::vector<double> eigenUpdateBuff_;
+
+    struct CovarianceMatrixUpdateInfo
+    {
+        CovarianceMatrixUpdateInfo(int dim)
+        {
+            check(dim > 0, "");
+
+            n = 0;
+            paramSum.resize(dim, 0);
+            matrixSum.resize(dim);
+            for(int i = 0; i < dim; ++i)
+                matrixSum[i].resize(dim, 0);
+        }
+
+        unsigned long n;
+        std::vector<double> paramSum;
+        std::vector<std::vector<double> > matrixSum;
+
+        inline void writeIntoFile(std::ofstream& out) const
+        {
+            const int dim = paramSum.size();
+            check(matrixSum.size() == dim, "");
+            out.write((char*)(&n), sizeof(n));
+            out.write((char*)(&(paramSum[0])), dim * sizeof(double));
+            for(int i = 0; i < dim; ++i)
+            {
+                check(matrixSum[i].size() == dim, "");
+                out.write((char*)(&(matrixSum[i][0])), dim * sizeof(double));
+            }
+        }
+
+        inline void readFromFile(std::ifstream& in)
+        {
+            const int dim = paramSum.size();
+            check(matrixSum.size() == dim, "");
+            in.read((char*)(&n), sizeof(n));
+            in.read((char*)(&(paramSum[0])), dim * sizeof(double));
+            for(int i = 0; i < dim; ++i)
+            {
+                check(matrixSum[i].size() == dim, "");
+                in.read((char*)(&(matrixSum[i][0])), dim * sizeof(double));
+            }
+        }
+
+        inline void flush()
+        {
+            n = 0;
+            const int dim = paramSum.size();
+            check(matrixSum.size() == dim, "");
+            for(int i = 0; i < dim; ++i)
+            {
+                paramSum[i] = 0;
+                check(matrixSum[i].size() == dim, "");
+                for(int j = 0; j < dim; ++j)
+                    matrixSum[i][j] = 0;
+            }
+        }
+    };
+
+    inline void updateCovarianceMatrix(const CovarianceMatrixUpdateInfo& info);
+
+    CovarianceMatrixUpdateInfo myCovUpdateInfo_;
+    CovarianceMatrixUpdateInfo tempCovUpdateInfo_;
 };
 
 double
@@ -554,25 +634,80 @@ MetropolisHastings::update()
 
     if(adapt_)
     {
-        check(iteration_ > 0, "");
+        ++myCovUpdateInfo_.n;
+        check(myCovUpdateInfo_.paramSum.size() == n_, "");
+        check(myCovUpdateInfo_.matrixSum.size() == n_, "");
         for(int i = 0; i < n_; ++i)
-            paramMeanNew_[i] = double(iteration_ - 1) / double(iteration_) * paramMean_[i] + current_[i] / double(iteration_);
-        if(iteration_ > 1)
-            for(int i = 0; i < n_; ++i)
-            {
-                for(int j = 0; j < n_; ++j)
-                {
-                    covariance_(i, j) = double(iteration_ - 2) / double(iteration_ - 1) * covariance_(i, j) + covFactor_ / double(iteration_ - 1) * ((iteration_ - 1) * paramMean_[i] * paramMean_[j] - iteration_ * paramMeanNew_[i] * paramMeanNew_[j] + current_[i] * current_[j] + (i == j ? covEpsilon_ : 0.0));
-                }
-            }
-        for(int i = 0; i < n_; ++i)
-            paramMean_[i] = paramMeanNew_[i];
-
-        if(iteration_ > 10)
-            Simulate::diagonalizeMatrix(covariance_, eigenRe_, eigenIm_, eigenMat_);
+        {
+            myCovUpdateInfo_.paramSum[i] += current_[i];
+            check(myCovUpdateInfo_.matrixSum[i].size() == n_, "");
+            for(int j = 0; j < n_; ++j)
+                myCovUpdateInfo_.matrixSum[i][j] += current_[i] * current_[j];
+        }
     }
 
     prev_ = current_;
+}
+
+void
+MetropolisHastings::updateCovarianceMatrix(const CovarianceMatrixUpdateInfo& info)
+{
+    check(isMaster(), "");
+    check(adapt_, "");
+
+    check(info.n >= 2, "at least 2 elements needed for updating");
+    check(info.paramSum.size() == n_, "");
+    for(int i = 0; i < n_; ++i)
+        paramMeanNew_[i] = double(covarianceElementsNum_) / double(covarianceElementsNum_ + info.n) * paramMean_[i] + info.paramSum[i] / double(covarianceElementsNum_ + info.n);
+
+    check(info.matrixSum.size() == n_, "");
+    for(int i = 0; i < n_; ++i)
+    {
+        check(info.matrixSum[i].size() == n_, "");
+        for(int j = 0; j < n_; ++j)
+        {
+            covariance_(i, j) = double(covarianceElementsNum_ - 1) / double(covarianceElementsNum_ + info.n - 1) * covariance_(i, j) + covFactor_ / double(covarianceElementsNum_ + info.n - 1) * (double(covarianceElementsNum_) * paramMean_[i] * paramMean_[j] - double(covarianceElementsNum_ + info.n) * paramMeanNew_[i] * paramMeanNew_[j] + info.matrixSum[i][j] + info.n * (i == j ? covEpsilon_ : 0.0));
+        }
+    }
+
+    for(int i = 0; i < n_; ++i)
+        paramMean_[i] = paramMeanNew_[i];
+
+    covarianceElementsNum_ += info.n;
+
+    for(int i = 0; i < n_; ++i)
+    {
+        for(int j = 0; j < n_; ++j)
+            cholesky_(i, j) = covariance_(i, j);
+    }
+
+    LaSymmBandMatFactorizeIP(cholesky_);
+
+    for(int i = 0; i < n_; ++i)
+    {
+        for(int j = 0; j <= i; ++j)
+            choleskyMat_(i, j) = cholesky_(i, j);
+    }
+
+    // to be removed
+    std::ofstream out("covariance_cholesky.txt");
+    for(int i = 0; i < n_; ++i)
+    {
+        for(int j = 0; j < n_; ++j)
+            out << covariance_(i, j) << '\t';
+        out << std::endl;
+    }
+    out << std::endl;
+    for(int i = 0; i < n_; ++i)
+    {
+        for(int j = 0; j < n_; ++j)
+            out << cholesky_(i, j) << '\t';
+        out << std::endl;
+    }
+    out.close();
+
+    if(covarianceElementsNum_ > 100)
+        covarianceReady_ = true;
 }
 
 void
@@ -647,6 +782,31 @@ MetropolisHastings::writeResumeInfo() const
     out.write((char*)(&(paramSquaredSum_[0])), n_ * sizeof(double));
     out.write((char*)(&(corSum_[0])), n_ * sizeof(double));
 
+    if(adapt_)
+    {
+        myCovUpdateInfo_.writeIntoFile(out);
+
+        out.write((char*)(&covarianceReady_), sizeof(covarianceReady_));
+
+        check(covariance_.size(0) == n_ && covariance_.size(1) == n_, "");
+        check(choleskyMat_.size(0) == n_ && choleskyMat_.size(1) == n_, "");
+
+        out.write((char*)(&covarianceElementsNum_), sizeof(covarianceElementsNum_));
+        for(int i = 0; i < n_; ++i)
+        {
+            for(int j = 0; j < n_; ++j)
+            {
+                double x = covariance_(i, j);
+                out.write((char*)(&x), sizeof(double));
+                x = choleskyMat_(i, j);
+                out.write((char*)(&x), sizeof(double));
+            }
+        }
+
+        check(paramMean_.size() == n_, "");
+        out.write((char*)(&(paramMean_[0])), n_ * sizeof(double));
+    }
+
     if(isMaster())
         writeCommInfo(out);
 
@@ -671,6 +831,32 @@ MetropolisHastings::readResumeInfo()
     in.read((char*)(&(paramSum_[0])), n_ * sizeof(double));
     in.read((char*)(&(paramSquaredSum_[0])), n_ * sizeof(double));
     in.read((char*)(&(corSum_[0])), n_ * sizeof(double));
+
+    if(adapt_)
+    {
+        myCovUpdateInfo_.readFromFile(in);
+
+        in.read((char*)(&covarianceReady_), sizeof(covarianceReady_));
+
+        check(covariance_.size(0) == n_ && covariance_.size(1) == n_, "");
+        check(choleskyMat_.size(0) == n_ && choleskyMat_.size(1) == n_, "");
+
+        in.read((char*)(&covarianceElementsNum_), sizeof(covarianceElementsNum_));
+        for(int i = 0; i < n_; ++i)
+        {
+            for(int j = 0; j < n_; ++j)
+            {
+                double x;
+                in.read((char*)(&x), sizeof(double));
+                covariance_(i, j) = x;
+                in.read((char*)(&x), sizeof(double));
+                choleskyMat_(i, j) = x;
+            }
+        }
+
+        check(paramMean_.size() == n_, "");
+        in.read((char*)(&(paramMean_[0])), n_ * sizeof(double));
+    }
 
     if(isMaster())
     {
