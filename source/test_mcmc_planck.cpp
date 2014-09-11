@@ -59,7 +59,7 @@ TestMCMCPlanck::runSubTest(unsigned int i, double& res, double& expected, std::s
     for(int i = 1; i < 15; ++i)
         blocks[i] = i + 6;
 
-    mh.specifyParameterBlocks(blocks);
+    //mh.specifyParameterBlocks(blocks);
 
     mh.useAdaptiveProposal();
 
