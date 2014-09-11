@@ -67,8 +67,6 @@ MatterLikelihood::calculate(const Math::RealFunction& matterPk, const Cosmologic
 
     const int n = data_.size();
 
-    output_screen1("Calculating matter likelihood at " << n << " points..." << std::endl);
-    
     check(kh_.size() == n, "");
     check(cInv_.size(0) == n && cInv_.size(1) == n, "need to initialize the covariance matrix first");
 
@@ -133,8 +131,6 @@ MatterLikelihood::calculate(const Math::RealFunction& matterPk, const Cosmologic
     const double bAb = b0 * A(0, 0) * b0 + b0 * A(0, 1) * b1 + b1 * A(1, 0) * b0 + b1 * A(1, 1) * b1;
 
     const double like = std::log(detA) - bAb + dataLike;
-
-    output_screen1("OK" << std::endl);
 
     return like;
 }
