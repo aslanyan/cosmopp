@@ -16,7 +16,7 @@ public:
 
     double calculate(const Math::RealFunction& matterPk, const CosmologicalParams& params) const;
 
-    double calculateLin(const Math::RealFunction& matterPk, const CosmologicalParams& params, double b2) const;
+    double calculateLin(const Math::RealFunction& matterPk, const CosmologicalParams& params, double b2 = 0) const;
 
     void useScaling(const CosmologicalParams& paramsFid, double z);
 

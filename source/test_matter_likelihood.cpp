@@ -14,7 +14,7 @@ TestMatterLikelihood::name() const
 unsigned int
 TestMatterLikelihood::numberOfSubtests() const
 {
-    return 3;
+    return 4;
 }
 
 void
@@ -65,7 +65,7 @@ TestMatterLikelihood::runSubTest(unsigned int i, double& res, double& expected, 
     if(i > 0)
         ml.useScaling(paramsFid, 0.57);
 
-    res = ml.calculate(mpk, paramsLCDM);
+    res = (i < 3 ? ml.calculate(mpk, paramsLCDM) : ml.calculateLin(mpk, paramsLCDM));
     expected = 173.199;
     subTestName = "unscaled";
 
@@ -79,6 +79,12 @@ TestMatterLikelihood::runSubTest(unsigned int i, double& res, double& expected, 
     {
         expected = 19.0294;
         subTestName = "scaled_range";
+    }
+
+    if(i == 3)
+    {
+        expected = 38.9616;
+        subTestName = "scaled_range_lin";
     }
 
     /*

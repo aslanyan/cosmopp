@@ -47,14 +47,32 @@ MatterLikelihood::calculateLin(const Math::RealFunction& matterPk, const Cosmolo
         const double k = kh * h;
         const double p = matterPk.evaluate(k) / (alpha * alpha * alpha);
 
-        p1[i] = b2 * p * h * h * h;
+        p1[i] = p * h * h * h;
+    }
+
+    // marginalize over b2
+    if(b2 == 0)
+    {
+        double dCInvd = 0, dCInvp = 0, pCInvp = 0;
+
+        for(int i = 0; i < n; ++i)
+        {
+            for(int j = 0; j < n; ++j)
+            {
+                dCInvd += data_[i] * cInv_(i, j) * data_[j];
+                dCInvp += data_[i] * cInv_(i, j) * p1[j];
+                pCInvp += p1[i] * cInv_(i, j) * p1[j];
+            }
+        }
+
+        return dCInvd - dCInvp * dCInvp / pCInvp + std::log(pCInvp);
     }
 
     double res = 0;
     for(int i = 0; i < n; ++i)
     {
         for(int j = 0; j < n; ++j)
-            res += (p1[i] - data_[i]) * cInv_(i, j) * (p1[j] - data_[j]);
+            res += (b2 * p1[i] - data_[i]) * cInv_(i, j) * (b2 * p1[j] - data_[j]);
     }
 
     return res;
