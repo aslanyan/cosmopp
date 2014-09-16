@@ -120,19 +120,19 @@ public:
     /// \param proposal A pointer to the external proposal distribution.
     void useExternalProposal(ProposalFunctionBase* proposal) { externalProposal_ = proposal; }
 
-    /// HIGHLY RECOMMENDED! This function will turn on the usage of the Adaptive Metropolis algorithm. The proposal distribution will be continuously updated during the run based on the covariance of the existing elements. This typically speeds up the run by about 1 order of magnitude!
-    void useAdaptiveProposal();
-
     /// Run the scan. Should be called after all of the other necessary functions have been called to set all of the necessary settings. The resulting chain is written in the file (fileRoot).txt. The first column is the number of repetitions of the element, the second column is -2ln(likelihood), the following columns are the values of all of the parameters.
     /// \param maxChainLength The maximum length of the chain (1000000 by default). The scan will stop when the chain reaches that length, even if the required accuracy for the parameters has not been achieved. If the accuracies are achieved earlier the scan will stop earlier.
     /// \param writeResumeInformationEvery Defines if resume information should be written in a file and how often. This will allow an interrupted run to resume. 0 will mean no resume information will be written. The default setting of 1 is recommended in most cases. However, if the likelihood calculation is very fast, so that the likelihood computing time is faster or comparable to writing out a small binary file, this parameter should be set to higher value. The reason is that it will slow down the scan significantly, and the chance of the resume file being corrupt and useless will be high (this will happen if the code is stopped during writing out the resume file).
     /// \param burnin The burnin length. These elements will still be written out into the chain but will be ignored for determining convergence.
     /// \param cd Convergence diagnostic to be used.
     /// \param convergenceCriterion A number used to determine convergence. For Gelman-Rubin diagnostic this is the number below which (R - 1) absolute values need to be for all the parameters.
+    /// \param adaptiveProposal This turns on the usage of the Adaptive Metropolis algorithm (optional, true by default). The proposal distribution will be continuously updated during the run based on the covariance of the existing elements. This typically speeds up the run by about 1 order of magnitude! HIBHLY RECOMMENDED to keep this argument true.
     /// \return The number of chains generated.
-    int run(unsigned long maxChainLength = 1000000, int writeResumeInformationEvery = 1, unsigned long burnin = 0, CONVERGENCE_DIAGNOSTIC cd = ACCURACY, double convergenceCriterion = 0.01);
+    int run(unsigned long maxChainLength = 1000000, int writeResumeInformationEvery = 1, unsigned long burnin = 0, CONVERGENCE_DIAGNOSTIC cd = ACCURACY, double convergenceCriterion = 0.01, bool adaptiveProposal = true);
 
 private:
+    void useAdaptiveProposal();
+
     inline double uniformPrior(double min, double max, double x) const;
     inline double gaussPrior(double mean, double sigma, double x) const;
     inline double calculatePrior();
@@ -503,14 +503,23 @@ MetropolisHastings::checkStoppingCrit()
                 const double diff = means[j] - totalMean;
                 B += diff * diff;
                 const double s2 = (ci.sqSums[i] - 2 * means[j] * ci.sums[i] + total * means[j] * means[j]) / (total - 1);
+                check(s2 >= 0, "i = " << i << ", j = " << j << ", total = " << total << ", squared sum = " << ci.sqSums[i] << ", sum = " << ci.sums[i] << ", mean = " << means[j]);
                 W += s2;
             }
             B *= total;
             B /= (nChains_ - 1);
             W /= nChains_;
 
+            check(B >= 0, "");
+            check(W >= 0, "");
+
             const double var = (total - 1) * W / total + B / total;
-            rGelmanRubin_[i] = (W <= 0 || var < 0 ? 100 : std::sqrt(var / W));
+            check(var >= 0, "");
+
+            if(W == 0)
+                rGelmanRubin_[i] = (var == 0 ? 1.0 : 100.0);
+            else
+                rGelmanRubin_[i] = std::sqrt(var / W);
 
             if(std::abs(rGelmanRubin_[i] - 1) > cc_)
                 doStop = false;
@@ -622,7 +631,7 @@ MetropolisHastings::writeChainElement()
 void
 MetropolisHastings::update()
 {
-    if(iteration_ >= burnin_)
+    if(iteration_ > burnin_)
     {
         for(int i = 0; i < n_; ++i)
         {

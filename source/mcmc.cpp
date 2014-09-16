@@ -452,7 +452,7 @@ MetropolisHastings::sendHaveStopped()
 }
 
 int
-MetropolisHastings::run(unsigned long maxChainLength, int writeResumeInformationEvery, unsigned long burnin, CONVERGENCE_DIAGNOSTIC cd, double convergenceCriterion)
+MetropolisHastings::run(unsigned long maxChainLength, int writeResumeInformationEvery, unsigned long burnin, CONVERGENCE_DIAGNOSTIC cd, double convergenceCriterion, bool adaptiveProposal)
 {
     check(maxChainLength > 0, "invalid maxChainLength = " << maxChainLength);
     check(!blocks_.empty(), "");
@@ -460,6 +460,9 @@ MetropolisHastings::run(unsigned long maxChainLength, int writeResumeInformation
     check(cd >= 0 && cd < CONVERGENCE_DIAGNOSTIC_MAX, "invalid convergence diagnostic");
 
     check(convergenceCriterion > 0, "invalid convergence criterion " << convergenceCriterion << ", needs to be positive");
+
+    if(adaptiveProposal)
+        useAdaptiveProposal();
     
     burnin_ = burnin;
 

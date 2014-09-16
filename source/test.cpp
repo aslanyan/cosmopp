@@ -54,16 +54,20 @@ TestFramework* createTest(const std::string& name)
         test = new TestLegendre;
     else if(name == "spherical_harmonics")
         test = new TestSphericalHarmonics;
+#ifdef COSMO_LAPACKPP
     else if(name == "mcmc_fast")
         test = new TestMCMCFast;
+#endif
 #ifdef COSMO_MULTINEST
     else if(name == "multinest_fast")
         test = new TestMultinestFast;
 #endif
 #ifdef COSMO_PLANCK
 #ifdef COSMO_CLASS
+#ifdef COSMO_LAPACKPP
     else if(name == "mcmc_planck")
         test = new TestMCMCPlanck;
+#endif
 #ifdef COSMO_MULTINEST
     else if(name == "multinest_planck")
         test = new TestMultinestPlanck;
@@ -166,7 +170,9 @@ int main(int argc, char *argv[])
         fastTests.insert("polynomial");
         fastTests.insert("legendre");
         fastTests.insert("spherical_harmonics");
+#ifdef COSMO_LAPACKPP
         fastTests.insert("mcmc_fast");
+#endif
 #ifdef COSMO_MULTINEST
         fastTests.insert("multinest_fast");
 #endif
@@ -198,7 +204,9 @@ int main(int argc, char *argv[])
 
 #ifdef COSMO_PLANCK
 #ifdef COSMO_CLASS
+#ifdef COSMO_LAPACKPP
         slowTests.insert("mcmc_planck");
+#endif
 #ifdef COSMO_MULTINEST
         slowTests.insert("multinest_planck");
 #endif

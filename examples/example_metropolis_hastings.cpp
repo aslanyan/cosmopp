@@ -68,11 +68,9 @@ int main(int argc, char *argv[])
         std::vector<int> blocks(1, 2);
         mh.specifyParameterBlocks(blocks);
 
-        mh.useAdaptiveProposal();
-
         // Choose the burnin and run
         const unsigned long burnin = 1000;
-        const int nChains = mh.run(1000000, 100, burnin, MetropolisHastings::GELMAN_RUBIN, 0.00001);
+        const int nChains = mh.run(1000000, 0, burnin, MetropolisHastings::GELMAN_RUBIN, 0.00001);
 
         // Only the master process will analyze the results
         if(isMaster)

@@ -62,9 +62,7 @@ TestMCMCFast::runSubTest(unsigned int i, double& res, double& expected, std::str
     const unsigned long burnin = 100;
     const unsigned int thin = 2;
 
-    mh1.useAdaptiveProposal();
-
-    const int nChains = mh1.run(1000000, 0, burnin, MetropolisHastings::GELMAN_RUBIN, 0.001);
+    const int nChains = mh1.run(1000000, 0, burnin, MetropolisHastings::GELMAN_RUBIN, 0.001, true);
 
     subTestName = std::string("2_param_gauss");
 
