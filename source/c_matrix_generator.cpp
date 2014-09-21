@@ -625,8 +625,6 @@ CMatrixGenerator::polarizationEEWholeMatrixToCMatrix(const WholeMatrix& ee, long
     }
     //output_screen("OK" << std::endl);
     
-    output_screen(reQPix[50](10, 10) << ' ' << reUPix[100](2, 0) << std::endl);
-    
     //output_screen("Converting to pixel space for l' and m'..." << std::endl);
     std::vector<Healpix_Map<double> > tPixMap(nPix), reQQPixMap(nPix), reQUPixMap(nPix), reUQPixMap(nPix), reUUPixMap(nPix);
 #ifdef CHECKS_ON
