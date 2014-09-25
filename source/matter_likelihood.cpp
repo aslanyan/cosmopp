@@ -16,10 +16,13 @@
 #include <blas2pp.h>
 #include <blas3pp.h>
 
-MatterLikelihood::MatterLikelihood(const char* pkFileName, const char* covFileName, double khMin, double khMax) : scale_(false)
+MatterLikelihood::MatterLikelihood(const char* pkFileName, const char* covFileName, bool isLog, double khMin, double khMax) : scale_(false)
 {
     readPk(pkFileName, khMin, khMax);
-    readLogCov(covFileName);
+    if(isLog)
+        readLogCov(covFileName);
+    else
+        readCov(covFileName);
 }
 
 double
@@ -233,6 +236,59 @@ MatterLikelihood::readPk(const char* fileName, double khMin, double khMax)
     }
 
     in.close();
+}
+
+void
+MatterLikelihood::readCov(const char* fileName)
+{
+    check(!data_.empty(), "need to initialize the data first");
+    
+    const int n = data_.size();
+    check(kh_.size() == n, "");
+
+    StandardException exc;
+    std::ifstream in(fileName);
+
+    if(!in)
+    {
+        std::stringstream exceptionStr;
+        exceptionStr << "Cannot open input file " << fileName << ".";
+        exc.set(exceptionStr.str());
+        throw exc;
+    }
+
+    cInv_.resize(n, n);
+
+    std::string s;
+    for(int i = 0; i < nIgnored_; ++i)
+        std::getline(in, s);
+
+    for(int i = 0; i < n; ++i)
+    {
+        std::getline(in, s);
+        double x;
+        std::stringstream str(s);
+        for(int j = 0; j < nIgnored_; ++j)
+            str >> x;
+
+        for(int j = 0; j < n; ++j)
+        {
+            str >> x;
+            cInv_(i, j) = x;
+        }
+    }
+    
+    in.close();
+
+    std::ofstream out("matter_test.txt");
+    for(int i = 0; i < n; ++i)
+        out << kh_[i] << '\t' << data_[i] << '\t' << std::sqrt(cInv_(i, i)) << std::endl;
+    out.close();
+
+    // inverting the covariance matrix
+    LaVectorLongInt pivotC(n);
+    LUFactorizeIP(cInv_, pivotC);
+    LaLUInverseIP(cInv_, pivotC);
 }
 
 void

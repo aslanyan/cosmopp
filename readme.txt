@@ -14,7 +14,7 @@ Cosmo++ can be compiled by itself without any other libraries. However, some of 
 
 1. CFITSIO: Please download from http://heasarc.gsfc.nasa.gov/fitsio/ then compile and install.
 2. HEALPIX: Please download from http://healpix.jpl.nasa.gov then compile and install. The C and C++ libraries need to be included in the installation.
-3. LAPACK++: This is the C++ version of Lapack. Please download from http://math.nist.gov/lapack++/ then compile and install.
+3. LAPACK++: This is the C++ version of Lapack. Please download from http://lapackpp.sourceforge.net then compile and install.
 4. CLASS: Please download from http://class-code.net then compile and install.
 5. MINUIT: Please download from http://seal.web.cern.ch/seal/work-packages/mathlibs/minuit/ then compile and install.
 6. MULTINEST: Please download from http://ccpforge.cse.rl.ac.uk/gf/project/multinest/ then compile and install.
