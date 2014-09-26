@@ -62,7 +62,7 @@ TestMCMCPlanck::runSubTest(unsigned int i, double& res, double& expected, std::s
     //mh.specifyParameterBlocks(blocks);
 
     const unsigned long burnin = 1000;
-    const int nChains = mh.run(25000, 1, burnin, MetropolisHastings::GELMAN_RUBIN, 0.1);
+    const int nChains = mh.run(25000, 1, burnin, MetropolisHastings::GELMAN_RUBIN, 0.01, true);
     
     subTestName = std::string("standard_param_limits");
     res = 1;
@@ -71,7 +71,7 @@ TestMCMCPlanck::runSubTest(unsigned int i, double& res, double& expected, std::s
     if(!isMaster())
         return;
 
-    const unsigned int thin = 10;
+    const unsigned int thin = 2;
     MarkovChain chain(nChains, root.c_str(), burnin, thin);
 
     const int nPoints = 1000;

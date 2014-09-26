@@ -2,6 +2,8 @@
 #include <mpi.h>
 #endif
 
+#include <blas2pp.h>
+
 #include <macros.hpp>
 #include <exception_handler.hpp>
 #include <mcmc.hpp>
@@ -9,7 +11,7 @@
 namespace Math
 {
 
-MetropolisHastings::MetropolisHastings(int nPar, LikelihoodFunction& like, std::string fileRoot, time_t seed) : n_(nPar), like_(&like), spareLike_(NULL), fileRoot_(fileRoot), paramNames_(nPar), param1_(nPar, 0), param2_(nPar, 0), starting_(nPar, std::numeric_limits<double>::max()), current_(nPar), prev_(nPar), samplingWidth_(nPar, 0), accuracy_(nPar, 0), paramSum_(nPar, 0), paramSquaredSum_(nPar, 0), corSum_(nPar, 0), priorMods_(nPar, PRIOR_MODE_MAX), externalPrior_(NULL), externalProposal_(NULL), resumeCode_(123456), nChains_(1), currentChainI_(0), stop_(false), stopRequestMessage_(111222), stopRequestTag_(0), stopRequestSent_(false), stopMessageRequested_(false), haveStoppedMessage_(476901), haveStoppedMessageTag_(100000), updateReqTag_(200000), firstUpdateRequested_(false), reachedSigma_(nPar, -1), rGelmanRubin_(nPar, -1)
+MetropolisHastings::MetropolisHastings(int nPar, LikelihoodFunction& like, std::string fileRoot, time_t seed) : n_(nPar), like_(&like), spareLike_(NULL), fileRoot_(fileRoot), paramNames_(nPar), param1_(nPar, 0), param2_(nPar, 0), starting_(nPar, std::numeric_limits<double>::max()), current_(nPar), prev_(nPar), samplingWidth_(nPar, 0), accuracy_(nPar, 0), paramSum_(nPar, 0), paramSquaredSum_(nPar, 0), corSum_(nPar, 0), priorMods_(nPar, PRIOR_MODE_MAX), externalPrior_(NULL), externalProposal_(NULL), resumeCode_(123456), nChains_(1), currentChainI_(0), stop_(false), stopRequestMessage_(111222), stopRequestTag_(0), stopRequestSent_(false), stopMessageRequested_(false), haveStoppedMessage_(476901), haveStoppedMessageTag_(100000), updateReqTag_(200000), covUpdateReqTag_(300000), firstUpdateRequested_(false), reachedSigma_(nPar, -1), rGelmanRubin_(nPar, -1), adapt_(false), covEpsilon_(1e-7), covFactor_(2.4 * 2.4 / nPar), myCovUpdateInfo_(nPar), tempCovUpdateInfo_(nPar), covarianceReady_(false), firstCovUpdateRequested_(false)
 {
 #ifdef COSMO_MPI
     int hasMpiInitialized;
@@ -22,6 +24,8 @@ MetropolisHastings::MetropolisHastings(int nPar, LikelihoodFunction& like, std::
     sendStopRequest_ = new MPI_Request;
     receiveStopRequest_ = new MPI_Request;
     haveStoppedMesReq_ = new MPI_Request;
+
+    receiveCovUpdateRequest_ = new MPI_Request;
 
     if(isMaster())
     {
@@ -80,6 +84,8 @@ MetropolisHastings::~MetropolisHastings()
     delete (MPI_Request*) sendStopRequest_;
     delete (MPI_Request*) receiveStopRequest_;
 
+    delete (MPI_Request*) receiveCovUpdateRequest_;
+
     if(!isMaster())
     {
         //MPI_Status st;
@@ -101,8 +107,41 @@ MetropolisHastings::~MetropolisHastings()
             delete (MPI_Request*) haveStoppedReceiveReq_[i];
             delete (MPI_Request*) updateReceiveReq_[i];
         }
+
+        for(int i = 0; i < covarianceUpdateRequests_.size(); ++i)
+            delete (MPI_Request*) covarianceUpdateRequests_[i];
     }
 #endif
+}
+
+void
+MetropolisHastings::useAdaptiveProposal()
+{
+    adapt_ = true;
+    covarianceElementsNum_ = 0;
+    covariance_.resize(n_, n_);
+
+    paramMean_.resize(n_, 0);
+    paramMeanNew_.resize(n_);
+    generatedVec_.resize(n_);
+    rotatedVec_.resize(n_);
+
+    choleskyMat_.resize(n_, n_);
+
+
+    cholesky_.resize(n_, 2 * n_ + 1);
+
+    for(int i = 0; i < n_; ++i)
+        for(int j = 0; j < n_; ++j)
+        {
+            covariance_(i, j) = 0;
+            choleskyMat_(i, j) = 0;
+        }
+
+    for(int i = 0; i < nChains_; ++i)
+    {
+        communicationBuff_[i].resize(n_ * n_ + n_ + 1 + 1 + 3 * n_, -1);
+    }
 }
 
 void
@@ -199,7 +238,17 @@ MetropolisHastings::communicate()
         (*it).sqSums = paramSquaredSum_;
         (*it).stdMean = myStdMean_;
         (*it).iter = double(iteration_ - burnin_);
+
+        if(adapt_ && !stop_)
+        {
+            updateCovarianceMatrix(myCovUpdateInfo_);
+            myCovUpdateInfo_.flush();
+        }
     }
+
+    int covarianceUpdateSize = 0;
+    if(adapt_ && !stop_)
+        covarianceUpdateSize = n_ * n_ + n_ + 1;
 
 #ifdef COSMO_MPI
     if(!isMaster() && !stop_)
@@ -209,15 +258,35 @@ MetropolisHastings::communicate()
         updateRequests_.push_back(updateReq);
         sendComBuff_.resize(sendComBuff_.size() + 1); 
         std::vector<double>& currentCom = sendComBuff_[sendComBuff_.size() - 1];
-        currentCom.resize(1 + 3 * n_);
+
+        currentCom.resize(covarianceUpdateSize + 1 + 3 * n_);
+
+        if(adapt_ && !stop_)
+        {
+            check(myCovUpdateInfo_.matrixSum.size() == n_, "");
+            for(int i = 0; i < n_; ++i)
+            {
+                check(myCovUpdateInfo_.matrixSum[i].size() == n_, "");
+                for(int j = 0; j < n_; ++j)
+                    currentCom[i * n_ + j] = myCovUpdateInfo_.matrixSum[i][j];
+            }
+
+            check(myCovUpdateInfo_.paramSum.size() == n_, "");
+            for(int i = 0; i < n_; ++i)
+                currentCom[n_ * n_ + i] = myCovUpdateInfo_.paramSum[i];
+
+            currentCom[n_ * n_ + n_] = double(myCovUpdateInfo_.n);
+
+            myCovUpdateInfo_.flush();
+        }
         for(int i = 0; i < n_; ++i)
         {
-            currentCom[i] = paramSum_[i];
-            currentCom[n_ + i] = paramSquaredSum_[i];
-            currentCom[2 * n_ + i] = myStdMean_[i];
+            currentCom[covarianceUpdateSize + i] = paramSum_[i];
+            currentCom[covarianceUpdateSize + n_ + i] = paramSquaredSum_[i];
+            currentCom[covarianceUpdateSize + 2 * n_ + i] = myStdMean_[i];
         }
-        currentCom[3 * n_] = double(iteration_ - burnin_);
-        MPI_Isend(&(currentCom[0]), 1 + 3 * n_, MPI_DOUBLE, 0, updateReqTag_ + currentChainI_, MPI_COMM_WORLD, updateReq);
+        currentCom[covarianceUpdateSize + 3 * n_] = double(iteration_ - burnin_);
+        MPI_Isend(&(currentCom[0]), covarianceUpdateSize + 1 + 3 * n_, MPI_DOUBLE, 0, updateReqTag_ + currentChainI_, MPI_COMM_WORLD, updateReq);
     }
 
     if(isMaster())
@@ -226,7 +295,8 @@ MetropolisHastings::communicate()
         {
             for(int i = 1; i < nChains_; ++i)
             {
-                MPI_Irecv(&(communicationBuff_[i][0]), 1 + 3 * n_, MPI_DOUBLE, i, updateReqTag_ + i, MPI_COMM_WORLD, (MPI_Request*) updateReceiveReq_[i]);
+                check(communicationBuff_[i].size() == covarianceUpdateSize + 1 + 3 * n_, "");
+                MPI_Irecv(&(communicationBuff_[i][0]), covarianceUpdateSize + 1 + 3 * n_, MPI_DOUBLE, i, updateReqTag_ + i, MPI_COMM_WORLD, (MPI_Request*) updateReceiveReq_[i]);
             }
 
             firstUpdateRequested_ = true;
@@ -248,13 +318,55 @@ MetropolisHastings::communicate()
                     --it;
                     for(int j = 0; j < n_; ++j)
                     {
-                        (*it).sums[j] = communicationBuff_[i][j];
-                        (*it).sqSums[j] = communicationBuff_[i][n_ + j];
-                        (*it).stdMean[j] = communicationBuff_[i][2 * n_ + j];
+                        (*it).sums[j] = communicationBuff_[i][covarianceUpdateSize + j];
+                        (*it).sqSums[j] = communicationBuff_[i][covarianceUpdateSize + n_ + j];
+                        (*it).stdMean[j] = communicationBuff_[i][covarianceUpdateSize + 2 * n_ + j];
                     }
-                    (*it).iter = communicationBuff_[i][3 * n_];
+                    (*it).iter = communicationBuff_[i][covarianceUpdateSize + 3 * n_];
 
-                    MPI_Irecv(&(communicationBuff_[i][0]), 1 + 3 * n_, MPI_DOUBLE, i, updateReqTag_ + i, MPI_COMM_WORLD, (MPI_Request*) updateReceiveReq_[i]);
+                    if(adapt_ && !stop_)
+                    {
+                        check(tempCovUpdateInfo_.matrixSum.size() == n_, "");
+                        for(int k = 0; k < n_; ++k)
+                        {
+                            check(tempCovUpdateInfo_.matrixSum[k].size() == n_, "");
+                            for(int j = 0; j < n_; ++j)
+                                tempCovUpdateInfo_.matrixSum[k][j] = communicationBuff_[i][k * n_ + j];
+                        }
+
+                        check(tempCovUpdateInfo_.paramSum.size() == n_, "");
+                        for(int j = 0; j < n_; ++j)
+                            tempCovUpdateInfo_.paramSum[j] = communicationBuff_[i][n_ * n_ + j];
+
+                        tempCovUpdateInfo_.n = (unsigned long)(communicationBuff_[i][n_ * n_ + n_]);
+
+                        updateCovarianceMatrix(tempCovUpdateInfo_);
+                    }
+
+                    MPI_Irecv(&(communicationBuff_[i][0]), covarianceUpdateSize + 1 + 3 * n_, MPI_DOUBLE, i, updateReqTag_ + i, MPI_COMM_WORLD, (MPI_Request*) updateReceiveReq_[i]);
+                }
+            }
+
+            // update everybody's covariance matrix
+            if(adapt_ && !stop_ && covarianceReady_)
+            {
+                for(int i = 1; i < nChains_; ++i)
+                {
+                    output_screen1("Sending the covariance matrix update to chain " << i << "." << std::endl);
+
+                    MPI_Request* covUpdateReq = new MPI_Request;
+                    covarianceUpdateRequests_.push_back(covUpdateReq);
+                    covUpdateBuff_.resize(covUpdateBuff_.size() + 1); 
+                    std::vector<double>& currentCom = covUpdateBuff_[covUpdateBuff_.size() - 1];
+
+                    currentCom.resize(n_ * n_);
+                    for(int j = 0; j < n_; ++j)
+                    {
+                        for(int k = 0; k < n_; ++k)
+                            currentCom[j * n_ + k] = choleskyMat_(j, k);
+                    }
+
+                    MPI_Isend(&(currentCom[0]), n_ * n_, MPI_DOUBLE, i, covUpdateReqTag_ + i, MPI_COMM_WORLD, covUpdateReq);
                 }
             }
         }
@@ -285,6 +397,34 @@ MetropolisHastings::communicate()
         stopMessageRequested_ = true;
     }
 
+    if(adapt_ && !firstCovUpdateRequested_)
+    {
+        eigenUpdateBuff_.resize(n_ * n_);
+        MPI_Irecv(&(eigenUpdateBuff_[0]), n_ * n_, MPI_DOUBLE, 0, covUpdateReqTag_ + currentChainI_, MPI_COMM_WORLD, (MPI_Request*) receiveCovUpdateRequest_);
+        firstCovUpdateRequested_ = true;
+    }
+
+    if(adapt_)
+    {
+        int covUpdateFlag = 0;
+        MPI_Status covUpdateSt;
+        MPI_Test((MPI_Request*) receiveCovUpdateRequest_, &covUpdateFlag, &covUpdateSt);
+        if(covUpdateFlag)
+        {
+            output_screen1("Received an updated covariance matrix from the master." << std::endl);
+            check(choleskyMat_.size(0) == n_ && choleskyMat_.size(1) == n_, "");
+            for(int i = 0; i < n_; ++i)
+            {
+                for(int j = 0; j < n_; ++j)
+                    choleskyMat_(i, j) = eigenUpdateBuff_[i * n_ + j];
+            }
+
+            covarianceReady_ = true;
+
+            MPI_Irecv(&(eigenUpdateBuff_[0]), n_ * n_, MPI_DOUBLE, 0, covUpdateReqTag_ + currentChainI_, MPI_COMM_WORLD, (MPI_Request*) receiveCovUpdateRequest_);
+        }
+    }
+
     if(!stop_)
     {
         int stopFlag = 0;
@@ -312,7 +452,7 @@ MetropolisHastings::sendHaveStopped()
 }
 
 int
-MetropolisHastings::run(unsigned long maxChainLength, int writeResumeInformationEvery, unsigned long burnin, CONVERGENCE_DIAGNOSTIC cd, double convergenceCriterion)
+MetropolisHastings::run(unsigned long maxChainLength, int writeResumeInformationEvery, unsigned long burnin, CONVERGENCE_DIAGNOSTIC cd, double convergenceCriterion, bool adaptiveProposal)
 {
     check(maxChainLength > 0, "invalid maxChainLength = " << maxChainLength);
     check(!blocks_.empty(), "");
@@ -320,6 +460,9 @@ MetropolisHastings::run(unsigned long maxChainLength, int writeResumeInformation
     check(cd >= 0 && cd < CONVERGENCE_DIAGNOSTIC_MAX, "invalid convergence diagnostic");
 
     check(convergenceCriterion > 0, "invalid convergence criterion " << convergenceCriterion << ", needs to be positive");
+
+    if(adaptiveProposal)
+        useAdaptiveProposal();
     
     burnin_ = burnin;
 
@@ -400,19 +543,37 @@ MetropolisHastings::run(unsigned long maxChainLength, int writeResumeInformation
         {
             int blockEnd = blocks_[i];
 
+            std::vector<double> currentOld = current_;
+
             std::vector<double> block(blockEnd - blockBegin);
 
-            if(externalProposal_)
-                externalProposal_->generate(&(current_[0]), n_, &(block[0]), i);
+            if(adapt_ && covarianceReady_)
+            {
+                for(int j = 0; j < n_; ++j)
+                    generatedVec_(j) = 0;
+
+                for(int j = blockBegin; j < blockEnd; ++j)
+                    generatedVec_(j) = generator_->generate();
+
+                Blas_Mat_Vec_Mult(choleskyMat_, generatedVec_, rotatedVec_);
+
+                for(int j = 0; j < n_; ++j)
+                    current_[j] += rotatedVec_(j);
+            }
             else
             {
+                if(externalProposal_)
+                    externalProposal_->generate(&(current_[0]), n_, &(block[0]), i);
+                else
+                {
+                    for(int j = blockBegin; j < blockEnd; ++j)
+                        block[j - blockBegin] = generateNewPoint(j);
+                }
+
                 for(int j = blockBegin; j < blockEnd; ++j)
-                    block[j - blockBegin] = generateNewPoint(j);
+                    current_[j] = block[j - blockBegin];
             }
 
-            std::vector<double> currentOld = current_;
-            for(int j = blockBegin; j < blockEnd; ++j)
-                current_[j] = block[j - blockBegin];
 
             const double newPrior = calculatePrior();
             const double oldLike = currentLike_;
@@ -423,7 +584,7 @@ MetropolisHastings::run(unsigned long maxChainLength, int writeResumeInformation
             const double deltaLike = currentLike_ - oldLike;
             p *= std::exp(-deltaLike / 2.0);
 
-            if(externalProposal_ && !externalProposal_->isSymmetric(i))
+            if(!(adapt_ && covarianceReady_) && externalProposal_ && !externalProposal_->isSymmetric(i))
             {
                 std::vector<double> oldBlock(blockEnd - blockBegin);
                 for(int j = blockBegin; j < blockEnd; ++j)

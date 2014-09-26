@@ -14,7 +14,7 @@ TestMatterLikelihood::name() const
 unsigned int
 TestMatterLikelihood::numberOfSubtests() const
 {
-    return 2;
+    return 7;
 }
 
 void
@@ -53,12 +53,22 @@ TestMatterLikelihood::runSubTest(unsigned int i, double& res, double& expected, 
     cmb.initialize(paramsFid, true, false, false, true, 0.57);
     cmb.getMatterPs(0.57, &mpkFid);
 
-    MatterLikelihood ml("data/boss_dr11_pk.dat", "data/boss_dr11_pk_cov.dat");
+    double khMin = 0, khMax = 100;
+    if(i >= 4)
+        khMax = 0.7;
+
+    if(i > 1 && i < 4 || i > 4)
+    {
+        khMin = 0.03;
+        khMax = 0.12;
+    }
+
+    MatterLikelihood ml((i < 4 ? "data/boss_dr11_pk.dat" : "data/boss_dr9_pk.dat"), (i < 4 ? "data/boss_dr11_pk_cov.dat" : "data/boss_dr9_pk_cov.dat"), i < 4, khMin, khMax);
     
-    if(i == 1)
+    if(i > 0)
         ml.useScaling(paramsFid, 0.57);
 
-    res = ml.calculate(mpk, paramsLCDM);
+    res = ((i == 3 || i == 6) ? ml.calculateLin(mpk, paramsLCDM) : ml.calculate(mpk, paramsLCDM));
     expected = 173.199;
     subTestName = "unscaled";
 
@@ -66,6 +76,36 @@ TestMatterLikelihood::runSubTest(unsigned int i, double& res, double& expected, 
     {
         expected = 191.083;
         subTestName = "scaled";
+    }
+
+    if(i == 2)
+    {
+        expected = 19.0294;
+        subTestName = "scaled_range";
+    }
+
+    if(i == 3)
+    {
+        expected = 38.9616;
+        subTestName = "scaled_range_lin";
+    }
+
+    if(i == 4)
+    {
+        expected = 1041.76;
+        subTestName = "dr9_scaled";
+    }
+
+    if(i == 5)
+    {
+        expected = 35.7087;
+        subTestName = "dr9_scaled_range";
+    }
+
+    if(i == 6)
+    {
+        expected = 66.7013;
+        subTestName = "dr9_scaled_range_lin";
     }
 
     /*

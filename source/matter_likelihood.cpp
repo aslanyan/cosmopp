@@ -16,10 +16,13 @@
 #include <blas2pp.h>
 #include <blas3pp.h>
 
-MatterLikelihood::MatterLikelihood(const char* pkFileName, const char* covFileName) : scale_(false)
+MatterLikelihood::MatterLikelihood(const char* pkFileName, const char* covFileName, bool isLog, double khMin, double khMax) : scale_(false)
 {
-    readPk(pkFileName);
-    readLogCov(covFileName);
+    readPk(pkFileName, khMin, khMax);
+    if(isLog)
+        readLogCov(covFileName);
+    else
+        readCov(covFileName);
 }
 
 double
@@ -47,14 +50,32 @@ MatterLikelihood::calculateLin(const Math::RealFunction& matterPk, const Cosmolo
         const double k = kh * h;
         const double p = matterPk.evaluate(k) / (alpha * alpha * alpha);
 
-        p1[i] = b2 * p * h * h * h;
+        p1[i] = p * h * h * h;
+    }
+
+    // marginalize over b2
+    if(b2 == 0)
+    {
+        double dCInvd = 0, dCInvp = 0, pCInvp = 0;
+
+        for(int i = 0; i < n; ++i)
+        {
+            for(int j = 0; j < n; ++j)
+            {
+                dCInvd += data_[i] * cInv_(i, j) * data_[j];
+                dCInvp += data_[i] * cInv_(i, j) * p1[j];
+                pCInvp += p1[i] * cInv_(i, j) * p1[j];
+            }
+        }
+
+        return dCInvd - dCInvp * dCInvp / pCInvp + std::log(pCInvp);
     }
 
     double res = 0;
     for(int i = 0; i < n; ++i)
     {
         for(int j = 0; j < n; ++j)
-            res += (p1[i] - data_[i]) * cInv_(i, j) * (p1[j] - data_[j]);
+            res += (b2 * p1[i] - data_[i]) * cInv_(i, j) * (b2 * p1[j] - data_[j]);
     }
 
     return res;
@@ -64,8 +85,9 @@ double
 MatterLikelihood::calculate(const Math::RealFunction& matterPk, const CosmologicalParams& params) const
 {
     check(!data_.empty(), "need to initialize the data first");
-    
+
     const int n = data_.size();
+
     check(kh_.size() == n, "");
     check(cInv_.size(0) == n && cInv_.size(1) == n, "need to initialize the covariance matrix first");
 
@@ -164,7 +186,7 @@ MatterLikelihood::DV(const CosmologicalParams& params, double z) const
 }
 
 void
-MatterLikelihood::readPk(const char* fileName)
+MatterLikelihood::readPk(const char* fileName, double khMin, double khMax)
 {
     StandardException exc;
     std::ifstream in(fileName);
@@ -179,6 +201,9 @@ MatterLikelihood::readPk(const char* fileName)
 
     kh_.clear();
     data_.clear();
+
+    nIgnored_ = 0;
+    nTotal_ = 0;
 
     while(!in.eof())
     {
@@ -195,11 +220,75 @@ MatterLikelihood::readPk(const char* fileName)
         double kh, pk;
 
         str >> kh >> pk;
+
+        ++nTotal_;
+
+        if(kh < khMin)
+        {
+            ++nIgnored_;
+            continue;
+        }
+        if(kh > khMax)
+            continue;
+
         kh_.push_back(kh);
         data_.push_back(pk);
     }
 
     in.close();
+}
+
+void
+MatterLikelihood::readCov(const char* fileName)
+{
+    check(!data_.empty(), "need to initialize the data first");
+    
+    const int n = data_.size();
+    check(kh_.size() == n, "");
+
+    StandardException exc;
+    std::ifstream in(fileName);
+
+    if(!in)
+    {
+        std::stringstream exceptionStr;
+        exceptionStr << "Cannot open input file " << fileName << ".";
+        exc.set(exceptionStr.str());
+        throw exc;
+    }
+
+    cInv_.resize(n, n);
+
+    std::string s;
+    for(int i = 0; i < nIgnored_; ++i)
+        std::getline(in, s);
+
+    for(int i = 0; i < n; ++i)
+    {
+        std::getline(in, s);
+        double x;
+        std::stringstream str(s);
+        for(int j = 0; j < nIgnored_; ++j)
+            str >> x;
+
+        for(int j = 0; j < n; ++j)
+        {
+            str >> x;
+            cInv_(i, j) = x;
+        }
+    }
+    
+    in.close();
+
+    std::ofstream out("matter_test.txt");
+    for(int i = 0; i < n; ++i)
+        out << kh_[i] << '\t' << data_[i] << '\t' << std::sqrt(cInv_(i, i)) << std::endl;
+    out.close();
+
+    // inverting the covariance matrix
+    LaVectorLongInt pivotC(n);
+    LUFactorizeIP(cInv_, pivotC);
+    LaLUInverseIP(cInv_, pivotC);
 }
 
 void
@@ -244,18 +333,18 @@ MatterLikelihood::readLogCov(const char* fileName)
         double c;
         str >> i >> j >> c;
 
-        if(i < 1 || i > n)
+        if(i < 1 || i > nTotal_)
         {
             std::stringstream exceptionStr;
-            exceptionStr << "Invalid format of the input file " << fileName << ": the first index is " << i << " but needs to be between 1 and " << n << ".";
+            exceptionStr << "Invalid format of the input file " << fileName << ": the first index is " << i << " but needs to be between 1 and " << nTotal_ << ".";
             exc.set(exceptionStr.str());
             throw exc;
         }
 
-        if(j < 1 || j > n)
+        if(j < 1 || j > nTotal_)
         {
             std::stringstream exceptionStr;
-            exceptionStr << "Invalid format of the input file " << fileName << ": the second index is " << j << " but needs to be between 1 and " << n << ".";
+            exceptionStr << "Invalid format of the input file " << fileName << ": the second index is " << j << " but needs to be between 1 and " << nTotal_ << ".";
             exc.set(exceptionStr.str());
             throw exc;
         }
@@ -264,7 +353,12 @@ MatterLikelihood::readLogCov(const char* fileName)
 
         --i;
         --j;
-        cInv_(i, j) = data_[i] * data_[j] * (c > 0.001 ? (std::exp(c) - 1.0) : c);
+
+        i -= nIgnored_;
+        j -= nIgnored_;
+        
+        if(i >= 0 && i < n && j >= 0 && j < n)
+            cInv_(i, j) = data_[i] * data_[j] * (c > 0.001 ? (std::exp(c) - 1.0) : c);
     }
     
     in.close();

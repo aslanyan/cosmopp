@@ -57,12 +57,12 @@ TestMCMCFast::runSubTest(unsigned int i, double& res, double& expected, std::str
     MetropolisHastings mh1(2, l1, root1.str());
 
     const double xMin = -20, xMax = 20, yMin = -20, yMax = 20;
-    mh1.setParam(0, "x", xMin, xMax, 0, 4, 2, 0.1);
-    mh1.setParam(1, "y", yMin, yMax, 0, 6, 3, 0.1);
+    mh1.setParam(0, "x", xMin, xMax, 0, 2, 0.5, 0.1);
+    mh1.setParam(1, "y", yMin, yMax, 0, 2, 0.5, 0.1);
     const unsigned long burnin = 100;
     const unsigned int thin = 2;
 
-    const int nChains = mh1.run(1000000, 0, burnin, MetropolisHastings::GELMAN_RUBIN, 0.001);
+    const int nChains = mh1.run(1000000, 0, burnin, MetropolisHastings::GELMAN_RUBIN, 0.001, true);
 
     subTestName = std::string("2_param_gauss");
 

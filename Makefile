@@ -20,8 +20,10 @@ CLASS_AND_LAPACK_OBJ = obj/matter_likelihood.o
 CLASS_AND_LAPACK_TEST_OBJ = obj/test_matter_likelihood.o
 
 PLANCK_AND_CLASS_OBJ = obj/planck_like.o
-PLANCK_AND_CLASS_TEST_OBJ = obj/test_planck_like.o obj/test_mcmc_planck.o
+PLANCK_AND_CLASS_TEST_OBJ = obj/test_planck_like.o
 PLANCK_AND_CLASS_TARGET = bin/example_planck
+
+PLANCK_AND_CLASS_AND_LAPACK_TEST_OBJ = obj/test_mcmc_planck.o
 
 WMAP_AND_CLASS_OBJ = obj/wmap9_like.o
 WMAP_AND_CLASS_TEST_OBJ = obj/test_wmap9_like.o
@@ -64,16 +66,21 @@ LAPACKPP_INCLUDE_FLAGS = -I $(LAPACKPPINCDIR)
 LAPACKPP_COMPILE_FLAGS = -D COSMO_LAPACKPP
 LAPACKPP_LIB_FLAGS1 = -L $(LAPACKPPLIBDIR)
 LAPACKPP_LIB_FLAGS2 = -llapackpp
+LAPACKPP_OBJ = obj/mcmc.o
+LAPACKPP_TEST_OBJ = obj/test_mcmc.o
+LAPACKPP_TARGET = bin/example_metropolis_hastings
 else
 LAPACKPP_INCLUDE_FLAGS =
 LAPACKPP_COMPILE_FLAGS =
 LAPACKPP_LIB_FLAGS1 =
 LAPACKPP_LIB_FLAGS2 =
+LAPACKPP_OBJ =
 CLASS_AND_LAPACK_OBJ =
 CLASS_AND_LAPACK_TEST_OBJ =
 HEALPIX_AND_LAPACKPP_OBJ =
 HEALPIX_AND_LAPACKPP_TARGET =
 HEALPIX_AND_LAPACK_AND_CLASS_TEST_OBJ =
+PLANCK_AND_CLASS_AND_LAPACK_TEST_OBJ =
 endif
 
 ifdef CLASSDIR
@@ -97,6 +104,7 @@ CLASS_AND_LAPACK_TEST_OBJ =
 PLANCK_AND_CLASS_OBJ =
 PLANCK_AND_CLASS_TEST_OBJ =
 PLANCK_AND_CLASS_TARGET =
+PLANCK_AND_CLASS_AND_LAPACK_TEST_OBJ =
 PLANCK_AND_MULTINEST_AND_CLASS_TEST_OBJ =
 PLANCK_AND_MULTINEST_AND_CLASS_TARGET =
 WMAP_AND_CLASS_OBJ =
@@ -158,6 +166,7 @@ PLANCK_AND_MULTINEST_AND_CLASS_TARGET =
 PLANCK_AND_CLASS_OBJ =
 PLANCK_AND_CLASS_TEST_OBJ =
 PLANCK_AND_CLASS_TARGET =
+PLANCK_AND_CLASS_AND_LAPACK_TEST_OBJ =
 endif
 
 ifdef WMAP9DIR
@@ -278,25 +287,27 @@ TEST_THREE_ROTATION_HPP = include/test_three_rotation.hpp $(TEST_FRAMEWORK_HPP)
 TEST_MASK_APODIZER_HPP = include/test_mask_apodizer.hpp $(TEST_FRAMEWORK_HPP)
 TEST_MATTER_LIKELIHOOD_HPP = include/test_matter_likelihood.hpp $(TEST_FRAMEWORK_HPP)
 
-GENERAL_TARGET = bin/example_metropolis_hastings
+GENERAL_TARGET =
 
-all: lib/libcosmopp.a bin/test $(GENERAL_TARGET) $(HEALPIX_AND_LAPACKPP_TARGET) $(HEALPIX_TARGET) $(CLASS_TARGET) $(PLANCK_AND_CLASS_TARGET) $(PLANCK_AND_MULTINEST_AND_CLASS_TARGET)
+all: lib/libcosmopp.a bin/test $(GENERAL_TARGET) $(HEALPIX_AND_LAPACKPP_TARGET) $(HEALPIX_TARGET) $(CLASS_TARGET) $(PLANCK_AND_CLASS_TARGET) $(PLANCK_AND_MULTINEST_AND_CLASS_TARGET) $(LAPACKPP_TARGET)
 
-GENERAL_OBJ = obj/macros.o obj/test_framework.o obj/mcmc.o obj/whole_matrix.o obj/scale_factor.o obj/markov_chain.o
+GENERAL_OBJ = obj/macros.o obj/test_framework.o obj/whole_matrix.o obj/scale_factor.o obj/markov_chain.o
 
-OBJ_LIBRARY = $(GENERAL_OBJ) $(HEALPIX_OBJ) $(CLASS_AND_LAPACK_OBJ) $(HEALPIX_AND_LAPACKPP_OBJ) $(CLASS_OBJ) $(MULTINEST_OBJ) $(PLANCK_OBJ) $(PLANCK_AND_CLASS_OBJ) $(WMAP_OBJ) $(WMAP_AND_CLASS_OBJ)
+OBJ_LIBRARY = $(GENERAL_OBJ) $(HEALPIX_OBJ) $(LAPACKPP_OBJ) $(CLASS_AND_LAPACK_OBJ) $(HEALPIX_AND_LAPACKPP_OBJ) $(CLASS_OBJ) $(MULTINEST_OBJ) $(PLANCK_OBJ) $(PLANCK_AND_CLASS_OBJ) $(WMAP_OBJ) $(WMAP_AND_CLASS_OBJ)
 lib/libcosmopp.a: $(OBJ_LIBRARY)
 	ar rcs $@ $(OBJ_LIBRARY)
 
-GENERAL_TEST_OBJ = obj/test.o obj/test_unit_conversions.o obj/test_int_operations.o obj/test_integral.o obj/test_conjugate_gradient.o obj/test_polynomial.o obj/test_legendre.o obj/test_spherical_harmonics.o obj/test_mcmc.o obj/test_wigner_3j.o obj/test_table_function.o obj/test_cubic_spline.o obj/test_three_rotation.o
+GENERAL_TEST_OBJ = obj/test.o obj/test_unit_conversions.o obj/test_int_operations.o obj/test_integral.o obj/test_conjugate_gradient.o obj/test_polynomial.o obj/test_legendre.o obj/test_spherical_harmonics.o obj/test_wigner_3j.o obj/test_table_function.o obj/test_cubic_spline.o obj/test_three_rotation.o
 
-OBJ_TEST = $(OBJ_LIBRARY) $(GENERAL_TEST_OBJ) $(MULTINEST_TEST_OBJ) $(PLANCK_TEST_OBJ) $(PLANCK_AND_MULTINEST_AND_CLASS_TEST_OBJ) $(CLASS_TEST_OBJ) $(CLASS_AND_LAPACK_TEST_OBJ) $(PLANCK_AND_CLASS_TEST_OBJ) $(HEALPIX_TEST_OBJ) $(HEALPIX_AND_LAPACK_AND_CLASS_TEST_OBJ) $(MINUIT_TEST_OBJ) $(WMAP_AND_CLASS_TEST_OBJ)
+OBJ_TEST = $(OBJ_LIBRARY) $(GENERAL_TEST_OBJ) $(MULTINEST_TEST_OBJ) $(PLANCK_TEST_OBJ) $(PLANCK_AND_MULTINEST_AND_CLASS_TEST_OBJ) $(CLASS_TEST_OBJ) $(CLASS_AND_LAPACK_TEST_OBJ) $(PLANCK_AND_CLASS_TEST_OBJ) $(LAPACKPP_TEST_OBJ) $(HEALPIX_TEST_OBJ) $(HEALPIX_AND_LAPACK_AND_CLASS_TEST_OBJ) $(MINUIT_TEST_OBJ) $(WMAP_AND_CLASS_TEST_OBJ) $(PLANCK_AND_CLASS_AND_LAPACK_TEST_OBJ)
 bin/test: $(OBJ_TEST)
 	$(CC) $(LFLAGS1) -o $@ $(OBJ_TEST) $(LFLAGS2)
 
+ifdef LAPACKPP_TARGET
 OBJ_EXAMPLE_METROPOLIS_HASTINGS = obj/example_metropolis_hastings.o $(OBJ_LIBRARY)
 bin/example_metropolis_hastings: $(OBJ_EXAMPLE_METROPOLIS_HASTINGS)
 	$(CC) $(LFLAGS1) -o $@ $(OBJ_EXAMPLE_METROPOLIS_HASTINGS) $(LFLAGS2)
+endif
 
 ifdef HEALPIX_AND_LAPACKPP_TARGET
 OBJ_GENERATE_WHITE_NOISE = obj/generate_white_noise.o obj/macros.o obj/simulate.o obj/whole_matrix.o

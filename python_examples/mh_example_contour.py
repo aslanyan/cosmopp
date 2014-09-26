@@ -82,7 +82,7 @@ plt.contour(X1, Y1, z1, levels1, colors = ('g'), linestyles = ('--'), linewidths
 plt.xlabel('$x$', fontsize = 20)
 plt.ylabel('$y$', fontsize = 20)
 
-plt.axis([-5,5,-5,5])
+plt.axis([-10, 10, -10, 10])
 
 #plt.show()
 
