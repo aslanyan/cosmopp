@@ -335,6 +335,7 @@ PlanckLikelihood::calculateCls()
         useCMB_->getCl(NULL, NULL, NULL, &clPP_, NULL, NULL);
 
     // to be removed
+    /*
     std::ifstream in("l_list.txt");
     if(!in)
     {
@@ -391,6 +392,7 @@ PlanckLikelihood::calculateCls()
     std::ofstream out(nameStr.str().c_str(), std::ios::binary | std::ios::app);
     out.write((char*)(&(buff[0])), buff.size() * sizeof(double));
     out.close();
+    */
 }
 
 double

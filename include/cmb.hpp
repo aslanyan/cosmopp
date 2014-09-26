@@ -29,7 +29,7 @@ public:
     CMB() : preInit_(false), init_(false), primordialInitialize_(true), lensing_(false), includeTensors_(false) { allocate(); }
 
     /// Destructor.
-    ~CMB() { if(preInit_) preClean(); deAllocate(); }
+    virtual ~CMB() { if(preInit_) preClean(); deAllocate(); }
 
     /// Pre-initialization routine. Always must be called after the constructor and before initialization can be done.
     /// \param lMax The maximum value of l for calculations. NOTE: Lensed cl-s will be calculated up to a value less than lMax, if requested. It is recommended to give lMax higher than requested lensed cl-s by 1000.
@@ -40,7 +40,7 @@ public:
     /// \param kPerDecade Used only if primordialInitialize is true. Determines how many k points per decade need to be used for initializing the primordial power spectrum.
     /// \param kMin Used only if primordialInitialize is true. This is the lower end for initializing the primordial power spectrum.
     /// \param kMax Used only if primordialInitialize is true. This is the upper end for initializing the primordial power spectrum.
-    void preInitialize(int lMax, bool wantAllL = false, bool primordialInitialize = true, bool includeTensors = false, int lMaxTensors = 0, double kPerDecade = 100, double kMin = 1e-6, double kMax = 1.0);
+    virtual void preInitialize(int lMax, bool wantAllL = false, bool primordialInitialize = true, bool includeTensors = false, int lMaxTensors = 0, double kPerDecade = 100, double kMin = 1e-6, double kMax = 1.0);
 
     /// Initialization routine. Must be called after pre-initialization. Can be called multiple times in a row.
     /// \param params The cosmological parameters to use.
@@ -49,7 +49,7 @@ public:
     /// \param wantLensing A flag specifying if lensing potential and lensed Cl-s should be calculated.
     /// \param wantMatterPs A flag specifying if the matter power spectrum should be calculated.
     /// \param zMaxPk The redshift up to which the matter power spectrum is needed. This parameter matters only if wantMatterPs is true.
-    void initialize(const CosmologicalParams& params, bool wantT = true, bool wantPol = false, bool wantLensing = false, bool wantMatterPs = false, double zMaxPk = 0);
+    virtual void initialize(const CosmologicalParams& params, bool wantT = true, bool wantPol = false, bool wantLensing = false, bool wantMatterPs = false, double zMaxPk = 0);
 
     /// Retrieves the values of the calculated CMB power spectra.
     /// \param clTT A pointer to a vector where TT power spectra should be stored. Give NULL if not wanted. NOTE: Can only be requested if T modes have been calculated during initialization.
@@ -59,47 +59,47 @@ public:
     /// \param clTP A pointer to a vector where TP power spectra should be stored. Give NULL if not wanted. NOTE: Can only be requested if T modes and lensing have been calculated during initialization.
     /// \param clEP A pointer to a vector where EP power spectra should be stored. Give NULL if not wanted. NOTE: Can only be requested if polarization modes and lensing have been calculated during initialization.
     /// \param clBB A pointer to a vector where BB power spectra should be stored. Give NULL if not wanted. NOTE: Can only be requested if polarization modes have been calculated during initialization.
-    void getCl(std::vector<double>* clTT, std::vector<double>* clEE = NULL, std::vector<double>* clTE = NULL, std::vector<double>* clPP = NULL, std::vector<double>* clTP = NULL, std::vector<double>* clEP = NULL, std::vector<double>* clBB = NULL);
+    virtual void getCl(std::vector<double>* clTT, std::vector<double>* clEE = NULL, std::vector<double>* clTE = NULL, std::vector<double>* clPP = NULL, std::vector<double>* clTP = NULL, std::vector<double>* clEP = NULL, std::vector<double>* clBB = NULL);
 
     /// Retrieves the values of lensed Cl-s. This function can be called only if lensing has been calculated during initialization.
     /// \param clTT A pointer to a vector where lensed TT power spectra should be stored. Give NULL if not wanted. NOTE: Can only be requested if T modes have been calculated during initialization.
     /// \param clEE A pointer to a vector where lensed EE power spectra should be stored. Give NULL if not wanted. NOTE: Can only be requested if polarization modes have been calculated during initialization.
     /// \param clTE A pointer to a vector where lensed TE power spectra should be stored. Give NULL if not wanted. NOTE: Can only be requested if T and polarization modes have been calculated during initialization.
     /// \param clBB A pointer to a vector where lensed BB power spectra should be stored. Give NULL if not wanted. NOTE: Can only be requested if polarization modes have been calculated during initialization.
-    void getLensedCl(std::vector<double>* clTT, std::vector<double>* clEE = NULL, std::vector<double>* clTE = NULL, std::vector<double>* clBB = NULL);
+    virtual void getLensedCl(std::vector<double>* clTT, std::vector<double>* clEE = NULL, std::vector<double>* clTE = NULL, std::vector<double>* clBB = NULL);
 
     /// Retrieves CMB transfer functions. In order for this function to work properly all l calculation must be requested during pre-initialization.
     /// \param l The value of l for the transfer function.
     /// \param t A pointer to a map where the temperature transfer function should be stored. Give NULL if not wanted. NOTE: Can only be requested if T modes have been calculated during initialization.
     /// \param e A pointer to a map where the E mode transfer function should be stored. Give NULL if not wanted. NOTE: Can only be requested if polarization modes have been calculated during initialization.
     /// \param p A pointer to a map where the the lensing potential transfer function should be stored. Give NULL if not wanted. NOTE: Can only be requested if lensing has been calculated during initialization.
-    void getTransfer(int l, Math::TableFunction<double, double>* t, Math::TableFunction<double, double>* e = NULL, Math::TableFunction<double, double>* p = NULL);
+    virtual void getTransfer(int l, Math::TableFunction<double, double>* t, Math::TableFunction<double, double>* e = NULL, Math::TableFunction<double, double>* p = NULL);
 
     /// Retrieves the matter power spectrum. Should not be called unless wantMatterPs is set to true in initialize.
     /// \param z The redshift at which the matter power spectrum is wanted. Should not exceed zMaxPk of initialize.
     /// \param ps A pointer to a map where the matter power spectrum will be written.
-    void getMatterPs(double z, Math::TableFunction<double, double>* ps);
+    virtual void getMatterPs(double z, Math::TableFunction<double, double>* ps);
 
     /// Retrieves the matter transfer function. Should not be called unless wantMatterPs is set to true in initialize.
     /// \param z The redshift at which the matter transfer function is wanted. Should not exceed zMaxPk of initialize.
     /// \param tk A pointer to a map where the matter transfer function will be written.
-    void getMatterTransfer(double z, Math::TableFunction<double, double>* tk);
+    virtual void getMatterTransfer(double z, Math::TableFunction<double, double>* tk);
 
     /// Calculates sigma_8. Should not be called unless wantMatterPs is set to true in initialize.
     /// \return The sigma_8 value.
-    double sigma8();
+    virtual double sigma8();
 
-    void getLList(std::vector<double>& list) const;
-    void getLListLens(std::vector<double>& list) const;
+    virtual void getLList(std::vector<double>& list) const;
+    virtual void getLListLens(std::vector<double>& list) const;
 
-private:
+protected:
     void preClean();
     void clean();
 
     void allocate();
     void deAllocate();
 
-private:
+protected:
     const CosmologicalParams* params_;
 
     precision* pr_;
