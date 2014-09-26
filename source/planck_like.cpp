@@ -501,6 +501,7 @@ PlanckLikelihood::calculate(double* params, int nPar)
 {
     //Timer timer("Planck likelihood timer");
     //timer.start();
+    
     check(useCMB_ == &cmb_, "");
 
     check(nPar == (6 + (camspec_ ? 14 : 0) + (actspt_ ? 24 : 0)), "");
