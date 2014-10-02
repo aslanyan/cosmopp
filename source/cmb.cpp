@@ -30,6 +30,12 @@ void CMB::allocate()
     nl_ = new nonlinear;
     le_ = new lensing;
     op_ = new output;
+
+    for(int i = 0; i < 1000; ++i)
+    {
+        dum1_[i] = new double[1000];
+        dum2_[i] = new double[1000];
+    }
 }
 
 void
@@ -46,6 +52,12 @@ CMB::deAllocate()
     delete nl_;
     delete le_;
     delete op_;
+
+    for(int i = 0; i < 1000; ++i)
+    {
+        delete dum1_[i];
+        delete dum2_[i];
+    }
 }
 
 void
@@ -617,24 +629,12 @@ CMB::getCl(std::vector<double>* clTT, std::vector<double>* clEE, std::vector<dou
     for(int l = 2; l <= lMax; ++l)
     {
         double clTot[1000];
-        double* dum1[1000], *dum2[1000];
-        for(int i = 0; i < 1000; ++i)
-        {
-            dum1[i] = new double[1000];
-            dum2[i] = new double[1000];
-        }
-        if(spectra_cl_at_l(sp_, l, clTot, dum1, dum2) == _FAILURE_)
+        if(spectra_cl_at_l(sp_, l, clTot, dum1_, dum2_) == _FAILURE_)
         {
             std::stringstream exceptionStr;
             exceptionStr << "CLASS: spectra_cl_at_l failed!" << std::endl << sp_->error_message;
             exc.set(exceptionStr.str());
             throw exc;
-        }
-
-        for(int i = 0; i < 1000; ++i)
-        {
-            delete dum1[i];
-            delete dum2[i];
         }
 
         if(clTT)
