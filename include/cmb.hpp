@@ -126,6 +126,8 @@ protected:
     double kPerDecade_;
     double kMin_;
     double kMax_;
+
+    double* dum1_[1000], *dum2_[1000];
 };
 
 #endif

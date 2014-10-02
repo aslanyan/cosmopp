@@ -454,6 +454,10 @@ MetropolisHastings::sendHaveStopped()
 int
 MetropolisHastings::run(unsigned long maxChainLength, int writeResumeInformationEvery, unsigned long burnin, CONVERGENCE_DIAGNOSTIC cd, double convergenceCriterion, bool adaptiveProposal)
 {
+#ifdef COSMO_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+
     check(maxChainLength > 0, "invalid maxChainLength = " << maxChainLength);
     check(!blocks_.empty(), "");
 
@@ -692,6 +696,10 @@ MetropolisHastings::run(unsigned long maxChainLength, int writeResumeInformation
         }
 #endif
     }
+
+#ifdef COSMO_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
 
     return nChains_;
 }

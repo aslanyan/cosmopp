@@ -1,6 +1,4 @@
-#ifdef COSMO_MPI
-#include <mpi.h>
-#endif
+#include <cosmo_mpi.hpp>
 
 #include <fstream>
 #include <set>
@@ -35,6 +33,7 @@
 #include <test_three_rotation.hpp>
 #include <test_mask_apodizer.hpp>
 #include <test_matter_likelihood.hpp>
+#include <test_k_nearest_neighbors.hpp>
 
 TestFramework* createTest(const std::string& name)
 {
@@ -124,6 +123,10 @@ TestFramework* createTest(const std::string& name)
         test = new TestMatterLikelihood(1e-3);
 #endif
 #endif
+#ifdef COSMO_ANN
+    else if(name == "k_nearest_neighbors")
+        test = new TestKNearestNeighbors;
+#endif
 
     return test;
 }
@@ -143,13 +146,7 @@ int main(int argc, char *argv[])
     try {
         StandardException exc;
 
-        bool isMaster = true;
-#ifdef COSMO_MPI
-        MPI_Init(&argc, &argv);
-        int mpiRank;
-        MPI_Comm_rank(MPI_COMM_WORLD, &mpiRank);
-        isMaster = (mpiRank == 0);
-#endif
+        bool isMaster = CosmoMPI::create().isMaster();
         
         unsigned int total = 0, pass = 0, fail = 0;
 
@@ -200,6 +197,9 @@ int main(int argc, char *argv[])
 #ifdef COSMO_LAPACKPP
         fastTests.insert("matter_likelihood");
 #endif
+#endif
+#ifdef COSMO_ANN
+        fastTests.insert("k_nearest_neighbors");
 #endif
 
 #ifdef COSMO_PLANCK
@@ -281,12 +281,6 @@ int main(int argc, char *argv[])
                 output_screen_clean(std::endl);
             }
 
-#ifdef COSMO_MPI
-            int hasMpiFinalized;
-            MPI_Finalized(&hasMpiFinalized);
-            if(!hasMpiFinalized)
-                MPI_Finalize();
-#endif
             return 0;
         }
         else
@@ -309,12 +303,6 @@ int main(int argc, char *argv[])
                     std::cout << "The test name " << argument << " was not found!" << std::endl;
                     std::cout << "Try 'all' to run all of the tests, 'fast' to run only the fast tests, 'slow' to run all of the slow tests, and 'list' to get a list of all the tests." << std::endl;
                 }
-#ifdef COSMO_MPI
-                int hasMpiFinalized;
-                MPI_Finalized(&hasMpiFinalized);
-                if(!hasMpiFinalized)
-                    MPI_Finalize();
-#endif
                 return -1;
             }
 
@@ -341,13 +329,6 @@ int main(int argc, char *argv[])
             }
         }
 
-#ifdef COSMO_MPI
-        int hasMpiFinalized;
-        MPI_Finalized(&hasMpiFinalized);
-        if(!hasMpiFinalized)
-            MPI_Finalize();
-#endif
-        
     } catch (std::exception& e)
     {
         output_screen("EXCEPTION CAUGHT!!! " << std::endl << e.what() << std::endl);

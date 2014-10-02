@@ -2,6 +2,7 @@
 #define COSMO_PP_COSMOLOGICAL_PARAMS_HPP
 
 #include <cmath>
+#include <string>
 
 #include <macros.hpp>
 #include <phys_constants.hpp>
@@ -80,6 +81,12 @@ public:
     /// The primordial tensor power spectrum function.
     virtual const Math::RealFunction& powerSpectrumTensor() const = 0;
 
+    /// The name of the parameters model.
+    virtual std::string name() const { return ""; }
+
+    /// All of the relevant parameters in one vector.
+    virtual void getAllParameters(std::vector<double>& v) const { v.clear(); }
+
     /// The Hubble constant without units (the reduced Planck mass is assumed to be 1, together with c and hbar).
     virtual double getHubbleUnitless() const
     {
@@ -155,6 +162,18 @@ public:
 
     virtual const Math::RealFunction& powerSpectrum() const { return ps_; }
     virtual const Math::RealFunction& powerSpectrumTensor() const { return psTensor_; }
+
+    virtual std::string name() const { return "LambdaCDM"; }
+    virtual void getAllParameters(std::vector<double>& v) const
+    {
+        v.resize(6);
+        v[0] = getOmBH2();
+        v[1] = getOmCH2();
+        v[2] = getH();
+        v[3] = getTau();
+        v[4] = getNs();
+        v[5] = getAs();
+    }
 
 private:
     double omBH2_;

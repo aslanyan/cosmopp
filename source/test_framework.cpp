@@ -1,7 +1,4 @@
-#ifdef COSMO_MPI
-#include <mpi.h>
-#endif
-
+#include <cosmo_mpi.hpp>
 #include <macros.hpp>
 #include <numerics.hpp>
 #include <test_framework.hpp>
@@ -15,6 +12,9 @@ TestFramework::TestFramework(double precision) : precision_(precision)
 bool
 TestFramework::run(unsigned int& pass, unsigned int& fail)
 {
+#ifdef COSMO_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
     if(isMaster())
     {
         output_screen_clean(std::endl << "TEST: " << name() << std::endl << std::endl);
@@ -48,26 +48,21 @@ TestFramework::run(unsigned int& pass, unsigned int& fail)
         }
     }
 
+#ifdef COSMO_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+
     if(isMaster())
     {
         output_screen_clean(std::endl << "Total subtests: " << pass + fail << std::endl << "Pass: " << pass << std::endl << "Fail: " << fail << std::endl << std::endl);
         return (fail == 0);
     }
+
     return true;
 }
 
 bool
 TestFramework::isMaster() const
 {
-#ifdef COSMO_MPI
-    int hasMpiInitialized;
-    MPI_Initialized(&hasMpiInitialized);
-    if(!hasMpiInitialized)
-        MPI_Init(NULL, NULL);
-    int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    return (rank == 0);
-#endif
-
-    return true;
+    return CosmoMPI::create().isMaster();
 }
