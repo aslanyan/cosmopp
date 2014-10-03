@@ -540,6 +540,8 @@ MetropolisHastings::run(unsigned long maxChainLength, int writeResumeInformation
 
     std::vector<unsigned long> accepted(blocks_.size(), 0);
     unsigned long currentIter = 0;
+
+    int notAcceptedCount = 0;
     while(!stop())
     {
         int blockBegin = 0;
@@ -597,6 +599,17 @@ MetropolisHastings::run(unsigned long maxChainLength, int writeResumeInformation
                 p *= externalProposal_->calculate(&(current_[0]), n_, &(oldBlock[0]), i);
                 p /= externalProposal_->calculate(&(currentOld[0]), n_, &(block[0]), i);
             }
+
+            if(notAcceptedCount > 100)
+            {
+                output_screen("Haven't moved for " << notAcceptedCount << "iterations!" << std::endl);
+                output_screen("\tcurrent like = " << currentLike_ << std::endl);
+                output_screen("\told like = " << oldLike << std::endl);
+                output_screen("\tcurrent prior = " << currentPrior_ << std::endl);
+                output_screen("\tnew prior = " << newPrior << std::endl);
+                output_screen("\tp = " << p << std::endl);
+            }
+
             if(p > 1)
                 p = 1;
             
@@ -606,11 +619,13 @@ MetropolisHastings::run(unsigned long maxChainLength, int writeResumeInformation
             {
                 currentPrior_ = newPrior;
                 ++accepted[i];
+                notAcceptedCount = 0;
             }
             else
             {
                 current_ = currentOld;
                 currentLike_ = oldLike;
+                ++notAcceptedCount;
             }
 
             blockBegin = blockEnd;
