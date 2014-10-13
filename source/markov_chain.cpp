@@ -17,7 +17,6 @@ Posterior1D::addPoint(double x, double prob, double like)
 {
     points_.push_back(x);
     probs_.push_back(prob);
-    likes_.push_back(like);
 
     if(x < min_)
         min_ = x;
@@ -35,7 +34,7 @@ void
 Posterior1D::generate(SmoothingMethod method, double scale)
 {
     check(points_.size() >= 2, "at least 2 different data points need to be added before generating");
-    check(points_.size() == probs_.size() && probs_.size() == likes_.size(), "");
+    check(points_.size() == probs_.size(), "");
     check(max_ > min_, "at least 2 different data points need to be added before generating");
 
     check(scale >= 0, "invalid scale " << scale);
@@ -95,10 +94,8 @@ Posterior1D::generate(SmoothingMethod method, double scale)
 
     if(smooth_)
     {
-        check(cumul_, "");
         check(cumulInv_, "");
         delete smooth_;
-        delete cumul_;
         delete cumulInv_;
     }
 
@@ -117,10 +114,10 @@ Posterior1D::generate(SmoothingMethod method, double scale)
 
     const int N = 100 * resolution;
     const double delta = (x[x.size() - 1] - x[0]) / N;
-    cumul_ = new Math::TableFunction<double, double>;
     cumulInv_ = new Math::TableFunction<double, double>;
     double maxVal = 0, maxX;
     norm_ = 0;
+    (*cumulInv_)[0] = 0;
     for(int i = 0; i <= N; ++i)
     {
         double v = x[0] + i * delta;
@@ -141,9 +138,11 @@ Posterior1D::generate(SmoothingMethod method, double scale)
         }
 
         norm_ += y * delta;
-        (*cumul_)[v] = norm_;
         (*cumulInv_)[norm_] = v;
     }
+
+    points_.clear();
+    probs_.clear();
 }
 
 double
@@ -202,7 +201,6 @@ Posterior2D::addPoint(double x1, double x2, double prob, double like)
     points1_.push_back(x1);
     points2_.push_back(x2);
     probs_.push_back(prob);
-    likes_.push_back(like);
 
     if(x1 < min1_)
         min1_ = x1;
@@ -308,11 +306,9 @@ Posterior2D::generate(double scale1, double scale2)
 
     if(smooth_)
     {
-        check(cumul_, "");
         check(cumulInv_, "");
 
         delete smooth_;
-        delete cumul_;
         delete cumulInv_;
     }
 
@@ -353,7 +349,6 @@ Posterior2D::generate(double scale1, double scale2)
     check(norm_ > 0, "");
 
     std::sort(probs.begin(), probs.end());
-    cumul_ = new Math::TableFunction<double, double>;
     cumulInv_ = new Math::TableFunction<double, double>;
 
     double total = 0;
@@ -361,13 +356,15 @@ Posterior2D::generate(double scale1, double scale2)
     while(total < 1 && index >= 0)
     {
         const double currentP = probs[index] / norm_;
-        (*cumul_)[currentP] = total;
         (*cumulInv_)[total] = currentP;
         total += currentP * delta1 * delta2;
         --index;
     }
-    (*cumul_)[0] = 1;
     (*cumulInv_)[1] = 0;
+
+    points1_.clear();
+    points2_.clear();
+    probs_.clear();
 }
 
 bool lessMarkovChainElementPointer(MarkovChain::Element* i, MarkovChain::Element* j)

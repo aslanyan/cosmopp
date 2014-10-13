@@ -58,7 +58,7 @@ typename TableFunction<VarType, ValType, Compare>::ValueType TableFunction<VarTy
 	check(!MapType::key_comp()(x2, x), "");
 	if(!MapType::key_comp()(x, x2))
 		return y2;
-	check(it != MapType::begin(), "Element is outside the range!");
+	check(it != MapType::begin(), "Element" << x << " is outside the range!");
 	--it;
 	const VariableType x1 = (*it).first;
 	const ValueType y1 = (*it).second;

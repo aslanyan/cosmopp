@@ -259,7 +259,7 @@ MCMC_HPP = include/mcmc.hpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(MATH_CONSTA
 MN_SCANNER_HPP = include/mn_scanner.hpp $(LIKELIHOOD_FUNCTION_HPP) $(TABLE_FUNCTION_HPP)
 WIGNER_3J_HPP = include/wigner_3j.hpp $(MACROS_HPP)
 CONJUGATE_GRADIENT_HPP = include/conjugate_gradient.hpp $(MACROS_HPP)
-MARKOV_CHAIN_HPP = include/markov_chain.hpp $(FUNCTION_HPP) $(TABLE_FUNCTION_HPP)
+MARKOV_CHAIN_HPP = include/markov_chain.hpp $(FUNCTION_HPP) $(TABLE_FUNCTION_HPP) $(RANDOM_HPP)
 K_NEAREST_NEIGHBORS_HPP = include/k_nearest_neighbors.hpp
 
 C_MATRIX_HPP = include/c_matrix.hpp

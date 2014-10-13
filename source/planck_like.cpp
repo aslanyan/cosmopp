@@ -60,7 +60,7 @@ struct PlanckLikelihoodContainer
     void* actspt;
 };
 
-PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useLensing, bool usePol, bool useActSpt, bool includeTensors, double kPerDecade) : spectraNames_(6), cosmoParams_(6), prevCosmoCalculated_(false), commander_(NULL), camspec_(NULL), lens_(NULL), pol_(NULL), actspt_(NULL)
+PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useLensing, bool usePol, bool useActSpt, bool includeTensors, double kPerDecade) : spectraNames_(6), cosmoParams_(6), prevCosmoCalculated_(false), needToCalculate_(true), commander_(NULL), camspec_(NULL), lens_(NULL), pol_(NULL), actspt_(NULL)
 {
     check(useCommander || useCamspec || useLensing || usePol || useActSpt, "at least one likelihood must be specified");
 
@@ -399,6 +399,10 @@ double
 PlanckLikelihood::commanderLike()
 {
     check(commander_, "commander not initialized");
+
+    if(!needToCalculate_)
+        return prevCommander_;
+
     check(!clTT_.empty(), "Cl-s not computed");
 
     check(clTT_.size() >= commanderLMax_ + 1, "");
@@ -406,6 +410,7 @@ PlanckLikelihood::commanderLike()
     output_screen2("Calculating commander likelihood..." << std::endl);
     const double l = clik_compute(commander_, &(clTT_[0]), NULL);
     output_screen2("OK" << std::endl);
+    prevCommander_ = -2.0 * l;
     return -2.0 * l;
 }
 
@@ -433,6 +438,10 @@ double
 PlanckLikelihood::polLike()
 {
     check(pol_, "pol not initialized");
+    
+    if(!needToCalculate_)
+        return prevPol_;
+
     check(!clTT_.empty(), "Cl-s not computed");
     check(!clEE_.empty(), "EE Cl-s missing");
     check(!clTE_.empty(), "TE Cl-s missing");
@@ -451,6 +460,8 @@ PlanckLikelihood::polLike()
     const double l = clik_compute(pol_, &(input[0]), NULL);
     output_screen2("OK" << std::endl);
 
+    prevPol_ = -2.0 * l;
+
     return -2.0 * l;
 }
 
@@ -458,6 +469,10 @@ double
 PlanckLikelihood::lensingLike()
 {
     check(lens_, "lensing not initialized");
+
+    if(!needToCalculate_)
+        return prevLens_;
+
     check(!clTT_.empty(), "Cl-s not computed");
     check(!clPP_.empty(), "Lensing Cl-s missing");
 
@@ -471,6 +486,8 @@ PlanckLikelihood::lensingLike()
     
     const double l = clik_lensing_compute(lens_, &(input[0]), NULL);
     output_screen2("OK" << std::endl);
+
+    prevLens_ = -2.0 * l;
 
     return -2.0 * l;
 }
@@ -507,7 +524,7 @@ PlanckLikelihood::calculate(double* params, int nPar)
     check(nPar == (6 + (camspec_ ? 14 : 0) + (actspt_ ? 24 : 0)), "");
     const double pivot = 0.05;
 
-    bool needToCalculate = true;
+    needToCalculate_ = true;
     if(prevCosmoCalculated_)
     {
         check(cosmoParams_.size() == 6, "");
@@ -521,10 +538,10 @@ PlanckLikelihood::calculate(double* params, int nPar)
             }
         }
 
-        needToCalculate = !areParamsEqual;
+        needToCalculate_ = !areParamsEqual;
     }
 
-    if(needToCalculate)
+    if(needToCalculate_)
     {
         LambdaCDMParams lcdmParams(params[0], params[1], params[2], params[3], params[4], std::exp(params[5]) / 1e10, pivot);
         setCosmoParams(lcdmParams);
@@ -543,7 +560,7 @@ PlanckLikelihood::calculate(double* params, int nPar)
         actSptExtra_.insert(actSptExtra_.end(), params + paramShift, params + paramShift + 24);
     }
 
-    if(needToCalculate)
+    if(needToCalculate_)
     {
         calculateCls();
         check(cosmoParams_.size() == 6, "");
