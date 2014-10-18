@@ -612,7 +612,7 @@ MetropolisHastings::openOut(bool append)
     {
         StandardException exc;
         std::stringstream exceptionStr;
-        exceptionStr << "Cannot write into output file " << fileName << ".";
+        exceptionStr << "Cannot write into output file " << fileName.str() << ".";
         exc.set(exceptionStr.str());
         throw exc;
     }
