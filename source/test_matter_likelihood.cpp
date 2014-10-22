@@ -86,7 +86,7 @@ TestMatterLikelihood::runSubTest(unsigned int i, double& res, double& expected, 
 
     if(i == 3)
     {
-        expected = 38.9616;
+        expected = 13.2616;
         subTestName = "scaled_range_lin";
     }
 
@@ -104,7 +104,7 @@ TestMatterLikelihood::runSubTest(unsigned int i, double& res, double& expected, 
 
     if(i == 6)
     {
-        expected = 66.7013;
+        expected = 28.4211;
         subTestName = "dr9_scaled_range_lin";
     }
 

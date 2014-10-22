@@ -26,8 +26,79 @@ MatterLikelihood::MatterLikelihood(const char* pkFileName, const char* covFileNa
 }
 
 double
-MatterLikelihood::calculateLin(const Math::RealFunction& matterPk, const CosmologicalParams& params, double b2) const
+MatterLikelihood::calculateLin(const Math::RealFunction& matterPk, const CosmologicalParams& params) const
 {
+    check(!data_.empty(), "need to initialize the data first");
+
+    const int n = data_.size();
+
+    check(kh_.size() == n, "");
+    check(cInv_.size(0) == n && cInv_.size(1) == n, "need to initialize the covariance matrix first");
+
+    const double h = params.getH();
+
+    double alpha = 1;
+    if(scale_)
+    {
+        const double dv = DV(params, z_);
+        alpha = dvFid_ / dv;
+    }
+
+    std::vector<double> p1(n), p2(n);
+    for(int i = 0; i < n; ++i)
+    {
+        const double kh = kh_[i] * alpha;
+        const double k = kh * h;
+        const double p = matterPk.evaluate(k) / (alpha * alpha * alpha);
+
+        p1[i] = p * h * h * h;
+        p2[i] = 1.0;
+    }
+
+    LaGenMatDouble A(2, 2);
+
+    A(0, 0) = 0;
+    A(0, 1) = 0;
+    A(1, 0) = 0;
+    A(1, 1) = 0;
+
+    double dataLike = 0;
+    double b0 = 0, b1 = 0;
+
+    for(int i = 0; i < n; ++i)
+    {
+        for(int j = 0; j < n; ++j)
+        {
+            const double c = cInv_(i, j);
+            const double p1c = p1[i] * c, p2c = p2[i] * c;
+            const double dj = data_[j];
+
+            A(0, 0) += p1c * p1[j];
+            A(1, 0) += p1c * p2[j];
+            A(1, 1) += p2c * p2[j];
+
+            b0 += p1c * dj;
+            b1 += p2c * dj;
+
+            dataLike += data_[i] * c * dj;
+        }
+    }
+
+    A(0, 1) = A(1, 0);
+
+    const double detA = A(0, 0) * A(1, 1) - A(1, 0) * A(1, 0);
+
+    // inverting A
+    LaVectorLongInt pivotA(2);
+    LUFactorizeIP(A, pivotA);
+    LaLUInverseIP(A, pivotA);
+
+    const double bAb = b0 * A(0, 0) * b0 + b0 * A(0, 1) * b1 + b1 * A(1, 0) * b0 + b1 * A(1, 1) * b1;
+
+    const double like = std::log(detA) - bAb + dataLike;
+
+    return like;
+    /*
     check(!data_.empty(), "need to initialize the data first");
     
     const int n = data_.size();
@@ -79,6 +150,7 @@ MatterLikelihood::calculateLin(const Math::RealFunction& matterPk, const Cosmolo
     }
 
     return res;
+    */
 }
 
 double
