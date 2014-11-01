@@ -60,7 +60,7 @@ struct PlanckLikelihoodContainer
     void* actspt;
 };
 
-PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useLensing, bool usePol, bool useActSpt, bool includeTensors, double kPerDecade) : spectraNames_(6), cosmoParams_(6), prevCosmoCalculated_(false), needToCalculate_(true), commander_(NULL), camspec_(NULL), lens_(NULL), pol_(NULL), actspt_(NULL)
+PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useLensing, bool usePol, bool useActSpt, bool includeTensors, double kPerDecade) : spectraNames_(6), cosmoParams_(6), prevCosmoCalculated_(false), needToCalculate_(true), commander_(NULL), camspec_(NULL), lens_(NULL), pol_(NULL), actspt_(NULL), useFast_(false), fastLikes_(3, 0)
 {
     check(useCommander || useCamspec || useLensing || usePol || useActSpt, "at least one likelihood must be specified");
 
@@ -328,7 +328,9 @@ PlanckLikelihood::calculateCls()
     std::vector<double>* tt = &clTT_;
     std::vector<double>* ee = (wantPol ? &clEE_ : NULL);
     std::vector<double>* te = (wantPol ? &clTE_ : NULL);
-    
+
+    useFast_ = useCMB_->getExtraData(fastLikes_);
+
     useCMB_->getLensedCl(tt, ee, te);
 
     if(wantLens)
@@ -577,11 +579,51 @@ double
 PlanckLikelihood::likelihood()
 {
     double l = 0;
-    if(commander_) l += commanderLike();
-    if(camspec_) l += camspecLike();
-    if(pol_) l += polLike();
-    if(lens_) l += lensingLike();
-    if(actspt_) l+= actSptLike();
+
+    if(commander_)
+    {
+        if(useFast_)
+            l += fastLikes_[0];
+        else
+        {
+            const double like = commanderLike();
+            l += like;
+            fastLikes_[0] = like;
+        }
+    }
+
+    if(camspec_)
+        l += camspecLike();
+
+    if(pol_)
+    {
+        if(useFast_)
+            l += fastLikes_[1];
+        else
+        {
+            const double like = polLike();
+            l += like;
+            fastLikes_[1] = like;
+        }
+    }
+
+    if(lens_)
+    {
+        if(useFast_)
+            l += fastLikes_[2];
+        else
+        {
+            const double like = lensingLike();
+            l += like;
+            fastLikes_[2] = like;
+        }
+    }
+
+    if(actspt_)
+        l+= actSptLike();
+
+    if(!useFast_)
+        useCMB_->setExtraData(fastLikes_);
 
     return l;
 }

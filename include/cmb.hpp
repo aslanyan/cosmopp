@@ -92,6 +92,10 @@ public:
     virtual void getLList(std::vector<double>& list) const;
     virtual void getLListLens(std::vector<double>& list) const;
 
+    virtual bool getExtraData(std::vector<double>& v) { return false; /* not relevant for this class, used in CMBTurbo */ }
+
+    virtual void setExtraData(const std::vector<double>& v) { /* not relevant for this class, used in CMBTurbo */ }
+
 protected:
     void preClean();
     void clean();
