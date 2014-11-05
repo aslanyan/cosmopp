@@ -583,12 +583,16 @@ PlanckLikelihood::likelihood()
     if(commander_)
     {
         if(useFast_)
+        {
+            output_screen1("Retrieving commander like = " << fastLikes_[0] << std::endl);
             l += fastLikes_[0];
+        }
         else
         {
             const double like = commanderLike();
             l += like;
             fastLikes_[0] = like;
+            output_screen1("Saving commander like = " << fastLikes_[0] << std::endl);
         }
     }
 
@@ -598,24 +602,32 @@ PlanckLikelihood::likelihood()
     if(pol_)
     {
         if(useFast_)
+        {
+            output_screen1("Retrieving polarization like = " << fastLikes_[1] << std::endl);
             l += fastLikes_[1];
+        }
         else
         {
             const double like = polLike();
             l += like;
             fastLikes_[1] = like;
+            output_screen1("Saving polarization like = " << fastLikes_[1] << std::endl);
         }
     }
 
     if(lens_)
     {
         if(useFast_)
+        {
+            output_screen1("Retrieving lensing like = " << fastLikes_[2] << std::endl);
             l += fastLikes_[2];
+        }
         else
         {
             const double like = lensingLike();
             l += like;
             fastLikes_[2] = like;
+            output_screen1("Saving lensing like = " << fastLikes_[2] << std::endl);
         }
     }
 
