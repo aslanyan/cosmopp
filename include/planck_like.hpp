@@ -85,9 +85,6 @@ private:
     double prevCommander_, prevPol_, prevLens_;
 
     const CosmologicalParams* params_;
-
-    std::vector<double> fastLikes_;
-    bool useFast_;
 };
 
 #endif
