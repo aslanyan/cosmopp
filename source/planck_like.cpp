@@ -60,7 +60,7 @@ struct PlanckLikelihoodContainer
     void* actspt;
 };
 
-PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useLensing, bool usePol, bool useActSpt, bool includeTensors, double kPerDecade) : spectraNames_(6), cosmoParams_(6), prevCosmoCalculated_(false), needToCalculate_(true), commander_(NULL), camspec_(NULL), lens_(NULL), pol_(NULL), actspt_(NULL)
+PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useLensing, bool usePol, bool useActSpt, bool includeTensors, double kPerDecade) : spectraNames_(6), haveCommander_(false), havePol_(false), haveLens_(false), commander_(NULL), camspec_(NULL), lens_(NULL), pol_(NULL), actspt_(NULL)
 {
     check(useCommander || useCamspec || useLensing || usePol || useActSpt, "at least one likelihood must be specified");
 
@@ -255,7 +255,35 @@ PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useL
 void
 PlanckLikelihood::setCosmoParams(const CosmologicalParams& params)
 {
+    bool needToCalculate = true;
+    params.getAllParameters(currentCosmoParams_);
+    if(params.name() == prevCosmoParamsName_)
+    {
+        check(currentCosmoParams_.size() == prevCosmoParams_.size(), "");
+        bool areParamsEqual = true;
+        for(int i = 0; i < prevCosmoParams_.size(); ++i)
+        {
+            if(prevCosmoParams_[i] != currentCosmoParams_[i])
+            {
+                areParamsEqual = false;
+                break;
+            }
+        }
+
+        needToCalculate = !areParamsEqual;
+    }
+    else
+        prevCosmoParamsName_ = params.name();
+
+    if(!needToCalculate)
+        return;
+
+    haveCommander_ = false;
+    havePol_ = false;
+    haveLens_ = false;
+
     params_ = &params;
+    prevCosmoParams_.swap(currentCosmoParams_);
 
     bool wantT = true;
     bool wantPol = (pol_ != NULL);
@@ -333,66 +361,6 @@ PlanckLikelihood::calculateCls()
 
     if(wantLens)
         useCMB_->getCl(NULL, NULL, NULL, &clPP_, NULL, NULL);
-
-    // to be removed
-    /*
-    std::ifstream in("l_list.txt");
-    if(!in)
-    {
-        StandardException exc;
-        std::string exceptionStr = "Cannot open input file l_list.txt.";
-        exc.set(exceptionStr);
-        throw exc;
-    }
-
-    int totalNum;
-    in >> totalNum;
-    std::vector<int> lList(totalNum);
-    for(int i = 0; i < totalNum; ++i)
-        in >> lList[i];
-    in.close();
-
-    std::stringstream nameStr;
-    nameStr << "cl_data";
-#ifdef COSMO_MPI
-    int mpif;
-    MPI_Initialized(&mpif);
-    if(mpif)
-    {
-        int n;
-        MPI_Comm_size(MPI_COMM_WORLD, &n);
-        if(n > 1)
-        {
-            int p;
-            MPI_Comm_rank(MPI_COMM_WORLD, &p);
-
-            nameStr << '_' << p;
-        }
-    }
-#endif
-    nameStr << ".dat";
-
-    std::vector<double> buff;
-    buff.push_back(params_->getOmBH2());
-    buff.push_back(params_->getOmCH2());
-    buff.push_back(params_->getH());
-    buff.push_back(params_->getTau());
-    buff.push_back(params_->getNs());
-    buff.push_back(params_->getAs());
-
-    for(int i = 0; i < totalNum; ++i)
-    {
-        const int l = lList[i];
-        buff.push_back(clTT_[l]);
-        buff.push_back(clEE_[l]);
-        buff.push_back(clTE_[l]);
-        buff.push_back(clPP_[l]);
-    }
-
-    std::ofstream out(nameStr.str().c_str(), std::ios::binary | std::ios::app);
-    out.write((char*)(&(buff[0])), buff.size() * sizeof(double));
-    out.close();
-    */
 }
 
 double
@@ -400,7 +368,7 @@ PlanckLikelihood::commanderLike()
 {
     check(commander_, "commander not initialized");
 
-    if(!needToCalculate_)
+    if(haveCommander_)
         return prevCommander_;
 
     check(!clTT_.empty(), "Cl-s not computed");
@@ -411,6 +379,7 @@ PlanckLikelihood::commanderLike()
     const double l = clik_compute(commander_, &(clTT_[0]), NULL);
     output_screen2("OK" << std::endl);
     prevCommander_ = -2.0 * l;
+    haveCommander_ = true;
     return -2.0 * l;
 }
 
@@ -439,7 +408,7 @@ PlanckLikelihood::polLike()
 {
     check(pol_, "pol not initialized");
     
-    if(!needToCalculate_)
+    if(havePol_)
         return prevPol_;
 
     check(!clTT_.empty(), "Cl-s not computed");
@@ -461,6 +430,7 @@ PlanckLikelihood::polLike()
     output_screen2("OK" << std::endl);
 
     prevPol_ = -2.0 * l;
+    havePol_ = true;
 
     return -2.0 * l;
 }
@@ -470,7 +440,7 @@ PlanckLikelihood::lensingLike()
 {
     check(lens_, "lensing not initialized");
 
-    if(!needToCalculate_)
+    if(haveLens_)
         return prevLens_;
 
     check(!clTT_.empty(), "Cl-s not computed");
@@ -488,6 +458,7 @@ PlanckLikelihood::lensingLike()
     output_screen2("OK" << std::endl);
 
     prevLens_ = -2.0 * l;
+    haveLens_ = true;
 
     return -2.0 * l;
 }
@@ -524,28 +495,8 @@ PlanckLikelihood::calculate(double* params, int nPar)
     check(nPar == (6 + (camspec_ ? 14 : 0) + (actspt_ ? 24 : 0)), "");
     const double pivot = 0.05;
 
-    needToCalculate_ = true;
-    if(prevCosmoCalculated_)
-    {
-        check(cosmoParams_.size() == 6, "");
-        bool areParamsEqual = true;
-        for(int i = 0; i < 6; ++i)
-        {
-            if(params[i] != cosmoParams_[i])
-            {
-                areParamsEqual = false;
-                break;
-            }
-        }
-
-        needToCalculate_ = !areParamsEqual;
-    }
-
-    if(needToCalculate_)
-    {
-        LambdaCDMParams lcdmParams(params[0], params[1], params[2], params[3], params[4], std::exp(params[5]) / 1e10, pivot);
-        setCosmoParams(lcdmParams);
-    }
+    LambdaCDMParams lcdmParams(params[0], params[1], params[2], params[3], params[4], std::exp(params[5]) / 1e10, pivot);
+    setCosmoParams(lcdmParams);
 
     if(camspec_)
     {
@@ -560,14 +511,7 @@ PlanckLikelihood::calculate(double* params, int nPar)
         actSptExtra_.insert(actSptExtra_.end(), params + paramShift, params + paramShift + 24);
     }
 
-    if(needToCalculate_)
-    {
-        calculateCls();
-        check(cosmoParams_.size() == 6, "");
-        for(int i = 0; i < 6; ++i)
-            cosmoParams_[i] = params[i];
-        prevCosmoCalculated_ = true;
-    }
+    calculateCls();
 
     //timer.end();
     return likelihood();
