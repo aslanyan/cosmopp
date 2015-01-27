@@ -90,6 +90,10 @@ Posterior1D::generate(SmoothingMethod method, double scale)
         totalP += probs_[i];
     }
 
+    // to make sure edges are smooth
+    y[0] = y[1];
+    y[resolution + 1] = y[resolution];
+
     check(totalP, "");
     mean_ /= totalP;
 
@@ -304,6 +308,19 @@ Posterior2D::generate(double scale1, double scale2)
             k2 = res2 - 1;
 
         y[k1 + 1][k2 + 1] += probs_[i];
+    }
+
+    // to make sure edges are smooth
+    for(int i = 0; i < y.size(); ++i)
+    {
+        y[i][0] = y[i][1];
+        y[i][res2 + 1] = y[i][res2];
+    }
+
+    for(int i = 0; i < res2 + 2; ++i)
+    {
+        y[0][i] = y[1][i];
+        y[res1 + 1][i] = y[res1][i];
     }
 
     if(smooth_)
