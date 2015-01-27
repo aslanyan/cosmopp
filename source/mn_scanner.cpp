@@ -171,14 +171,14 @@ MnScanner::logLike(double *cube, int &ndim, int &npars, double &lnew)
     lnew = - like_.calculate(&(paramsCurrent_[0]), n_) / 2.0;
 }
 
-void myDumper(int &nSamples, int &nlive, int &nPar, double **physLive, double **posterior, double **paramConstr, double &maxLogLike, double &logZ, double &logZerr, void *context)
+void myDumper(int &nSamples, int &nlive, int &nPar, double **physLive, double **posterior, double **paramConstr, double &maxLogLike, double &logZ, double &INSLogZ, double &logZerr, void *context)
 {
     MnScanner* scanner = (MnScanner*) context;
-    scanner->dumper(nSamples, nlive, nPar, physLive, posterior, paramConstr, maxLogLike, logZ, logZerr);
+    scanner->dumper(nSamples, nlive, nPar, physLive, posterior, paramConstr, maxLogLike, logZ, INSLogZ, logZerr);
 }
 
 void
-MnScanner::dumper(int &nSamples, int &nlive, int &nPar, double **physLive, double **posterior, double **paramConstr, double &maxLogLike, double &logZ, double &logZerr)
+MnScanner::dumper(int &nSamples, int &nlive, int &nPar, double **physLive, double **posterior, double **paramConstr, double &maxLogLike, double &logZ, double &INSLogZ, double &logZerr)
 {
     StandardException exc;
     check(nPar == n_ - nFixed_, "");
@@ -240,6 +240,7 @@ MnScanner::dumper(int &nSamples, int &nlive, int &nPar, double **physLive, doubl
 
     outConstr << "Constraints from " << nSamples << " samples:" << std::endl;
     outConstr << "log(Z) = " << logZ << "+-" << logZerr << std::endl;
+    outConstr << "INS log(Z) = " << INSLogZ << "+-" << logZerr << std::endl;
 	// parameter constraints
     j = 0;
     for(i = 0; i < n_; ++i)

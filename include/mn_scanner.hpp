@@ -60,7 +60,7 @@ public:
 
 public:
     void logLike(double *Cube, int &ndim, int &npars, double &lnew);
-    void dumper(int &nSamples, int &nlive, int &nPar, double **physLive, double **posterior, double **paramConstr, double &maxLogLike, double &logZ, double &logZerr);
+    void dumper(int &nSamples, int &nlive, int &nPar, double **physLive, double **posterior, double **paramConstr, double &maxLogLike, double &logZ, double &INSLogZ, double &logZerr);
 
 private:
     void dumpInfo(const char* error);
