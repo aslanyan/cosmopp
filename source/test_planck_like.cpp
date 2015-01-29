@@ -50,6 +50,6 @@ TestPlanckLike::runSubTest(unsigned int i, double& res, double& expected, std::s
     if(i == 1)
         subTestName = std::string("LCDM+Tensor");
     res = like.likelihood();
-    expected = (i == 0 ? 10038.47 : 10048.5); // calculated by running the Planck likelihood code itself on the same cl values
+    expected = (i == 0 ? 10038.62 : 10049.59); // calculated by running the Planck likelihood code itself on the same cl values
 }
 

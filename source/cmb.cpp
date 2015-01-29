@@ -239,6 +239,9 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
         br_->H0 = br_->h * 1e5 / _c_;
     }
 
+    //pr_->k_min_tau0 = kMin_ * br_->conformal_age;
+    //pr_->k_max_tau0_over_l_max = kMax_ * br_->conformal_age / lMax_;
+
     th_->reio_parametrization = reio_camb;
     th_->reio_z_or_tau = reio_tau;
     th_->tau_reio = params.getTau();
@@ -310,7 +313,7 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
     //pt_->has_source_t = wantT;
     //pt_->has_source_p = wantPol;
     //pt_->has_source_g = wantLensing;
-
+    
     int perturbInitFailures = 0;
     while(perturb_init(pr_, br_, th_, pt_) == _FAILURE_)
     {
@@ -445,9 +448,10 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
         check(nPoints > 0, "");
         const double kDelta = (std::log(kMax_) - std::log(kMin_)) / nPoints;
 
-        for(int i = 0; i <= nPoints; ++i)
+        for(int i = -2; i <= nPoints + 2; ++i)
         {
-            const double k = (i == nPoints ? kMax_ : (i == 0 ? kMin_ : std::exp(std::log(kMin_) + i * kDelta)));
+            //const double k = (i == nPoints ? kMax_ : (i == 0 ? kMin_ : std::exp(std::log(kMin_) + i * kDelta)));
+            const double k = std::exp(std::log(kMin_) + i * kDelta);
             outPk << k << ' ' << params.powerSpectrum().evaluate(k);
             
             if(includeTensors_)

@@ -50,7 +50,7 @@ TestCMB::runSubTest(unsigned int i, double& res, double& expected, std::string& 
 
         subTestName = std::string("LCDM");
         res = clTT[10];
-        expected = 47.6851;
+        expected = 47.8189;
         break;
     default:
         check(false, "");
