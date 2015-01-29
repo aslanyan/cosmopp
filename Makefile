@@ -31,6 +31,9 @@ WMAP_AND_CLASS_TEST_OBJ = obj/test_wmap9_like.o
 PLANCK_AND_MULTINEST_AND_CLASS_TEST_OBJ = obj/test_multinest_planck.o
 PLANCK_AND_MULTINEST_AND_CLASS_TARGET = bin/example_mn_planck
 
+ANN_AND_LAPACK_OBJ = obj/fast_approximator.o
+ANN_AND_LAPACK_TEST_OBJ = obj/test_fast_approximator.o obj/test_fast_approximator_error.o
+
 
 ifdef HEALPIX
 ifndef CFITSIO
@@ -67,7 +70,7 @@ LAPACKPP_INCLUDE_FLAGS = -I $(LAPACKPPINCDIR)
 LAPACKPP_COMPILE_FLAGS = -D COSMO_LAPACKPP
 LAPACKPP_LIB_FLAGS1 = -L $(LAPACKPPLIBDIR)
 LAPACKPP_LIB_FLAGS2 = -llapackpp
-LAPACKPP_OBJ = obj/mcmc.o
+LAPACKPP_OBJ = obj/mcmc.o obj/gaussian_process.o
 LAPACKPP_TEST_OBJ = obj/test_mcmc.o
 LAPACKPP_TARGET = bin/example_metropolis_hastings
 else
@@ -82,6 +85,8 @@ HEALPIX_AND_LAPACKPP_OBJ =
 HEALPIX_AND_LAPACKPP_TARGET =
 HEALPIX_AND_LAPACK_AND_CLASS_TEST_OBJ =
 PLANCK_AND_CLASS_AND_LAPACK_TEST_OBJ =
+ANN_AND_LAPACK_OBJ =
+ANN_AND_LAPACK_TEST_OBJ =
 endif
 
 ifdef ANNDIR
@@ -97,6 +102,8 @@ ANN_LIB_FLAGS1 =
 ANN_LIB_FLAGS2 =
 ANN_OBJ =
 ANN_TEST_OBJ =
+ANN_AND_LAPACK_OBJ =
+ANN_AND_LAPACK_TEST_OBJ =
 endif
 
 ifdef CLASSDIR
@@ -261,6 +268,9 @@ WIGNER_3J_HPP = include/wigner_3j.hpp $(MACROS_HPP)
 CONJUGATE_GRADIENT_HPP = include/conjugate_gradient.hpp $(MACROS_HPP)
 MARKOV_CHAIN_HPP = include/markov_chain.hpp $(FUNCTION_HPP) $(TABLE_FUNCTION_HPP) $(RANDOM_HPP)
 K_NEAREST_NEIGHBORS_HPP = include/k_nearest_neighbors.hpp
+FAST_APPROXIMATOR_HPP = include/fast_approximator.hpp $(MACROS_HPP) $(K_NEAREST_NEIGHBORS_HPP) $(TIMER_HPP) $(PROGRESS_METER_HPP)
+FAST_APPROXIMATOR_ERROR_HPP = include/fast_approximator_error.hpp $(FAST_APPROXIMATOR_HPP) $(MARKOV_CHAIN_HPP)
+GAUSSIAN_PROCESS_HPP = include/gaussian_process.hpp
 
 C_MATRIX_HPP = include/c_matrix.hpp
 WHOLE_MATRIX_HPP = include/whole_matrix.hpp
@@ -305,6 +315,8 @@ TEST_THREE_ROTATION_HPP = include/test_three_rotation.hpp $(TEST_FRAMEWORK_HPP)
 TEST_MASK_APODIZER_HPP = include/test_mask_apodizer.hpp $(TEST_FRAMEWORK_HPP)
 TEST_MATTER_LIKELIHOOD_HPP = include/test_matter_likelihood.hpp $(TEST_FRAMEWORK_HPP)
 TEST_K_NEAREST_NEIGHBORS_HPP = include/test_k_nearest_neighbors.hpp $(TEST_FRAMEWORK_HPP)
+TEST_FAST_APPROXIMATOR_HPP = include/test_fast_approximator.hpp $(TEST_FRAMEWORK_HPP)
+TEST_FAST_APPROXIMATOR_ERROR_HPP = include/test_fast_approximator_error.hpp $(TEST_FRAMEWORK_HPP)
 
 GENERAL_TARGET =
 
@@ -312,13 +324,13 @@ all: lib/libcosmopp.a bin/test $(GENERAL_TARGET) $(HEALPIX_AND_LAPACKPP_TARGET) 
 
 GENERAL_OBJ = obj/macros.o obj/test_framework.o obj/whole_matrix.o obj/scale_factor.o obj/markov_chain.o
 
-OBJ_LIBRARY = $(GENERAL_OBJ) $(HEALPIX_OBJ) $(LAPACKPP_OBJ) $(CLASS_AND_LAPACK_OBJ) $(HEALPIX_AND_LAPACKPP_OBJ) $(CLASS_OBJ) $(MULTINEST_OBJ) $(PLANCK_OBJ) $(PLANCK_AND_CLASS_OBJ) $(WMAP_OBJ) $(WMAP_AND_CLASS_OBJ) $(ANN_OBJ)
+OBJ_LIBRARY = $(GENERAL_OBJ) $(HEALPIX_OBJ) $(LAPACKPP_OBJ) $(CLASS_AND_LAPACK_OBJ) $(HEALPIX_AND_LAPACKPP_OBJ) $(CLASS_OBJ) $(MULTINEST_OBJ) $(PLANCK_OBJ) $(PLANCK_AND_CLASS_OBJ) $(WMAP_OBJ) $(WMAP_AND_CLASS_OBJ) $(ANN_OBJ) $(ANN_AND_LAPACK_OBJ)
 lib/libcosmopp.a: $(OBJ_LIBRARY)
 	ar rcs $@ $(OBJ_LIBRARY)
 
 GENERAL_TEST_OBJ = obj/test.o obj/test_unit_conversions.o obj/test_int_operations.o obj/test_integral.o obj/test_conjugate_gradient.o obj/test_polynomial.o obj/test_legendre.o obj/test_spherical_harmonics.o obj/test_wigner_3j.o obj/test_table_function.o obj/test_cubic_spline.o obj/test_three_rotation.o
 
-OBJ_TEST = $(OBJ_LIBRARY) $(GENERAL_TEST_OBJ) $(MULTINEST_TEST_OBJ) $(PLANCK_TEST_OBJ) $(PLANCK_AND_MULTINEST_AND_CLASS_TEST_OBJ) $(CLASS_TEST_OBJ) $(CLASS_AND_LAPACK_TEST_OBJ) $(PLANCK_AND_CLASS_TEST_OBJ) $(LAPACKPP_TEST_OBJ) $(HEALPIX_TEST_OBJ) $(HEALPIX_AND_LAPACK_AND_CLASS_TEST_OBJ) $(MINUIT_TEST_OBJ) $(WMAP_AND_CLASS_TEST_OBJ) $(PLANCK_AND_CLASS_AND_LAPACK_TEST_OBJ) $(ANN_TEST_OBJ)
+OBJ_TEST = $(OBJ_LIBRARY) $(GENERAL_TEST_OBJ) $(MULTINEST_TEST_OBJ) $(PLANCK_TEST_OBJ) $(PLANCK_AND_MULTINEST_AND_CLASS_TEST_OBJ) $(CLASS_TEST_OBJ) $(CLASS_AND_LAPACK_TEST_OBJ) $(PLANCK_AND_CLASS_TEST_OBJ) $(LAPACKPP_TEST_OBJ) $(HEALPIX_TEST_OBJ) $(HEALPIX_AND_LAPACK_AND_CLASS_TEST_OBJ) $(MINUIT_TEST_OBJ) $(WMAP_AND_CLASS_TEST_OBJ) $(PLANCK_AND_CLASS_AND_LAPACK_TEST_OBJ) $(ANN_TEST_OBJ) $(ANN_AND_LAPACK_TEST_OBJ)
 bin/test: $(OBJ_TEST)
 	$(CC) $(LFLAGS1) -o $@ $(OBJ_TEST) $(LFLAGS2)
 
@@ -410,7 +422,7 @@ obj/scale_factor.o: source/scale_factor.cpp $(UNIT_CONVERSIONS_HPP) $(TABLE_FUNC
 obj/simulate.o: source/simulate.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(NUMERICS_HPP) $(WHOLE_MATRIX_HPP) $(RANDOM_HPP) $(SIMULATE_HPP)
 	$(CC) $(CFLAGS) source/simulate.cpp -o $@
 
-obj/test.o: source/test.cpp $(COSMO_MPI_HPP) $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(TEST_FRAMEWORK_HPP) $(TEST_UNIT_CONVERSIONS_HPP) $(TEST_INT_OPERATIONS_HPP) $(TEST_INTEGRAL_HPP) $(TEST_CONJUGATE_GRADIENT_HPP) $(TEST_POLYNOMIAL_HPP) $(TEST_LEGENDRE_HPP) $(TEST_SPHERICAL_HARMONICS_HPP) $(TEST_MCMC_HPP) $(TEST_MULTINEST_HPP) $(TEST_MCMC_PLANCK_HPP) $(TEST_CMB_HPP) $(TEST_CMB_GIBBS_HPP) $(TEST_FIT_HPP) $(TEST_PLANCK_LIKE_HPP) $(TEST_WMAP9_LIKE_HPP) $(TEST_LIKE_HIGH_HPP) $(TEST_LIKE_LOW_HPP) $(TEST_WIGNER_3J_HPP) $(TEST_TABLE_FUNCTION_HPP) $(TEST_CUBIC_SPLINE_HPP) $(TEST_THREE_ROTATION_HPP) $(TEST_MASK_APODIZER_HPP) $(TEST_MATTER_LIKELIHOOD_HPP)
+obj/test.o: source/test.cpp $(COSMO_MPI_HPP) $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(TEST_FRAMEWORK_HPP) $(TEST_UNIT_CONVERSIONS_HPP) $(TEST_INT_OPERATIONS_HPP) $(TEST_INTEGRAL_HPP) $(TEST_CONJUGATE_GRADIENT_HPP) $(TEST_POLYNOMIAL_HPP) $(TEST_LEGENDRE_HPP) $(TEST_SPHERICAL_HARMONICS_HPP) $(TEST_MCMC_HPP) $(TEST_MULTINEST_HPP) $(TEST_MCMC_PLANCK_HPP) $(TEST_CMB_HPP) $(TEST_CMB_GIBBS_HPP) $(TEST_FIT_HPP) $(TEST_PLANCK_LIKE_HPP) $(TEST_WMAP9_LIKE_HPP) $(TEST_LIKE_HIGH_HPP) $(TEST_LIKE_LOW_HPP) $(TEST_WIGNER_3J_HPP) $(TEST_TABLE_FUNCTION_HPP) $(TEST_CUBIC_SPLINE_HPP) $(TEST_THREE_ROTATION_HPP) $(TEST_MASK_APODIZER_HPP) $(TEST_MATTER_LIKELIHOOD_HPP) $(TEST_K_NEAREST_NEIGHBORS_HPP) $(TEST_FAST_APPROXIMATOR_HPP) $(TEST_FAST_APPROXIMATOR_ERROR_HPP)
 	$(CC) $(CFLAGS) source/test.cpp -o $@
 
 obj/test_framework.o: source/test_framework.cpp $(COSMO_MPI_HPP) $(MACROS_HPP) $(NUMERICS_HPP) $(TEST_FRAMEWORK_HPP)
@@ -534,6 +546,18 @@ obj/k_nearest_neighbors.o: source/k_nearest_neighbors.cpp $(MACROS_HPP) $(EXCEPT
 
 obj/test_k_nearest_neighbors.o: source/test_k_nearest_neighbors.cpp $(MACROS_HPP) $(K_NEAREST_NEIGHBORS_HPP) $(NUMERICS_HPP) $(TEST_K_NEAREST_NEIGHBORS_HPP)
 	$(CC) $(CFLAGS) source/test_k_nearest_neighbors.cpp -o $@
+
+obj/fast_approximator.o: source/fast_approximator.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP)
+	$(CC) $(CFLAGS) source/fast_approximator.cpp -o $@
+
+obj/test_fast_approximator.o: source/test_fast_approximator.cpp $(RANDOM_HPP) $(FAST_APPROXIMATOR_HPP) $(TEST_FAST_APPROXIMATOR_HPP)
+	$(CC) $(CFLAGS) source/test_fast_approximator.cpp -o $@
+
+obj/test_fast_approximator_error.o: source/test_fast_approximator_error.cpp $(RANDOM_HPP) $(FAST_APPROXIMATOR_ERROR_HPP) $(TEST_FAST_APPROXIMATOR_ERROR_HPP)
+	$(CC) $(CFLAGS) source/test_fast_approximator_error.cpp -o $@
+
+obj/gaussian_process.o: source/gaussian_process.cpp $(MACROS_HPP) $(GAUSSIAN_PROCESS_HPP)
+	$(CC) $(CFLAGS) source/gaussian_process.cpp -o $@
 
 clean:
 	rm obj/* bin/* lib/*

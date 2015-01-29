@@ -34,6 +34,8 @@
 #include <test_mask_apodizer.hpp>
 #include <test_matter_likelihood.hpp>
 #include <test_k_nearest_neighbors.hpp>
+#include <test_fast_approximator.hpp>
+#include <test_fast_approximator_error.hpp>
 
 TestFramework* createTest(const std::string& name)
 {
@@ -126,6 +128,12 @@ TestFramework* createTest(const std::string& name)
 #ifdef COSMO_ANN
     else if(name == "k_nearest_neighbors")
         test = new TestKNearestNeighbors;
+#ifdef COSMO_LAPACKPP
+    else if(name == "fast_approximator")
+        test = new TestFastApproximator(1e-3);
+    else if(name == "fast_approximator_error")
+        test = new TestFastApproximatorError(1e-3);
+#endif
 #endif
 
     return test;
@@ -200,6 +208,10 @@ int main(int argc, char *argv[])
 #endif
 #ifdef COSMO_ANN
         fastTests.insert("k_nearest_neighbors");
+#ifdef COSMO_LAPACKPP
+        fastTests.insert("fast_approximator");
+        fastTests.insert("fast_approximator_error");
+#endif
 #endif
 
 #ifdef COSMO_PLANCK
