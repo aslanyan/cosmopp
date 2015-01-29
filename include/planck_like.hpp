@@ -79,8 +79,13 @@ private:
     std::vector<std::string> spectraNames_;
     std::vector<double> camspecExtra_, actSptExtra_;
     std::vector<double> clTT_, clEE_, clTE_, clPP_;
-    std::vector<double> cosmoParams_;
-    bool prevCosmoCalculated_;
+    std::vector<double> prevCosmoParams_;
+    std::string prevCosmoParamsName_;
+    std::vector<double> currentCosmoParams_;
+    double prevCommander_, prevPol_, prevLens_;
+    bool haveCommander_, havePol_, haveLens_;
+
+    const CosmologicalParams* params_;
 };
 
 #endif

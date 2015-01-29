@@ -3,9 +3,11 @@
 
 #include <vector>
 #include <limits>
+#include <ctime>
 
 #include <function.hpp>
 #include <table_function.hpp>
+#include <random.hpp>
 
 /// Posterior distribution for one parameter.
 class Posterior1D : public Math::RealFunction
@@ -14,10 +16,10 @@ public:
     enum SmoothingMethod { GAUSSIAN_SMOOTHING = 0, SPLINE_SMOOTHING, SMOOTHING_MAX };
 public:
     ///Constructior.
-    Posterior1D() : smooth_(NULL), cumul_(NULL), cumulInv_(NULL), min_(std::numeric_limits<double>::max()), max_(-std::numeric_limits<double>::max()), minLike_(std::numeric_limits<double>::max()) {}
+    Posterior1D(int seed = 0) : smooth_(NULL), cumulInv_(NULL), min_(std::numeric_limits<double>::max()), max_(-std::numeric_limits<double>::max()), minLike_(std::numeric_limits<double>::max()), generator_((seed == 0 ? std::time(0) : seed), 1e-5, 1.0 - 1e-5) {}
 
     /// Destructor.
-    ~Posterior1D() { if(smooth_) delete smooth_; if(cumul_) delete cumul_; if(cumulInv_) delete cumulInv_; }
+    ~Posterior1D() { if(smooth_) delete smooth_; if(cumulInv_) delete cumulInv_; }
 
     /// Add a sample point. All of the sample points must be added before generating the distribution with generate.
     /// \param x The value of the parameter.
@@ -73,6 +75,9 @@ public:
     /// Calculate the distribution at a given point. Must be called after calling generate.
     virtual double evaluate(double x) const { check(smooth_, "not generated"); const double res = smooth_->evaluate(x) / norm_; return (res >= 0.0 ? res : 0.0); }
 
+    /// Generate a random sample from this distribution
+    double generateSample() { return cumulInv_->evaluate(generator_.generate() * norm_); }
+
     /// Write the distribution into a text file.
     /// \param fileName The name of the file.
     /// \param n The number of points (10,000 by default).
@@ -82,10 +87,12 @@ private:
     double min_, max_;
     double minLike_, maxLikePoint_;
     double mean_;
-    std::vector<double> points_, probs_, likes_;
+    std::vector<double> points_, probs_;
     Math::RealFunction* smooth_;
-    Math::TableFunction<double, double>* cumul_, *cumulInv_;
+    Math::TableFunction<double, double>* cumulInv_;
     double norm_;
+
+    Math::UniformRealGenerator generator_;
 };
 
 /// Posterior distribution for two parameters. This is useful for making contour plots.
@@ -93,10 +100,10 @@ class Posterior2D : public Math::Function2<double, double, double>
 {
 public:
     /// Constructor.
-    Posterior2D() : smooth_(NULL), cumul_(NULL), cumulInv_(NULL), min1_(std::numeric_limits<double>::max()), min2_(std::numeric_limits<double>::max()), max1_(-std::numeric_limits<double>::max()), max2_(-std::numeric_limits<double>::max()), minLike_(std::numeric_limits<double>::max()) {}
+    Posterior2D() : smooth_(NULL), cumulInv_(NULL), min1_(std::numeric_limits<double>::max()), min2_(std::numeric_limits<double>::max()), max1_(-std::numeric_limits<double>::max()), max2_(-std::numeric_limits<double>::max()), minLike_(std::numeric_limits<double>::max()) {}
 
     /// Destructor.
-    ~Posterior2D() { if(smooth_) delete smooth_; if(cumul_) delete cumul_; if(cumulInv_) delete cumulInv_; }
+    ~Posterior2D() { if(smooth_) delete smooth_; if(cumulInv_) delete cumulInv_; }
 
     /// Add a sample point. All of the sample points must be added before generating the distribution with generate.
     /// \param x1 The value of the first parameter.
@@ -145,9 +152,9 @@ public:
 private:
     double min1_, min2_, max1_, max2_;
     double minLike_, maxLikePoint1_, maxLikePoint2_;
-    std::vector<double> points1_, points2_, probs_, likes_;
+    std::vector<double> points1_, points2_, probs_;
     Math::Function2<double, double, double>* smooth_;
-    Math::TableFunction<double, double>* cumul_, *cumulInv_;
+    Math::TableFunction<double, double>* cumulInv_;
     double norm_;
 };
 

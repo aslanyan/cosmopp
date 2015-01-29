@@ -14,6 +14,7 @@
 #include <exception_handler.hpp>
 #include <math_constants.hpp>
 #include <cmb.hpp>
+#include <timer.hpp>
 
 #include <class.h>
 
@@ -156,6 +157,9 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
     br_->Omega0_ur = params.getOmNeutrino();
     br_->Omega0_ncdm_tot = 0.0;
 
+    //Timer t1("BACKGROUND");
+    //t1.start();
+
     const double ncdm = params.getNumNCDM();
     check(ncdm >= 0, "invalid ncdm = " << ncdm);
     if(ncdm != 0)
@@ -242,6 +246,11 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
     //pr_->k_min_tau0 = kMin_ * br_->conformal_age;
     //pr_->k_max_tau0_over_l_max = kMax_ * br_->conformal_age / lMax_;
 
+    //t1.end();
+
+    //Timer t2("THERMO");
+    //t2.start();
+
     th_->reio_parametrization = reio_camb;
     th_->reio_z_or_tau = reio_tau;
     th_->tau_reio = params.getTau();
@@ -284,6 +293,11 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
         br_->Omega0_b -= 1e-4;
         background_init(pr_, br_);
     }
+
+    //t2.end();
+
+    //Timer t3("PERTURBATIONS");
+    //t3.start();
 
     if(wantMatterPs)
     {
@@ -401,6 +415,11 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
 
     }
 
+    //t3.end();
+
+    //Timer t4("PRIMORDIAL");
+    //t4.start();
+
     pm_->n_s = params.getNs();
     pm_->A_s = params.getAs();
     pm_->k_pivot = params.getPivot();
@@ -476,6 +495,8 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
         throw exc;
     }
 
+    //t4.end();
+
     /*
     if(primordialInitialize_)
     {
@@ -521,6 +542,9 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
     }
     */
 
+    //Timer t5("NONLINEAR");
+    //t5.start();
+
     if(nonlinear_init(pr_, br_, th_, pt_, pm_, nl_) == _FAILURE_)
     {
         std::stringstream exceptionStr;
@@ -529,7 +553,11 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
         throw exc;
     }
 
+    //t5.end();
 
+
+    //Timer t6("TRANSFER");
+    //t6.start();
     if(transfer_init(pr_, br_, th_, pt_, nl_, tr_) == _FAILURE_)
     {
         std::stringstream exceptionStr;
@@ -537,8 +565,11 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
         exc.set(exceptionStr.str());
         throw exc;
     }
+    //t6.end();
 
 
+    //Timer t7("SPECTRA");
+    //t7.start();
     sp_->has_tt = wantT;
     sp_->has_ee = wantPol;
     sp_->has_te = (wantT && wantPol);
@@ -554,6 +585,10 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
         exc.set(exceptionStr.str());
         throw exc;
     }
+    //t7.end();
+
+    //Timer t8("LENSING");
+    //t8.start();
 
     lensing_ = wantLensing;
 
@@ -574,12 +609,17 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
         }
     }
 
+    //t8.end();
+
     init_ = true;
 }
 
 void
 CMB::getCl(std::vector<double>* clTT, std::vector<double>* clEE, std::vector<double>* clTE, std::vector<double>* clPP, std::vector<double>* clTP, std::vector<double>* clEP, std::vector<double>* clBB)
 {
+    //Timer timer("GET CL");
+    //timer.start();
+
     StandardException exc;
 
     check(init_, "need to initialize first");
@@ -656,11 +696,15 @@ CMB::getCl(std::vector<double>* clTT, std::vector<double>* clEE, std::vector<dou
         if(clBB)
             (*clBB)[l] = br_->T_cmb * br_->T_cmb * 1e12 * clTot[sp_->index_ct_bb];
     }
+
+    //timer.end();
 }
 
 void
 CMB::getLensedCl(std::vector<double>* clTT, std::vector<double>* clEE, std::vector<double>* clTE, std::vector<double>* clBB)
 {
+    //Timer timer("GET LENSED CL");
+    //timer.start();
     StandardException exc;
 
     check(init_, "need to initialize first");
@@ -714,6 +758,7 @@ CMB::getLensedCl(std::vector<double>* clTT, std::vector<double>* clEE, std::vect
         if(clBB)
             (*clBB)[l] = br_->T_cmb * br_->T_cmb * 1e12 * clTot[le_->index_lt_bb];
     }
+    //timer.end();
 }
 
 void
@@ -1037,6 +1082,22 @@ CMB::sigma8()
     return std::sqrt(res);
 }
 
+void
+CMB::getLList(std::vector<double>& list) const
+{
+    list.clear();
+    for(int i = 0; i < sp_->l_size_max; ++i)
+        list.push_back((sp_->l)[i]);
+}
+
+
+void
+CMB::getLListLens(std::vector<double>& list) const
+{
+    list.clear();
+    for(int i = 0; i < le_->l_size; ++i)
+        list.push_back((le_->l)[i]);
+}
 
 /*
 extern "C"
