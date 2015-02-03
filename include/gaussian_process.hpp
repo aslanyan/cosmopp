@@ -20,7 +20,7 @@ public:
 public:
     GaussianProcess(int dim, CovarianceType covType = SQUARED_EXP);
 
-    void set(const std::vector<std::vector<double> >& x, const std::vector<double>& y);
+    void set(const std::vector<std::vector<double> >& x, const std::vector<double>& y, bool calculateParamsByMaxLike = false);
 
     void calculate(const std::vector<std::vector<double> >& input, std::vector<double>& mean, LaGenMatDouble& covariance) const;
 
@@ -34,7 +34,6 @@ private:
     CovarianceType covType_;
 
     LaGenMatDouble k_;
-    LaVectorLongInt pivotK_;
     std::vector<double> y_;
     std::vector<std::vector<double> > x_;
 

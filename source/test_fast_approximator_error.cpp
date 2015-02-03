@@ -33,7 +33,7 @@ TestFastApproximatorError::runSubTest(unsigned int i, double& res, double& expec
 {
     check(i >= 0 && i < 1, "invalid index " << i);
 
-    const int n = 1000000;
+    const int n = 1000;
 
     std::vector<std::vector<double> > points, data;
     std::vector<std::vector<double> > testPoints, testData;
@@ -54,7 +54,7 @@ TestFastApproximatorError::runSubTest(unsigned int i, double& res, double& expec
 
         //out << p[0] << ' ' << p[1] << ' ' << p[2] << ' ' << d[0] << std::endl;
 
-        if(i % 1000)
+        if(i % 10)
         {
             points.push_back(p);
             data.push_back(d);
@@ -68,9 +68,9 @@ TestFastApproximatorError::runSubTest(unsigned int i, double& res, double& expec
 
     //out.close();
 
-    FastApproximator fa(3, 1, points.size(), points, data, 100);
+    FastApproximator fa(3, 1, points.size(), points, data, 50);
     BasicFAErrorFunctionAvg func;
-    FastApproximatorError<BasicFAErrorFunctionAvg> faError(fa, testPoints, testData, 0, testPoints.size(), func, FastApproximatorError<BasicFAErrorFunctionAvg>::AVG_DISTANCE);
+    FastApproximatorError faError(fa, testPoints, testData, 0, testPoints.size(), func, FastApproximatorError::GAUSS_PROCESS);
 
     subTestName = "complicated_function";
     res = 0;

@@ -44,8 +44,6 @@ TestPlanckLike::runSubTest(unsigned int i, double& res, double& expected, std::s
         like.setCosmoParams(paramsLCDMTens);
     like.setCamspecExtraParams(153, 54.9, 55.8, 4, 55.5, 4, 0.91, 0.63, 0.6, 1, 1, 0.1, 1, 0.3);
 
-    like.calculateCls();
-
     subTestName = std::string("LCDM");
     if(i == 1)
         subTestName = std::string("LCDM+Tensor");

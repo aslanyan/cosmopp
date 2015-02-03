@@ -38,9 +38,6 @@ int main(int argc, char *argv[])
         // Set the foreground parameters for Camspec
         planck.setCamspecExtraParams(153, 54.9, 55.8, 4, 55.5, 4, 0.91, 0.63, 0.6, 1, 1, 0.1, 1, 0.3);
 
-        // Calculate the Cls in the likelihood module. Needed before separate likelihoods can be calculated
-        planck.calculateCls();
-
         // Calculate and print the commander likelihood
         const double comLike = planck.commanderLike();
         output_screen("Commander likelihood = " << comLike << std::endl);

@@ -30,7 +30,7 @@ TestFastApproximator::runSubTest(unsigned int i, double& res, double& expected, 
 
     Math::UniformRealGenerator gen(std::time(0), -10, 10);
 
-    const int nPoints = (i == 0 ? 10000 : 10000);
+    const int nPoints = (i == 0 ? 10000 : 100000);
 
     std::vector<double> p(1), d(1);
 

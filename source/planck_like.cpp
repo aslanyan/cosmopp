@@ -93,7 +93,10 @@ PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useL
         commanderPath << planckLikeDir << "/commander_v4.1_lm49.clik";
         char commanderPathCStr[100];
         std::strcpy(commanderPathCStr, commanderPath.str().c_str());
-        if(!cont.commander) cont.commander = clik_init(commanderPathCStr, NULL);
+
+        if(!cont.commander)
+            cont.commander = clik_init(commanderPathCStr, NULL);
+
         commander_ = cont.commander;
 
         clik_get_has_cl(commander_, hasCl, NULL);
@@ -126,7 +129,10 @@ PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useL
         camspecPath << planckLikeDir << "/CAMspec_v6.2TN_2013_02_26_dist.clik";
         char camspecPathCStr[100];
         std::strcpy(camspecPathCStr, camspecPath.str().c_str());
-        if(!cont.camspec) cont.camspec = clik_init(camspecPathCStr, NULL);
+
+        if(!cont.camspec)
+            cont.camspec = clik_init(camspecPathCStr, NULL);
+
         camspec_ = cont.camspec;
 
         clik_get_has_cl(camspec_, hasCl, NULL);
@@ -159,7 +165,10 @@ PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useL
         polPath << planckLikeDir << "/lowlike_v222.clik";
         char polPathCStr[100];
         std::strcpy(polPathCStr, polPath.str().c_str());
-        if(!cont.pol) cont.pol = clik_init(polPathCStr, NULL);
+
+        if(!cont.pol)
+            cont.pol = clik_init(polPathCStr, NULL);
+
         pol_ = cont.pol;
 
         clik_get_has_cl(pol_, hasCl, NULL);
@@ -192,7 +201,10 @@ PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useL
         lensPath << planckLikeDir << "/lensing_likelihood_v4_ref.clik_lensing";
         char lensPathCStr[100];
         std::strcpy(lensPathCStr, lensPath.str().c_str());
-        if(!cont.lens) cont.lens = clik_lensing_init(lensPathCStr, NULL);
+
+        if(!cont.lens)
+            cont.lens = clik_lensing_init(lensPathCStr, NULL);
+
         lens_ = cont.lens;
 
         lensingLMax_ = clik_lensing_get_lmax(lens_,NULL);
@@ -219,7 +231,10 @@ PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useL
         actSptPath << planckLikeDir << "/actspt_2013_01.clik";
         char actSptPathCStr[100];
         std::strcpy(actSptPathCStr, actSptPath.str().c_str());
-        if(!cont.actspt) cont.actspt = clik_init(actSptPathCStr, NULL);
+
+        if(!cont.actspt)
+            cont.actspt = clik_init(actSptPathCStr, NULL);
+
         actspt_ = cont.actspt;
 
         clik_get_has_cl(actspt_, hasCl, NULL);
@@ -248,8 +263,6 @@ PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useL
 
     output_screen1("Total l_max = " << lMax_ << std::endl);
     cmb_.preInitialize(lMax_ + 1000, false, true, includeTensors, lMax_ + 1000, kPerDecade);
-
-    useCMB_ = &cmb_;
 }
 
 void
@@ -290,6 +303,45 @@ PlanckLikelihood::setCosmoParams(const CosmologicalParams& params)
     bool wantLens = (lens_ != NULL);
 
     cmb_.initialize(params, wantT, wantPol, true);
+
+    std::vector<double>* tt = &clTT_;
+    std::vector<double>* ee = (wantPol ? &clEE_ : NULL);
+    std::vector<double>* te = (wantPol ? &clTE_ : NULL);
+
+    cmb_.getLensedCl(tt, ee, te);
+
+    if(wantLens)
+        cmb_.getCl(NULL, NULL, NULL, &clPP_, NULL, NULL);
+}
+
+void
+PlanckLikelihood::setCls(const std::vector<double>* tt, const std::vector<double>* ee, const std::vector<double>* te, const std::vector<double>* pp)
+{
+    check(tt, "TT must be specified");
+    check(ee || !pol_, "EE must be specified since polarization likelihood is used");
+    check(te || !pol_, "TE must be specified since polarization likelihood is used");
+    check(pp || !lens_, "PP must be specified since lensing likelihood is used");
+
+    clTT_ = *tt;
+
+    if(ee)
+        clEE_ = *ee;
+    else
+        clEE_.clear();
+
+    if(te)
+        clTE_ = *te;
+    else
+        clTE_.clear();
+
+    if(pp)
+        clPP_ = *pp;
+    else
+        clPP_.clear();
+
+    haveCommander_ = false;
+    havePol_ = false;
+    haveLens_ = false;
 }
 
 void
@@ -346,23 +398,6 @@ PlanckLikelihood::setActSptExtraParams(double A_sz, double A_ksz, double xi_sz_c
     actSptExtra_.push_back(cal_spt_220);
 }
 
-void
-PlanckLikelihood::calculateCls()
-{
-    bool wantT = true;
-    bool wantPol = (pol_ != NULL);
-    bool wantLens = (lens_ != NULL);
-
-    std::vector<double>* tt = &clTT_;
-    std::vector<double>* ee = (wantPol ? &clEE_ : NULL);
-    std::vector<double>* te = (wantPol ? &clTE_ : NULL);
-
-    useCMB_->getLensedCl(tt, ee, te);
-
-    if(wantLens)
-        useCMB_->getCl(NULL, NULL, NULL, &clPP_, NULL, NULL);
-}
-
 double
 PlanckLikelihood::commanderLike()
 {
@@ -378,8 +413,10 @@ PlanckLikelihood::commanderLike()
     output_screen2("Calculating commander likelihood..." << std::endl);
     const double l = clik_compute(commander_, &(clTT_[0]), NULL);
     output_screen2("OK" << std::endl);
+
     prevCommander_ = -2.0 * l;
     haveCommander_ = true;
+
     return -2.0 * l;
 }
 
@@ -490,8 +527,6 @@ PlanckLikelihood::calculate(double* params, int nPar)
     //Timer timer("Planck likelihood timer");
     //timer.start();
     
-    check(useCMB_ == &cmb_, "");
-
     check(nPar == (6 + (camspec_ ? 14 : 0) + (actspt_ ? 24 : 0)), "");
     const double pivot = 0.05;
 
@@ -510,8 +545,6 @@ PlanckLikelihood::calculate(double* params, int nPar)
         actSptExtra_.clear();
         actSptExtra_.insert(actSptExtra_.end(), params + paramShift, params + paramShift + 24);
     }
-
-    calculateCls();
 
     //timer.end();
     return likelihood();

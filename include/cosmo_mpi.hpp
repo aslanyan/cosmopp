@@ -21,6 +21,7 @@ private:
 
         MPI_Init(NULL, NULL);
 #endif
+        commTag_ = 1;
     }
 
     ~CosmoMPI()
@@ -89,6 +90,21 @@ public:
     {
         return (processId() == 0);
     }
+
+    void barrier() const
+    {
+#ifdef COSMO_MPI
+        MPI_Barrier(MPI_COMM_WORLD);
+#endif
+    }
+
+    int getCommTag()
+    {
+        return commTag_++;
+    }
+
+private:
+    int commTag_;
 };
 
 #endif

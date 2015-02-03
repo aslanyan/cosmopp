@@ -6,6 +6,8 @@
 
 #include <macros.hpp>
 #include <exception_handler.hpp>
+#include <gaussian_process.hpp>
+#include <fast_approximator.hpp>
 
 #include <gmd.h>
 #include <lavd.h>
@@ -14,7 +16,6 @@
 #include <blas2pp.h>
 #include <blas3pp.h>
 
-#include <fast_approximator.hpp>
 
 FastApproximator::FastApproximator(int nPoints, int nData, unsigned long dataSize, const std::vector<std::vector<double> >& points, const std::vector<std::vector<double> >& data, int k) : knn_(NULL), k_(k), nPoints_(nPoints), nData_(nData), x_(k, nPoints + nPoints * nPoints + 1), xLin_(k, nPoints + 1), xT_(nPoints + nPoints * nPoints + 1, k), xTLin_(nPoints_ + 1, k), inv_(nPoints + nPoints * nPoints + 1, nPoints + nPoints * nPoints + 1), invLin_(nPoints_ + 1, nPoints_ + 1), prod_(nPoints + nPoints * nPoints + 1, k), prodLin_(nPoints_ + 1, k), pivot_(nPoints + nPoints * nPoints + 1), pivotLin_(nPoints_ + 1), pivot1_(nPoints), pointTransformed_(nPoints), sigma_(1), l_(1e-6), gaussK_(k, k), pivotK_(k)
 {
@@ -193,6 +194,31 @@ FastApproximator::getApproximationGaussianProcess(std::vector<double>& val, std:
         return;
     }
 
+    std::vector<std::vector<double> > gaussPoints;
+    for(int i = 0; i < k_; ++i)
+        gaussPoints.push_back(pointsTransformed_[indices_[i]]);
+
+    for(int i = 0; i < nData_; ++i)
+    {
+        std::vector<double> gaussData;
+        for(int j = 0; j < k_; ++j)
+            gaussData.push_back((*data_)[indices_[j]][i]);
+
+        Math::GaussianProcess gp(nPoints_);
+        gp.set(gaussPoints, gaussData, true);
+
+        std::vector<double> mean;
+        LaGenMatDouble covariance;
+
+        std::vector<std::vector<double> > gaussInput(1, pointTransformed_);
+
+        gp.calculate(gaussInput, mean, covariance);
+
+        val[i] = mean[0];
+        error[i] = std::sqrt(covariance(0, 0));
+    }
+
+    /*
     for(int i = 0; i < k_; ++i)
     {
         for(int j = i; j < k_; ++j)
@@ -204,6 +230,10 @@ FastApproximator::getApproximationGaussianProcess(std::vector<double>& val, std:
             //output_screen(i << ' ' << j << ' ' << c << std::endl);
         }
     }
+
+    // hack
+    for(int i = 0; i < k_; ++i)
+        gaussK_(i, i) *= 1.00001;
 
     LUFactorizeIP(gaussK_, pivotK_);
     LaLUInverseIP(gaussK_, pivotK_);
@@ -225,6 +255,9 @@ FastApproximator::getApproximationGaussianProcess(std::vector<double>& val, std:
     for(int i = 0; i < k_; ++i)
         e -= kKInv_[i] * kStar_[i];
 
+    check(e >= 0, "");
+    e = std::sqrt(e);
+
     for(int i = 0; i < nData_; ++i)
     {
         error[i] = e;
@@ -232,6 +265,7 @@ FastApproximator::getApproximationGaussianProcess(std::vector<double>& val, std:
         for(int j = 0; j < k_; ++j)
             val[i] += kKInv_[j] * (*data_)[indices_[j]][i];
     }
+    */
 }
 
 void

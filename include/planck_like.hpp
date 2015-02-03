@@ -23,13 +23,16 @@ public:
     /// Destructor.
     ~PlanckLikelihood();
 
-    /// Sets a reference to a CMB object which will be used to get the power spectra. If this is set then setCosmoParams should not be used any more (will not affect the likelihood).
-    /// \param cmb A reference to the CMB object.
-    void setCMB(CMB& cmb) { useCMB_ = &cmb; }
-
-    /// Set cosmological parameters. Needs to be called before calculateCls.
+    /// Set cosmological parameters. Either this function or setCls should be called before likelihood calculation.
     /// \param params The cosmological parameters.
     void setCosmoParams(const CosmologicalParams& params);
+
+    /// Set the Cl values. Either this function or setCosmoParams should be called before likelihood calculation.
+    /// \param tt The Cl_TT values.
+    /// \param ee The Cl_EE values. Can be NULL if do not want to specify this. Required if polarization likelihood has been initialized.
+    /// \param te The Cl_TE values. Can be NULL if do not want to specify this. Required if polarization likelihood has been initialized.
+    /// \param pp The Cl_PP values. Can be NULL if do not want to specify this. Required if lensing likelihood has been initialized.
+    void setCls(const std::vector<double>* tt, const std::vector<double>* ee = NULL, const std::vector<double>* te = NULL, const std::vector<double>* pp = NULL);
 
     /// Set extra parameters needed for Camspec. Needs to be called before likelihood calculation. Should not be called if Camspec likelihood is not included.
     void setCamspecExtraParams(double A_ps_100, double A_ps_143, double A_ps_217, double A_cib_143, double A_cib_217, double A_sz, double r_ps, double r_cib, double n_Dl_cib, double cal_100, double cal_217, double xi_sz_cib, double A_ksz, double Bm_1_1);
@@ -37,30 +40,27 @@ public:
     /// Set extra parameters needed for high-l (ACT and SPT). Needs to be called before likelihood calculation. Should not be called if high-l likelihood is not included.
     void setActSptExtraParams(double A_sz, double A_ksz, double xi_sz_cib, double a_ps_act_148, double a_ps_act_217, double a_ps_spt_95, double a_ps_spt_150, double a_ps_spt_220, double A_cib_143, double A_cib_217, double n_Dl_cib, double r_ps_spt_95x150, double r_ps_spt_95x220, double r_ps_150x220, double r_cib, double a_gs, double a_ge, double cal_acts_148, double cal_acts_217, double cal_acte_148, double cal_acte_217, double cal_spt_95, double cal_spt_150, double cal_spt_220);
 
-    /// Calculate the Cl values. Should be called after setCosmoParams but before any likelihood calculation.
-    void calculateCls();
-
-    /// Calculate commander likelihood. Should not be called if commander likelihood was not included in the constructor. Must be called after calculateCls.
+    /// Calculate commander likelihood. Should not be called if commander likelihood was not included in the constructor. Must be called after setCosmoParams or setCls.
     /// \return -2ln(likelihood).
     double commanderLike();
 
-    /// Calculate Camspec likelihood. Should not be called if Camspec likelihood was not included in the constructor. Must be called after calculateCls.
+    /// Calculate Camspec likelihood. Should not be called if Camspec likelihood was not included in the constructor. Must be called after setCosmoParams or setCls.
     /// \return -2ln(likelihood).
     double camspecLike();
 
-    /// Calculate polarization likelihood. Should not be called if polarization likelihood was not included in the constructor. Must be called after calculateCls.
+    /// Calculate polarization likelihood. Should not be called if polarization likelihood was not included in the constructor. Must be called after setCosmoParams or setCls.
     /// \return -2ln(likelihood).
     double polLike();
 
-    /// Calculate lensing likelihood. Should not be called if lensing likelihood was not included in the constructor. Must be called after calculateCls.
+    /// Calculate lensing likelihood. Should not be called if lensing likelihood was not included in the constructor. Must be called after setCosmoParams or setCls.
     /// \return -2ln(likelihood).
     double lensingLike();
 
-    /// Calculate high-l (ACT and SPT) likelihood. Should not be called if high-l likelihood was not included in the constructor. Must be called after calculateCls.
+    /// Calculate high-l (ACT and SPT) likelihood. Should not be called if high-l likelihood was not included in the constructor. Must be called after setCosmoParams or setCls.
     /// \return -2ln(likelihood).
     double actSptLike();
 
-    /// Calculate all of the likelihoods included in the constructor. Must be called after calculateCls.
+    /// Calculate all of the likelihoods included in the constructor. Must be called after setCosmoParams or setCls.
     /// \return -2ln(likelihood).
     double likelihood();
 
@@ -70,12 +70,14 @@ public:
     /// \return -2ln(likelihood).
     double calculate(double* params, int nPar);
 
+    /// Get the l_max value.
+    int getLMax() const { return lMax_; }
+
 private:
     void* commander_, *camspec_, *pol_, *actspt_;
     void* lens_;
     int commanderLMax_, camspecLMax_, lensingLMax_, polLMax_, actSptLMax_, lMax_;
     CMB cmb_;
-    CMB* useCMB_;
     std::vector<std::string> spectraNames_;
     std::vector<double> camspecExtra_, actSptExtra_;
     std::vector<double> clTT_, clEE_, clTE_, clPP_;
