@@ -68,7 +68,6 @@ LearnAsYouGo::construct()
     updateCount_ = 10;
     updateErrorThreshold_ = minCount_;
     testSize_ = updateErrorThreshold_ / 20;
-    //testSize_ = 200;
 
     newCommunicateCount_ = 0;
     communicateCount_ = 10;
@@ -80,6 +79,7 @@ LearnAsYouGo::construct()
         updateReceiveReq_[i] = new MPI_Request;
 
     totalCount_ = 0;
+    sameCount_ = 0;
     successfulCount_ = 0;
 
     logFile_ = NULL;
@@ -260,13 +260,16 @@ LearnAsYouGo::evaluate(const std::vector<double>& x, std::vector<double>* res)
 
     const std::map<std::vector<double>, unsigned long, PointComp>::const_iterator it = pointMap_.find(x);
 
-    bool good;
     if(it != pointMap_.end())
     {
-        good = true;
         *res = data_[it->second];
+        ++sameCount_;
+        log();
+        return;
     }
-    else
+
+    bool good = false;
+    if(fast_)
         good = fast_->approximate(x, *res);
 
     if(!good)
@@ -277,7 +280,6 @@ LearnAsYouGo::evaluate(const std::vector<double>& x, std::vector<double>* res)
     }
 
     ++successfulCount_;
-    turboCalls_.push_back(successfulCount_);
 
     log();
 }
@@ -292,8 +294,6 @@ LearnAsYouGo::actual(const std::vector<double>& x, std::vector<double>* res)
 
     communicate();
     addDataPoint(x, *res);
-
-    slowCalls_.push_back(totalCount_ - successfulCount_);
 }
 
 void
@@ -301,7 +301,7 @@ LearnAsYouGo::log()
 {
     if(logFile_)
     {
-        (*logFile_) << totalCount_ << '\t' << successfulCount_ << '\t' << totalCount_ - successfulCount_ << std::endl;
+        (*logFile_) << totalCount_ << '\t' << sameCount_ << '\t' << successfulCount_ << '\t' << totalCount_ - sameCount_ - successfulCount_ << std::endl;
     }
 }
 
@@ -351,7 +351,7 @@ LearnAsYouGo::addDataPoint(const std::vector<double>& p, const std::vector<doubl
             fast_->reset(points_, data_, points_.size() - testSize_, points_.size());
             if(processId_ == 0)
                 fast_->getPosterior()->writeIntoFile("fast_approximator_error_ratio.txt");
-            updateErrorThreshold_ = points_.size() + points_.size() / 10;
+            updateErrorThreshold_ = points_.size() + points_.size() / 5;
             testSize_ = updateErrorThreshold_ / 20;
         }
 
@@ -399,7 +399,7 @@ LearnAsYouGo::constructFast()
             fast_->getPosterior()->writeIntoFile("fast_approximator_error_ratio.txt");
 
         fa_->reset(points_.size(), points_, data_, false);
-        updateErrorThreshold_ = points_.size() + points_.size() / 10;
+        updateErrorThreshold_ = points_.size() + points_.size() / 5;
         testSize_ = updateErrorThreshold_ / 20;
     }
     else

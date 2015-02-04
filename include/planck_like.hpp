@@ -18,7 +18,7 @@ public:
     /// \param usePolarization Defines if polarization likelihood should be included (false by default).
     /// \param useActSpt Defines if high-l likelihood (ACT and SPT) should be included (false by default).
     /// \param includeTensors Defines if tensor modes should be taken into account during calculations (false by default).
-    PlanckLikelihood(bool useCommander = true, bool useCamspec = true, bool useLensing = true, bool usePolarization = false, bool useActSpt = false, bool includeTensors = false, double kPerDecade = 100);
+    PlanckLikelihood(bool useCommander = true, bool useCamspec = true, bool useLensing = true, bool usePolarization = false, bool useActSpt = false, bool includeTensors = false, double kPerDecade = 100, bool useOwnCmb = true);
 
     /// Destructor.
     ~PlanckLikelihood();
@@ -77,7 +77,7 @@ private:
     void* commander_, *camspec_, *pol_, *actspt_;
     void* lens_;
     int commanderLMax_, camspecLMax_, lensingLMax_, polLMax_, actSptLMax_, lMax_;
-    CMB cmb_;
+    CMB* cmb_;
     std::vector<std::string> spectraNames_;
     std::vector<double> camspecExtra_, actSptExtra_;
     std::vector<double> clTT_, clEE_, clTE_, clPP_;

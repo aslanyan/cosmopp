@@ -37,6 +37,7 @@
 #include <test_fast_approximator.hpp>
 #include <test_fast_approximator_error.hpp>
 #include <test_gaussian_process.hpp>
+#include <test_mcmc_planck_fast.hpp>
 
 TestFramework* createTest(const std::string& name)
 {
@@ -142,6 +143,16 @@ TestFramework* createTest(const std::string& name)
         test = new TestGaussianProcess;
 #endif
 #endif
+#ifdef COSMO_LAPACKPP
+#ifdef COSMO_ANN
+#ifdef COSMO_CLASS
+#ifdef COSMO_PLANCK
+    else if(name == "mcmc_planck_fast")
+        test = new TestMCMCPlanckFast;
+#endif
+#endif
+#endif
+#endif
 
     return test;
 }
@@ -242,6 +253,15 @@ int main(int argc, char *argv[])
         slowTests.insert("cmb_gibbs");
         slowTests.insert("like_high");
         slowTests.insert("like_low");
+#endif
+#endif
+#endif
+#ifdef COSMO_LAPACKPP
+#ifdef COSMO_ANN
+#ifdef COSMO_CLASS
+#ifdef COSMO_PLANCK
+        slowTests.insert("mcmc_planck_fast");
+#endif
 #endif
 #endif
 #endif

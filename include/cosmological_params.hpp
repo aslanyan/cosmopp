@@ -82,10 +82,13 @@ public:
     virtual const Math::RealFunction& powerSpectrumTensor() const = 0;
 
     /// The name of the parameters model.
-    virtual std::string name() const { return ""; }
+    virtual std::string name() const = 0; 
 
     /// All of the relevant parameters in one vector.
     virtual void getAllParameters(std::vector<double>& v) const { v.clear(); }
+
+    /// Set all of the relevant parameters.
+    virtual void setAllParameters(const std::vector<double>& v) = 0;
 
     /// The Hubble constant without units (the reduced Planck mass is assumed to be 1, together with c and hbar).
     virtual double getHubbleUnitless() const
@@ -172,7 +175,18 @@ public:
         v[2] = getH();
         v[3] = getTau();
         v[4] = getNs();
-        v[5] = getAs();
+        v[5] = std::log(getAs() * 1e10);
+    }
+
+    virtual void setAllParameters(const std::vector<double>& v)
+    {
+        check(v.size() == 6, "");
+        omBH2_ = v[0];
+        omCH2_ = v[1];
+        h_ = v[2];
+        tau_ = v[3];
+        ps_.setNs(v[4]);
+        ps_.setAs(std::exp(v[5]) / 1e10);
     }
 
 private:
@@ -199,6 +213,16 @@ public:
     virtual double getNt() const { return nt_; }
 
     virtual const Math::RealFunction& powerSpectrumTensor() const { return *psT_; }
+
+    virtual std::string name() const { return "LCDMWithTensor"; }
+    virtual void getAllParameters(std::vector<double>& v) const
+    {
+        LambdaCDMParams::getAllParameters(v);
+        v.push_back(getR());
+        v.push_back(getNt());
+    }
+
+    virtual void setAllParameters(const std::vector<double>& v) { check(false, "not implemented"); }
 
 private:
     double r_;
@@ -233,6 +257,10 @@ public:
         //return 0.715985;
         return 0.713765855506013;
     }
+
+    virtual std::string name() const { return "LCDMWithDegenerateNeutrinos"; }
+    virtual void getAllParameters(std::vector<double>& v) const { check(false, "not implemented"); }
+    virtual void setAllParameters(const std::vector<double>& v) { check(false, "not implemented"); }
 
 private:
     double nEff_;
@@ -276,6 +304,10 @@ public:
         return 0.713765855506013;
     }
 
+    virtual std::string name() const { return "LCDMWithTensorAndDegenerateNeutrinos"; }
+    virtual void getAllParameters(std::vector<double>& v) const { check(false, "not implemented"); }
+    virtual void setAllParameters(const std::vector<double>& v) { check(false, "not implemented"); }
+
 private:
     double nEff_;
     int nMassive_;
@@ -298,6 +330,10 @@ public:
     virtual double getNs() const { return psC_.getNs(); }
     virtual double getAs() const { return psC_.getAs(); }
     virtual double getPivot() const { return psC_.getPivot(); }
+
+    virtual std::string name() const { return "LCDMWithCutoffTensorDegenerateNeutrinos"; }
+    virtual void getAllParameters(std::vector<double>& v) const { check(false, "not implemented"); }
+    virtual void setAllParameters(const std::vector<double>& v) { check(false, "not implemented"); }
 
 private:
     CutoffPowerSpectrum psC_;
@@ -336,6 +372,10 @@ public:
 
     virtual const Math::RealFunction& powerSpectrum() const { return ps_; }
     virtual const Math::RealFunction& powerSpectrumTensor() const { return psTensor_; }
+
+    virtual std::string name() const { return "LinearSpline"; }
+    virtual void getAllParameters(std::vector<double>& v) const { check(false, "not implemented"); }
+    virtual void setAllParameters(const std::vector<double>& v) { check(false, "not implemented"); }
 
 private:
     double omBH2_;
@@ -379,6 +419,10 @@ public:
 
     virtual const Math::RealFunction& powerSpectrum() const { return ps_; }
     virtual const Math::RealFunction& powerSpectrumTensor() const { return psTensor_; }
+
+    virtual std::string name() const { return "CubicSpline"; }
+    virtual void getAllParameters(std::vector<double>& v) const { check(false, "not implemented"); }
+    virtual void setAllParameters(const std::vector<double>& v) { check(false, "not implemented"); }
 
 private:
     double omBH2_;

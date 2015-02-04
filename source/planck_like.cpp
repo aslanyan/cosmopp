@@ -60,7 +60,7 @@ struct PlanckLikelihoodContainer
     void* actspt;
 };
 
-PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useLensing, bool usePol, bool useActSpt, bool includeTensors, double kPerDecade) : spectraNames_(6), haveCommander_(false), havePol_(false), haveLens_(false), commander_(NULL), camspec_(NULL), lens_(NULL), pol_(NULL), actspt_(NULL)
+PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useLensing, bool usePol, bool useActSpt, bool includeTensors, double kPerDecade, bool useOwnCmb) : spectraNames_(6), haveCommander_(false), havePol_(false), haveLens_(false), commander_(NULL), camspec_(NULL), lens_(NULL), pol_(NULL), actspt_(NULL), cmb_(NULL)
 {
     check(useCommander || useCamspec || useLensing || usePol || useActSpt, "at least one likelihood must be specified");
 
@@ -262,12 +262,25 @@ PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useL
     }
 
     output_screen1("Total l_max = " << lMax_ << std::endl);
-    cmb_.preInitialize(lMax_ + 1000, false, true, includeTensors, lMax_ + 1000, kPerDecade);
+
+    if(useOwnCmb)
+    {
+        cmb_ = new CMB;
+        cmb_->preInitialize(lMax_ + 1000, false, true, includeTensors, lMax_ + 1000, kPerDecade);
+    }
+}
+
+PlanckLikelihood::~PlanckLikelihood()
+{
+    if(cmb_)
+        delete cmb_;
 }
 
 void
 PlanckLikelihood::setCosmoParams(const CosmologicalParams& params)
 {
+    check(cmb_, "own CMB must be used (set in constructor)");
+
     bool needToCalculate = true;
     params.getAllParameters(currentCosmoParams_);
     if(params.name() == prevCosmoParamsName_)
@@ -302,25 +315,25 @@ PlanckLikelihood::setCosmoParams(const CosmologicalParams& params)
     bool wantPol = (pol_ != NULL);
     bool wantLens = (lens_ != NULL);
 
-    cmb_.initialize(params, wantT, wantPol, true);
+    cmb_->initialize(params, wantT, wantPol, true);
 
     std::vector<double>* tt = &clTT_;
     std::vector<double>* ee = (wantPol ? &clEE_ : NULL);
     std::vector<double>* te = (wantPol ? &clTE_ : NULL);
 
-    cmb_.getLensedCl(tt, ee, te);
+    cmb_->getLensedCl(tt, ee, te);
 
     if(wantLens)
-        cmb_.getCl(NULL, NULL, NULL, &clPP_, NULL, NULL);
+        cmb_->getCl(NULL, NULL, NULL, &clPP_, NULL, NULL);
 }
 
 void
 PlanckLikelihood::setCls(const std::vector<double>* tt, const std::vector<double>* ee, const std::vector<double>* te, const std::vector<double>* pp)
 {
     check(tt, "TT must be specified");
-    check(ee || !pol_, "EE must be specified since polarization likelihood is used");
-    check(te || !pol_, "TE must be specified since polarization likelihood is used");
-    check(pp || !lens_, "PP must be specified since lensing likelihood is used");
+    //check(ee || !pol_, "EE must be specified since polarization likelihood is used");
+    //check(te || !pol_, "TE must be specified since polarization likelihood is used");
+    //check(pp || !lens_, "PP must be specified since lensing likelihood is used");
 
     clTT_ = *tt;
 
@@ -571,9 +584,5 @@ PlanckLikelihood::likelihood()
         l+= actSptLike();
 
     return l;
-}
-
-PlanckLikelihood::~PlanckLikelihood()
-{
 }
 

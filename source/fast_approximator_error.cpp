@@ -83,6 +83,13 @@ FastApproximatorError::reset(const std::vector<std::vector<double> >& testPoints
         const double correctError = std::abs(f_.evaluate(testData[i]) - f_.evaluate(val_));
 
         //output_screen1("Estimated error = " << estimatedError << std::endl << "Correct error = " << correctError << std::endl << testData[i][100] << '\t' << val_[100] << std::endl);
+        if(correctError > 10)
+        {
+            for(int j = 0; j < val_.size(); ++j)
+            {
+                //output_screen1("\t" << testData[i][j] << "\t" << val_[j] << std::endl);
+            }
+        }
         
         if(estimatedError == 0)
         {
@@ -102,10 +109,11 @@ FastApproximatorError::reset(const std::vector<std::vector<double> >& testPoints
         posterior_->generate();
         posteriorGood_ = true;
         output_screen1("Posterior 1 sigma is: " << posterior_->get1SigmaUpper() << std::endl);
+        output_screen1("Posterior 2 sigma is: " << posterior_->get2SigmaUpper() << std::endl);
+        posterior_->writeIntoFile("fast_approximator_error_ratio.txt");
     }
     else
         posteriorGood_ = false;
-    posterior_->writeIntoFile("fast_approximator_error_ratio.txt");
 
     t.end();
 }
@@ -214,7 +222,8 @@ FastApproximatorError::approximate(const std::vector<double>& point, std::vector
         return false;
     }
 
-    const double estimatedError = e * posterior_->get1SigmaUpper(); //generateSample();
+    const double estimatedError = e * posterior_->get2SigmaUpper();
+    //const double estimatedError = e * posterior_->get1SigmaUpper();
 
     output_screen1("Error = " << estimatedError << std::endl);
 

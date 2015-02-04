@@ -15,7 +15,7 @@
 class LearnAsYouGo
 {
 public:
-    LearnAsYouGo(int nPoints, int nData, const Math::RealFunctionMultiToMulti& f, const Math::RealFunctionMultiDim& errorFunc, unsigned long minCount = 1000, double precision = 1.0, const char* fileName = "");
+    LearnAsYouGo(int nPoints, int nData, const Math::RealFunctionMultiToMulti& f, const Math::RealFunctionMultiDim& errorFunc, unsigned long minCount = 1000, double precision = 0.1, const char* fileName = "");
 
     ~LearnAsYouGo();
     
@@ -103,7 +103,7 @@ private:
     FastApproximator* fa_;
     FastApproximatorError* fast_;
 
-    unsigned long totalCount_, successfulCount_;
+    unsigned long totalCount_, successfulCount_, sameCount_;
 
     std::vector<std::vector<double> > points_, data_;
 
@@ -116,8 +116,6 @@ private:
     std::vector<double> communicateBuff_;
     std::vector<std::vector<double> > communicateData_;
     std::vector<std::vector<double> > receiveBuff_;
-
-    std::vector<unsigned long> turboCalls_, slowCalls_;
 
     std::map<std::vector<double>, unsigned long, PointComp> pointMap_;
 };
