@@ -7,6 +7,7 @@
 #include <algorithm>
 
 #include <learn_as_you_go.hpp>
+#include <exception_handler.hpp>
 
 LearnAsYouGo::LearnAsYouGo(int nPoints, int nData, const Math::RealFunctionMultiToMulti& f, const Math::RealFunctionMultiDim& errorFunc, unsigned long minCount, double precision, const char* fileName) : nPoints_(nPoints), nData_(nData), f_(f), errorFunc_(errorFunc), minCount_(minCount), precision_(precision), fileName_(fileName), gen_(std::time(0), 0, 1), fa_(NULL), fast_(NULL)
 {
