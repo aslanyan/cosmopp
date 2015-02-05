@@ -18,6 +18,7 @@
 #include <test_polynomial.hpp>
 #include <test_legendre.hpp>
 #include <test_spherical_harmonics.hpp>
+#include <test_matrix.hpp>
 #include <test_mcmc.hpp>
 #include <test_multinest.hpp>
 #include <test_mcmc_planck.hpp>
@@ -54,6 +55,8 @@ TestFramework* createTest(const std::string& name)
         test = new TestLegendre;
     else if(name == "spherical_harmonics")
         test = new TestSphericalHarmonics;
+    else if(name == "matrix")
+        test = new TestMatrix;
 #ifdef COSMO_LAPACKPP
     else if(name == "mcmc_fast")
         test = new TestMCMCFast;
@@ -170,6 +173,7 @@ int main(int argc, char *argv[])
         fastTests.insert("polynomial");
         fastTests.insert("legendre");
         fastTests.insert("spherical_harmonics");
+        fastTests.insert("matrix");
 #ifdef COSMO_LAPACKPP
         fastTests.insert("mcmc_fast");
 #endif
