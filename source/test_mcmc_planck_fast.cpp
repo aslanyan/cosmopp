@@ -2,34 +2,36 @@
 #include <string>
 #include <sstream>
 
-#include <test_mcmc_planck.hpp>
+#include <test_mcmc_planck_fast.hpp>
 #include <mcmc.hpp>
-#include <planck_like.hpp>
+#include <planck_like_fast.hpp>
 #include <markov_chain.hpp>
 #include <numerics.hpp>
 
 std::string
-TestMCMCPlanck::name() const
+TestMCMCPlanckFast::name() const
 {
-    return std::string("MCMC PLANCK LIKELIHOOD TESTER");
+    return std::string("MCMC FAST PLANCK LIKELIHOOD TESTER");
 }
 
 unsigned int
-TestMCMCPlanck::numberOfSubtests() const
+TestMCMCPlanckFast::numberOfSubtests() const
 {
     return 1;
 }
 
 void
-TestMCMCPlanck::runSubTest(unsigned int i, double& res, double& expected, std::string& subTestName)
+TestMCMCPlanckFast::runSubTest(unsigned int i, double& res, double& expected, std::string& subTestName)
 {
     check(i >= 0 && i < 1, "invalid index " << i);
     
     using namespace Math;
 
-    PlanckLikelihood planckLike(true, true, false, true, false, false, 5);
-    PlanckLikelihood planckLike1(true, true, false, true, false, false, 5);
-    std::string root = "slow_test_files/mcmc_planck_test";
+    const double pivot = 0.05;
+    LambdaCDMParams par(0.022, 0.12, 0.7, 0.1, 1.0, std::exp(3.0) / 1e10, pivot);
+
+    PlanckLikeFast planckLike(&par, true, true, false, true, false, false, 5, 0.2, 10000);
+    std::string root = "slow_test_files/mcmc_planck_fast_test";
     MetropolisHastings mh(20, planckLike, root);
 
     mh.setParam(0, "ombh2", 0.005, 0.1, 0.022, 0.0003, 0.00005);
@@ -54,15 +56,8 @@ TestMCMCPlanck::runSubTest(unsigned int i, double& res, double& expected, std::s
     mh.setParam(18, "A_ksz", 0, 10, 5, 6, 0.5);
     mh.setParam(19, "Bm_1_1", -20, 20, 0.5, 1.0, 0.1);
 
-    std::vector<int> blocks(15);
-    blocks[0] = 6;
-    for(int i = 1; i < 15; ++i)
-        blocks[i] = i + 6;
-
-    //mh.specifyParameterBlocks(blocks);
-
     const unsigned long burnin = 500;
-    const int nChains = mh.run(25000, 1, burnin, MetropolisHastings::GELMAN_RUBIN, 0.1, true);
+    const int nChains = mh.run(25000, 1, burnin, MetropolisHastings::GELMAN_RUBIN, 0.01, true);
     
     subTestName = std::string("standard_param_limits");
     res = 1;
@@ -132,3 +127,4 @@ TestMCMCPlanck::runSubTest(unsigned int i, double& res, double& expected, std::s
     }
     outParamLimits.close();
 }
+

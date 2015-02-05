@@ -267,6 +267,10 @@ MnScanner::dumper(int &nSamples, int &nlive, int &nPar, double **physLive, doubl
 void
 MnScanner::run(bool res)
 {
+#ifdef COSMO_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+
     StandardException exc;
 
     nFixed_ = 0;
@@ -344,6 +348,10 @@ MnScanner::run(bool res)
         dumpInfo(e.what());
         throw e;
     }
+
+#ifdef COSMO_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
 }
 
 void

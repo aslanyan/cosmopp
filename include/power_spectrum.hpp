@@ -23,9 +23,17 @@ public:
     /// \return The scalar tilt.
     double getNs() const { return ns_; }
 
+    /// Set the scalar tilt.
+    /// \param ns The scalar tilt.
+    void setNs(double ns) { ns_ = ns; }
+
     /// Get the scalar amplitude.
     /// \return The scalar amplitude.
     double getAs() const { return as_; }
+
+    /// Set the scalar amplitude.
+    /// \param as The scalar amplitude.
+    void setAs(double as) { as_ = as; }
 
     /// Get the pivot point.
     /// \return The pivot point in Mpc^(-1).
