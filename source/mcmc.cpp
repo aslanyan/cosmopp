@@ -248,7 +248,7 @@ MetropolisHastings::communicate()
     }
 
     int covarianceUpdateSize = 0;
-    if(adapt_ && !stop_)
+    if(adapt_)
         covarianceUpdateSize = n_ * n_ + n_ + 1;
 
 #ifdef COSMO_MPI
@@ -262,7 +262,7 @@ MetropolisHastings::communicate()
 
         currentCom.resize(covarianceUpdateSize + 1 + 3 * n_);
 
-        if(adapt_ && !stop_)
+        if(adapt_)
         {
             check(myCovUpdateInfo_.matrixSum.size() == n_, "");
             for(int i = 0; i < n_; ++i)
