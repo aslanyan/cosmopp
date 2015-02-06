@@ -1,6 +1,4 @@
-#ifdef COSMO_MPI
-#include <mpi.h>
-#endif
+#include <cosmo_mpi.hpp>
 
 #include <blas2pp.h>
 
@@ -11,20 +9,23 @@
 namespace Math
 {
 
-MetropolisHastings::MetropolisHastings(int nPar, LikelihoodFunction& like, std::string fileRoot, time_t seed) : n_(nPar), like_(&like), spareLike_(NULL), fileRoot_(fileRoot), paramNames_(nPar), param1_(nPar, 0), param2_(nPar, 0), starting_(nPar, std::numeric_limits<double>::max()), current_(nPar), prev_(nPar), samplingWidth_(nPar, 0), accuracy_(nPar, 0), paramSum_(nPar, 0), paramSquaredSum_(nPar, 0), corSum_(nPar, 0), priorMods_(nPar, PRIOR_MODE_MAX), externalPrior_(NULL), externalProposal_(NULL), resumeCode_(123456), nChains_(1), currentChainI_(0), stop_(false), stopRequestMessage_(111222), stopRequestTag_(0), stopRequestSent_(false), stopMessageRequested_(false), haveStoppedMessage_(476901), haveStoppedMessageTag_(100000), updateReqTag_(200000), covUpdateReqTag_(300000), firstUpdateRequested_(false), reachedSigma_(nPar, -1), rGelmanRubin_(nPar, -1), adapt_(false), covEpsilon_(1e-7), covFactor_(2.4 * 2.4 / nPar), myCovUpdateInfo_(nPar), tempCovUpdateInfo_(nPar), covarianceReady_(false), firstCovUpdateRequested_(false)
+MetropolisHastings::MetropolisHastings(int nPar, LikelihoodFunction& like, std::string fileRoot, time_t seed) : n_(nPar), like_(&like), spareLike_(NULL), fileRoot_(fileRoot), paramNames_(nPar), param1_(nPar, 0), param2_(nPar, 0), starting_(nPar, std::numeric_limits<double>::max()), current_(nPar), prev_(nPar), samplingWidth_(nPar, 0), accuracy_(nPar, 0), paramSum_(nPar, 0), paramSquaredSum_(nPar, 0), corSum_(nPar, 0), priorMods_(nPar, PRIOR_MODE_MAX), externalPrior_(NULL), externalProposal_(NULL), resumeCode_(123456), nChains_(1), currentChainI_(0), stop_(false), stopRequestMessage_(111222), stopRequestSent_(false), stopMessageRequested_(false), haveStoppedMessage_(476901), firstUpdateRequested_(false), reachedSigma_(nPar, -1), rGelmanRubin_(nPar, -1), adapt_(false), covEpsilon_(1e-7), covFactor_(2.4 * 2.4 / nPar), myCovUpdateInfo_(nPar), tempCovUpdateInfo_(nPar), covarianceReady_(false), firstCovUpdateRequested_(false)
 {
-#ifdef COSMO_MPI
-    int hasMpiInitialized;
-    MPI_Initialized(&hasMpiInitialized);
-    if(!hasMpiInitialized)
-        MPI_Init(NULL, NULL);
-    MPI_Comm_size(MPI_COMM_WORLD, &nChains_);
-    MPI_Comm_rank(MPI_COMM_WORLD, &currentChainI_);
 
+    nChains_ = CosmoMPI::create().numProcesses();
+    check(nChains_ >= 1, "");
+    currentChainI_ = CosmoMPI::create().processId();
+    check(currentChainI_ >= 0 && currentChainI_  < nChains_, "");
+
+    stopRequestTag_ = CosmoMPI::create().getCommTag();
+    haveStoppedMessageTag_ = CosmoMPI::create().getCommTag();
+    updateReqTag_ = CosmoMPI::create().getCommTag();
+    covUpdateReqTag_ = CosmoMPI::create().getCommTag();
+
+#ifdef COSMO_MPI
     sendStopRequest_ = new MPI_Request;
     receiveStopRequest_ = new MPI_Request;
     haveStoppedMesReq_ = new MPI_Request;
-
     receiveCovUpdateRequest_ = new MPI_Request;
 
     if(isMaster())

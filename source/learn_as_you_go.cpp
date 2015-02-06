@@ -40,6 +40,7 @@ LearnAsYouGo::~LearnAsYouGo()
     if(fa_) delete fa_;
     if(fast_) delete fast_;
 
+#ifdef COSMO_MPI
     for(int i = 0; i < updateRequests_.size(); ++i)
     {
         //MPI_Status updateSt;
@@ -51,6 +52,7 @@ LearnAsYouGo::~LearnAsYouGo()
 
     for(int i = 0; i < nProcesses_; ++i)
         delete (MPI_Request*) updateReceiveReq_[i];
+#endif
 }
 
 void
@@ -75,9 +77,11 @@ LearnAsYouGo::construct()
 
     firstUpdateRequested_ = false;
 
+#ifdef COSMO_MPI
     updateReceiveReq_.resize(nProcesses_);
     for(int i = 0; i < nProcesses_; ++i)
         updateReceiveReq_[i] = new MPI_Request;
+#endif
 
     totalCount_ = 0;
     sameCount_ = 0;
@@ -413,6 +417,7 @@ LearnAsYouGo::constructFast()
 void
 LearnAsYouGo::receive()
 {
+#ifdef COSMO_MPI
     check(nPoints_ > 0, "");
     check(nData_ > 0, "");
 
@@ -460,11 +465,13 @@ LearnAsYouGo::receive()
             MPI_Irecv(&(receiveBuff_[i][0]), receiveBuff_[i].size(), MPI_DOUBLE, i, communicateTag_ + i, MPI_COMM_WORLD, (MPI_Request*) updateReceiveReq_[i]);
         }
     }
+#endif
 }
 
 void
 LearnAsYouGo::communicate()
 {
+#ifdef COSMO_MPI
     if(nProcesses_ == 1)
         return;
 
@@ -497,5 +504,6 @@ LearnAsYouGo::communicate()
 
         newCommunicateCount_ = 0;
     }
+#endif
 }
 

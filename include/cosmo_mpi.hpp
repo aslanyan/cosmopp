@@ -21,7 +21,7 @@ private:
 
         MPI_Init(NULL, NULL);
 #endif
-        commTag_ = 1;
+        commTag_ = 1000;
     }
 
     ~CosmoMPI()
@@ -100,7 +100,11 @@ public:
 
     int getCommTag()
     {
-        return commTag_++;
+        barrier();
+
+        commTag_ += 10 * numProcesses();
+
+        return commTag_;
     }
 
 private:
