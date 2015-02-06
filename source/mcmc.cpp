@@ -410,9 +410,7 @@ MetropolisHastings::communicate()
         int covUpdateFlag = 0;
         MPI_Status covUpdateSt;
         
-        output_screen("Testing if covariance matrix update received..." << std::endl);
         MPI_Test((MPI_Request*) receiveCovUpdateRequest_, &covUpdateFlag, &covUpdateSt);
-        output_screen("OK" << std::endl);
         if(covUpdateFlag)
         {
             output_screen1("Received an updated covariance matrix from the master." << std::endl);
@@ -425,10 +423,7 @@ MetropolisHastings::communicate()
 
             covarianceReady_ = true;
 
-            output_screen("Submitting new receive request..." << std::endl);
-            output_screen("n_ = " << n_ << std::endl << "covUpdateReqTag_ = " << covUpdateReqTag_ << std::endl << "currentChainI_ = " << currentChainI_ << std::endl);
             MPI_Irecv(&(eigenUpdateBuff_[0]), n_ * n_, MPI_DOUBLE, 0, covUpdateReqTag_ + currentChainI_, MPI_COMM_WORLD, (MPI_Request*) receiveCovUpdateRequest_);
-            output_screen("OK" << std::endl);
         }
     }
 
