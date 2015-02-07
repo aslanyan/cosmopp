@@ -9,7 +9,7 @@
 namespace Math
 {
 
-MetropolisHastings::MetropolisHastings(int nPar, LikelihoodFunction& like, std::string fileRoot, time_t seed) : n_(nPar), like_(&like), spareLike_(NULL), fileRoot_(fileRoot), paramNames_(nPar), param1_(nPar, 0), param2_(nPar, 0), starting_(nPar, std::numeric_limits<double>::max()), current_(nPar), prev_(nPar), samplingWidth_(nPar, 0), accuracy_(nPar, 0), paramSum_(nPar, 0), paramSquaredSum_(nPar, 0), corSum_(nPar, 0), priorMods_(nPar, PRIOR_MODE_MAX), externalPrior_(NULL), externalProposal_(NULL), resumeCode_(123456), nChains_(1), currentChainI_(0), stop_(false), stopRequestMessage_(111222), stopRequestSent_(false), stopMessageRequested_(false), haveStoppedMessage_(476901), firstUpdateRequested_(false), reachedSigma_(nPar, -1), rGelmanRubin_(nPar, -1), adapt_(false), covEpsilon_(1e-7), covFactor_(2.4 * 2.4 / nPar), myCovUpdateInfo_(nPar), tempCovUpdateInfo_(nPar), covarianceReady_(false), firstCovUpdateRequested_(false)
+MetropolisHastings::MetropolisHastings(int nPar, LikelihoodFunction& like, std::string fileRoot, time_t seed, bool isLikelihoodApproximate) : n_(nPar), like_(&like), likelihoodApproximate_(isLikelihoodApproximate), spareLike_(NULL), fileRoot_(fileRoot), paramNames_(nPar), param1_(nPar, 0), param2_(nPar, 0), starting_(nPar, std::numeric_limits<double>::max()), current_(nPar), prev_(nPar), samplingWidth_(nPar, 0), accuracy_(nPar, 0), paramSum_(nPar, 0), paramSquaredSum_(nPar, 0), corSum_(nPar, 0), priorMods_(nPar, PRIOR_MODE_MAX), externalPrior_(NULL), externalProposal_(NULL), resumeCode_(123456), nChains_(1), currentChainI_(0), stop_(false), stopRequestMessage_(111222), stopRequestSent_(false), stopMessageRequested_(false), haveStoppedMessage_(476901), firstUpdateRequested_(false), reachedSigma_(nPar, -1), rGelmanRubin_(nPar, -1), adapt_(false), covEpsilon_(1e-7), covFactor_(2.4 * 2.4 / nPar), myCovUpdateInfo_(nPar), tempCovUpdateInfo_(nPar), covarianceReady_(false), firstCovUpdateRequested_(false)
 {
 
     nChains_ = CosmoMPI::create().numProcesses();
@@ -586,7 +586,16 @@ MetropolisHastings::run(unsigned long maxChainLength, int writeResumeInformation
             const double newPrior = calculatePrior();
             const double oldLike = currentLike_;
             if(newPrior != 0)
+            {
                 currentLike_ = like_->calculate(&(current_[0]), n_);
+                if(likelihoodApproximate_ && std::abs(currentLike_ - oldLike) > 5)
+                {
+                    const double approxLike = currentLike_;
+                    currentLike_ = like_->calculateExact(&(current_[0]), n_);
+                    output_screen1("The approximate likelihood is too far from the previous point, calculating it exactly." << std::endl);
+                    output_screen1("Approx like = " << approxLike << std::endl << "Exact like = " << currentLike_ << std::endl);
+                }
+            }
 
             double p = newPrior / currentPrior_;
             const double deltaLike = currentLike_ - oldLike;
@@ -610,6 +619,13 @@ MetropolisHastings::run(unsigned long maxChainLength, int writeResumeInformation
                 output_screen("\tcurrent prior = " << currentPrior_ << std::endl);
                 output_screen("\tnew prior = " << newPrior << std::endl);
                 output_screen("\tp = " << p << std::endl);
+            }
+
+            if(notAcceptedCount > 500)
+            {
+                output_screen("WARNING: haven't moved for " << notAcceptedCount << "iterations!" << std::endl);
+                output_screen("Forcing to move!" << std::endl);
+                p = 1;
             }
 
             if(p > 1)

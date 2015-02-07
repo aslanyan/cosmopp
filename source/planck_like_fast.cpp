@@ -179,7 +179,7 @@ PlanckLikeFast::~PlanckLikeFast()
 }
 
 double
-PlanckLikeFast::calculate(double* params, int nPar)
+PlanckLikeFast::doCalculation(double* params, int nPar, bool exact)
 {
     check(nPar == nParams_, "");
 
@@ -190,7 +190,10 @@ PlanckLikeFast::calculate(double* params, int nPar)
     for(int i = 0; i < nCosmoParams; ++i)
         cosmoParamsVec_[i] = params[i];
 
-    layg_->evaluate(cosmoParamsVec_, &res_);
+    if(exact)
+        layg_->evaluateExact(cosmoParamsVec_, &res_);
+    else
+        layg_->evaluate(cosmoParamsVec_, &res_);
 
     const int lSize = lList_.size();
     double res = res_[lSize] + res_[lSize + 1] + res_[lSize + 2];

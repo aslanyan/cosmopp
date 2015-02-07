@@ -13,7 +13,11 @@ public:
     PlanckLikeFast(CosmologicalParams* params, bool useCommander = true, bool useCamspec = true, bool useLensing = true, bool usePolarization = false, bool useActSpt = false, bool includeTensors = false, double kPerDecade = 100, double precision = 0.2, unsigned long minCount = 10000);
     ~PlanckLikeFast();
 
-    double calculate(double* params, int nPar);
+    double calculate(double* params, int nPar) { return doCalculation(params, nPar, false); }
+    double calculateExact(double* params, int nPar) { return doCalculation(params, nPar, true); }
+
+private:
+    double doCalculation(double* params, int nPar, bool exact);
 
 private:
     CosmologicalParams* cosmoParams_;

@@ -74,7 +74,7 @@ public:
     /// \param like The likelihood function.
     /// \param fileRoot The root for filenames produced by MetropolisHastings.
     /// \param seed A random seed. If set to 0 (the default value), it will be determined from the current time.
-    MetropolisHastings(int nPar, LikelihoodFunction& like, std::string fileRoot, time_t seed = 0);
+    MetropolisHastings(int nPar, LikelihoodFunction& like, std::string fileRoot, time_t seed = 0, bool isLikelihoodApproximate = false);
 
     /// Destructor.
     ~MetropolisHastings();
@@ -346,6 +346,8 @@ private:
 
     CovarianceMatrixUpdateInfo myCovUpdateInfo_;
     CovarianceMatrixUpdateInfo tempCovUpdateInfo_;
+
+    bool likelihoodApproximate_;
 };
 
 double

@@ -1,6 +1,7 @@
 #include <vector>
 #include <string>
 #include <sstream>
+#include <ctime>
 
 #include <test_mcmc_planck_fast.hpp>
 #include <mcmc.hpp>
@@ -32,7 +33,7 @@ TestMCMCPlanckFast::runSubTest(unsigned int i, double& res, double& expected, st
 
     PlanckLikeFast planckLike(&par, true, true, false, true, false, false, 5, 0.2, 10000);
     std::string root = "slow_test_files/mcmc_planck_fast_test";
-    MetropolisHastings mh(20, planckLike, root);
+    MetropolisHastings mh(20, planckLike, root, std::time(0), true);
 
     mh.setParam(0, "ombh2", 0.005, 0.1, 0.022, 0.0003, 0.00005);
     mh.setParam(1, "omch2", 0.001, 0.99, 0.12, 0.003, 0.0005);

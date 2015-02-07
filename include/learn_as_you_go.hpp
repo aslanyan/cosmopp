@@ -21,6 +21,8 @@ public:
     
     void evaluate(const std::vector<double>& x, std::vector<double>* res);
 
+    void evaluateExact(const std::vector<double>& x, std::vector<double>* res);
+
     void setPrecision(double p);
 
     void writeIntoFile(const char* fileName) const;

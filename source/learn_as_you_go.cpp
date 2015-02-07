@@ -290,6 +290,22 @@ LearnAsYouGo::evaluate(const std::vector<double>& x, std::vector<double>* res)
 }
 
 void
+LearnAsYouGo::evaluateExact(const std::vector<double>& x, std::vector<double>* res)
+{
+    check(x.size() == nPoints_, "");
+
+    const std::map<std::vector<double>, unsigned long, PointComp>::const_iterator it = pointMap_.find(x);
+
+    if(it != pointMap_.end())
+    {
+        *res = data_[it->second];
+        return;
+    }
+
+    actual(x, res);
+}
+
+void
 LearnAsYouGo::actual(const std::vector<double>& x, std::vector<double>* res)
 {
     f_.evaluate(x, res);
