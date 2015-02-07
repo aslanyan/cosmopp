@@ -7,6 +7,7 @@
 #include <planck_like.hpp>
 #include <markov_chain.hpp>
 #include <numerics.hpp>
+#include <timer.hpp>
 
 std::string
 TestMCMCPlanck::name() const
@@ -53,8 +54,13 @@ TestMCMCPlanck::runSubTest(unsigned int i, double& res, double& expected, std::s
     mh.setParam(18, "A_ksz", 0, 10, 5, 6, 0.5);
     mh.setParam(19, "Bm_1_1", -20, 20, 0.5, 1.0, 0.1);
 
+    Timer timer("MCMC PLANCK");
+
     const unsigned long burnin = 500;
+    timer.start();
     const int nChains = mh.run(25000, 1, burnin, MetropolisHastings::GELMAN_RUBIN, 0.01, true);
+    const unsigned long time = timer.end();
+    output_screen("MCMC Planck took " << time / 1000000 << " seconds." << std::endl);
     
     subTestName = std::string("standard_param_limits");
     res = 1;

@@ -520,7 +520,7 @@ obj/test_mcmc.o: source/test_mcmc.cpp $(TEST_MCMC_HPP) $(MCMC_HPP) $(MARKOV_CHAI
 obj/test_multinest.o: source/test_multinest.cpp $(TEST_MULTINEST_HPP) $(MN_SCANNER_HPP) $(MARKOV_CHAIN_HPP) $(NUMERICS_HPP)
 	$(CC) $(CFLAGS) source/test_multinest.cpp -o $@
 
-obj/test_mcmc_planck.o: source/test_mcmc_planck.cpp $(TEST_MCMC_PLANCK_HPP) $(MCMC_HPP) $(PLANCK_LIKE_HPP) $(MARKOV_CHAIN_HPP) $(NUMERICS_HPP)
+obj/test_mcmc_planck.o: source/test_mcmc_planck.cpp $(TEST_MCMC_PLANCK_HPP) $(MCMC_HPP) $(PLANCK_LIKE_HPP) $(MARKOV_CHAIN_HPP) $(NUMERICS_HPP) $(TIMER_HPP)
 	$(CC) $(CFLAGS) source/test_mcmc_planck.cpp -o $@
 
 obj/test_multinest_planck.o: source/test_multinest_planck.cpp $(TEST_MULTINEST_PLANCK_HPP) $(MN_SCANNER_HPP) $(PLANCK_LIKE_HPP) $(MARKOV_CHAIN_HPP) $(NUMERICS_HPP)
@@ -598,7 +598,7 @@ obj/test_gaussian_process.o: source/test_gaussian_process.cpp $(MACROS_HPP) $(GA
 obj/planck_like_fast.o: source/planck_like_fast.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(CUBIC_SPLINE_HPP) $(PLANCK_LIKE_FAST_HPP)
 	$(CC) $(CFLAGS) source/planck_like_fast.cpp -o $@
 
-obj/test_mcmc_planck_fast.o: source/test_mcmc_planck_fast.cpp $(TEST_MCMC_PLANCK_FAST_HPP) $(MCMC_HPP) $(PLANCK_LIKE_FAST_HPP) $(MARKOV_CHAIN_HPP) $(NUMERICS_HPP)
+obj/test_mcmc_planck_fast.o: source/test_mcmc_planck_fast.cpp $(TEST_MCMC_PLANCK_FAST_HPP) $(MCMC_HPP) $(PLANCK_LIKE_FAST_HPP) $(MARKOV_CHAIN_HPP) $(NUMERICS_HPP) $(TIMER_HPP)
 	$(CC) $(CFLAGS) source/test_mcmc_planck_fast.cpp -o $@
 
 clean:

@@ -8,6 +8,7 @@
 #include <planck_like_fast.hpp>
 #include <markov_chain.hpp>
 #include <numerics.hpp>
+#include <timer.hpp>
 
 std::string
 TestMCMCPlanckFast::name() const
@@ -31,7 +32,7 @@ TestMCMCPlanckFast::runSubTest(unsigned int i, double& res, double& expected, st
     const double pivot = 0.05;
     LambdaCDMParams par(0.022, 0.12, 0.7, 0.1, 1.0, std::exp(3.0) / 1e10, pivot);
 
-    PlanckLikeFast planckLike(&par, true, true, false, true, false, false, 5, 0.5, 10000);
+    PlanckLikeFast planckLike(&par, true, true, false, true, false, false, 5, 0.2, 10000);
     std::string root = "slow_test_files/mcmc_planck_fast_test";
     MetropolisHastings mh(20, planckLike, root, std::time(0), false);
 
@@ -57,8 +58,13 @@ TestMCMCPlanckFast::runSubTest(unsigned int i, double& res, double& expected, st
     mh.setParam(18, "A_ksz", 0, 10, 5, 6, 0.5);
     mh.setParam(19, "Bm_1_1", -20, 20, 0.5, 1.0, 0.1);
 
+    Timer timer("MCMC PLANCK FAST");
+
     const unsigned long burnin = 500;
+    timer.start();
     const int nChains = mh.run(25000, 1, burnin, MetropolisHastings::GELMAN_RUBIN, 0.01, true);
+    const unsigned long time = timer.end();
+    output_screen("MCMC Planck fast took " << time / 1000000 << " seconds." << std::endl);
     
     subTestName = std::string("standard_param_limits");
     res = 1;
