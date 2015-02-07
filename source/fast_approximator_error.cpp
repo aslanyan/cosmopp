@@ -222,8 +222,8 @@ FastApproximatorError::approximate(const std::vector<double>& point, std::vector
         return false;
     }
 
-    //const double estimatedError = e * posterior_->get2SigmaUpper();
-    const double estimatedError = e * posterior_->get1SigmaUpper();
+    const double estimatedError = e * posterior_->get2SigmaUpper();
+    //const double estimatedError = e * posterior_->get1SigmaUpper();
 
     output_screen1("Error = " << estimatedError << std::endl);
 

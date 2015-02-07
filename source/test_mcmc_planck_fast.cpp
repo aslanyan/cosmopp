@@ -31,9 +31,9 @@ TestMCMCPlanckFast::runSubTest(unsigned int i, double& res, double& expected, st
     const double pivot = 0.05;
     LambdaCDMParams par(0.022, 0.12, 0.7, 0.1, 1.0, std::exp(3.0) / 1e10, pivot);
 
-    PlanckLikeFast planckLike(&par, true, true, false, true, false, false, 5, 0.2, 10000);
+    PlanckLikeFast planckLike(&par, true, true, false, true, false, false, 5, 0.5, 10000);
     std::string root = "slow_test_files/mcmc_planck_fast_test";
-    MetropolisHastings mh(20, planckLike, root, std::time(0), true);
+    MetropolisHastings mh(20, planckLike, root, std::time(0), false);
 
     mh.setParam(0, "ombh2", 0.005, 0.1, 0.022, 0.0003, 0.00005);
     mh.setParam(1, "omch2", 0.001, 0.99, 0.12, 0.003, 0.0005);

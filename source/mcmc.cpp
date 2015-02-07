@@ -613,17 +613,12 @@ MetropolisHastings::run(unsigned long maxChainLength, int writeResumeInformation
 
             if(notAcceptedCount > 100)
             {
-                output_screen("Haven't moved for " << notAcceptedCount << "iterations!" << std::endl);
+                output_screen("WARNING! Haven't moved for " << notAcceptedCount << "iterations!" << std::endl);
                 output_screen("\tcurrent like = " << currentLike_ << std::endl);
                 output_screen("\told like = " << oldLike << std::endl);
                 output_screen("\tcurrent prior = " << currentPrior_ << std::endl);
                 output_screen("\tnew prior = " << newPrior << std::endl);
                 output_screen("\tp = " << p << std::endl);
-            }
-
-            if(notAcceptedCount > 500)
-            {
-                output_screen("WARNING: haven't moved for " << notAcceptedCount << "iterations!" << std::endl);
                 output_screen("Forcing to move!" << std::endl);
                 p = 1;
             }
