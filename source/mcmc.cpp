@@ -588,7 +588,7 @@ MetropolisHastings::run(unsigned long maxChainLength, int writeResumeInformation
             if(newPrior != 0)
             {
                 currentLike_ = like_->calculate(&(current_[0]), n_);
-                if(iteration_ > burnin_ / 2 && likelihoodApproximate_ && std::abs(currentLike_ - oldLike) > 10)
+                if(iteration_ > burnin_ / 3 && likelihoodApproximate_ && std::abs(currentLike_ - oldLike) > 10)
                 {
                     const double approxLike = currentLike_;
                     currentLike_ = like_->calculateExact(&(current_[0]), n_);
