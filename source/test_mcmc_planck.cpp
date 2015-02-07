@@ -28,7 +28,6 @@ TestMCMCPlanck::runSubTest(unsigned int i, double& res, double& expected, std::s
     using namespace Math;
 
     PlanckLikelihood planckLike(true, true, false, true, false, false, 5);
-    PlanckLikelihood planckLike1(true, true, false, true, false, false, 5);
     std::string root = "slow_test_files/mcmc_planck_test";
     MetropolisHastings mh(20, planckLike, root);
 
@@ -54,15 +53,8 @@ TestMCMCPlanck::runSubTest(unsigned int i, double& res, double& expected, std::s
     mh.setParam(18, "A_ksz", 0, 10, 5, 6, 0.5);
     mh.setParam(19, "Bm_1_1", -20, 20, 0.5, 1.0, 0.1);
 
-    std::vector<int> blocks(15);
-    blocks[0] = 6;
-    for(int i = 1; i < 15; ++i)
-        blocks[i] = i + 6;
-
-    //mh.specifyParameterBlocks(blocks);
-
     const unsigned long burnin = 500;
-    const int nChains = mh.run(25000, 1, burnin, MetropolisHastings::GELMAN_RUBIN, 0.1, true);
+    const int nChains = mh.run(25000, 1, burnin, MetropolisHastings::GELMAN_RUBIN, 0.01, true);
     
     subTestName = std::string("standard_param_limits");
     res = 1;
@@ -132,3 +124,4 @@ TestMCMCPlanck::runSubTest(unsigned int i, double& res, double& expected, std::s
     }
     outParamLimits.close();
 }
+
