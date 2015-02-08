@@ -3,34 +3,37 @@
 #include <string>
 #include <sstream>
 
-#include <test_multinest_planck.hpp>
+#include <test_multinest_planck_fast.hpp>
 #include <mn_scanner.hpp>
-#include <planck_like.hpp>
+#include <planck_like_fast.hpp>
 #include <markov_chain.hpp>
 #include <numerics.hpp>
 #include <timer.hpp>
 
 std::string
-TestMultinestPlanck::name() const
+TestMultinestPlanckFast::name() const
 {
-    return std::string("MULTINEST PLANCK LIKELIHOOD TESTER");
+    return std::string("MULTINEST PLANCK FAST LIKELIHOOD TESTER");
 }
 
 unsigned int
-TestMultinestPlanck::numberOfSubtests() const
+TestMultinestPlanckFast::numberOfSubtests() const
 {
     return 1;
 }
 
 void
-TestMultinestPlanck::runSubTest(unsigned int i, double& res, double& expected, std::string& subTestName)
+TestMultinestPlanckFast::runSubTest(unsigned int i, double& res, double& expected, std::string& subTestName)
 {
     check(i >= 0 && i < 1, "invalid index " << i);
     
     using namespace Math;
 
-    PlanckLikelihood planckLike(true, true, false, true, false, false, 5);
-    std::string root = "slow_test_files/multinest_planck_test";
+    const double pivot = 0.05;
+    LambdaCDMParams par(0.022, 0.12, 0.7, 0.1, 1.0, std::exp(3.0) / 1e10, pivot);
+
+    PlanckLikeFast planckLike(&par, true, true, false, true, false, false, 5, 0.2, 50000);
+    std::string root = "slow_test_files/multinest_planck_fast_test";
     MnScanner mn(20, planckLike, 300, root);
 
     mn.setParam(0, "ombh2", 0.02, 0.025);
@@ -55,11 +58,11 @@ TestMultinestPlanck::runSubTest(unsigned int i, double& res, double& expected, s
     mn.setParam(18, "A_ksz", 0, 10);
     mn.setParam(19, "Bm_1_1", -20, 20);
 
-    Timer timer("MN PLANCK");
+    Timer timer("MN PLANCK FAST");
     timer.start();
     mn.run(true);
     const unsigned long time = timer.end();
-    output_screen("MN Planck took " << time / 1000000 << " seconds." << std::endl);
+    output_screen("MN Planck fast took " << time / 1000000 << " seconds." << std::endl);
     
     subTestName = std::string("standard_param_limits");
     res = 1;
@@ -120,3 +123,4 @@ TestMultinestPlanck::runSubTest(unsigned int i, double& res, double& expected, s
     }
     outParamLimits.close();
 }
+

@@ -39,6 +39,7 @@
 #include <test_fast_approximator_error.hpp>
 #include <test_gaussian_process.hpp>
 #include <test_mcmc_planck_fast.hpp>
+#include <test_multinest_planck_fast.hpp>
 
 TestFramework* createTest(const std::string& name)
 {
@@ -152,6 +153,10 @@ TestFramework* createTest(const std::string& name)
 #ifdef COSMO_PLANCK
     else if(name == "mcmc_planck_fast")
         test = new TestMCMCPlanckFast;
+#ifdef COSMO_MULTINEST
+    else if(name == "multinest_planck_fast")
+        test = new TestMultinestPlanckFast;
+#endif
 #endif
 #endif
 #endif
@@ -265,6 +270,9 @@ int main(int argc, char *argv[])
 #ifdef COSMO_CLASS
 #ifdef COSMO_PLANCK
         slowTests.insert("mcmc_planck_fast");
+#ifdef COSMO_MULTINEST
+        slowTests.insert("multinest_planck_fast");
+#endif
 #endif
 #endif
 #endif
