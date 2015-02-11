@@ -162,6 +162,10 @@ POLYCHORD_LIB_FLAGS2 = $(POLYCHORDLIBFLAGS)
 POLYCHORD_FC = $(POLYCHORDCOMPILER)
 ifdef MPI_COMP
 POLYCHORD_FC = mpifort
+ifeq ($(POLYCHORDCOMPILER),gfortran)
+else
+POLYCHORD_FC = mpif90
+endif
 endif
 POLYCHORD_FC_FLAGS = -cpp -c -I $(POLYCHORD)/src
 POLYCHORD_OBJ = obj/polychord_wrapper.o obj/polychord.o
