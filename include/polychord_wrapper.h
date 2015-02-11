@@ -2,7 +2,7 @@
 #define COSMO_PP_POLYCHORD_WRAPPER_H
 
 #ifdef POLYCHORD_IFORT
-#define POLYRUN polycwraprun_
+#define POLYRUN polycwraprun
 #else
 #define POLYRUN polycwraprun
 #endif
