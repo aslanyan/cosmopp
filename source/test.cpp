@@ -21,6 +21,7 @@
 #include <test_matrix.hpp>
 #include <test_mcmc.hpp>
 #include <test_multinest.hpp>
+#include <test_polychord.hpp>
 #include <test_mcmc_planck.hpp>
 #include <test_multinest_planck.hpp>
 #include <test_cmb.hpp>
@@ -64,6 +65,10 @@ TestFramework* createTest(const std::string& name)
 #ifdef COSMO_MULTINEST
     else if(name == "multinest_fast")
         test = new TestMultinestFast;
+#endif
+#ifdef COSMO_POLYCHORD
+    else if(name == "polychord_fast")
+        test = new TestPolyChordFast;
 #endif
 #ifdef COSMO_PLANCK
 #ifdef COSMO_CLASS
@@ -179,6 +184,9 @@ int main(int argc, char *argv[])
 #endif
 #ifdef COSMO_MULTINEST
         fastTests.insert("multinest_fast");
+#endif
+#ifdef COSMO_POLYCHORD
+        fastTests.insert("polychord_fast");
 #endif
 #ifdef COSMO_CLASS
         fastTests.insert("cmb");

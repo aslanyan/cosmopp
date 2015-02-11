@@ -3,6 +3,7 @@
 #include <sstream>
 #include <limits>
 #include <algorithm>
+#include <utility>
 #include <cmath>
 
 #include <macros.hpp>
@@ -31,6 +32,19 @@ Posterior1D::addPoint(double x, double prob, double like)
     }
 }
 
+namespace
+{
+
+struct LessPairFirst
+{
+    bool operator() (const std::pair<double, double>& a, const std::pair<double, double>& b)
+    {
+        return a.first < b.first;
+    }
+};
+
+}
+
 void
 Posterior1D::generate(SmoothingMethod method, double scale)
 {
@@ -40,17 +54,32 @@ Posterior1D::generate(SmoothingMethod method, double scale)
 
     check(scale >= 0, "invalid scale " << scale);
 
-    std::vector<double> pointsSorted = points_;
-    std::sort(pointsSorted.begin(), pointsSorted.end());
+    std::vector<std::pair<double, double> > pointsSorted(points_.size());
+    double totalWeight = 0;
+    for(int i = 0; i < points_.size(); ++i)
+    {
+        pointsSorted[i].first = points_[i];
+        pointsSorted[i].second = probs_[i];
+        totalWeight += probs_[i];
+    }
 
-    unsigned int q1 = (unsigned int) (0.25 * pointsSorted.size());
-    if(q1 > pointsSorted.size())
-        q1 = 0;
-    unsigned int q3 = (unsigned int) (0.75 * pointsSorted.size());
-    if(q3 > pointsSorted.size())
-        q3 = pointsSorted.size() - 1;
+    LessPairFirst less;
 
-    const double iqr = pointsSorted[q3] - pointsSorted[q1];
+    std::sort(pointsSorted.begin(), pointsSorted.end(), less);
+
+    int q1 = 0, q3 = pointsSorted.size() - 1;
+    double cumulWeight = 0;
+    for(int i = 0; i < pointsSorted.size(); ++i)
+    {
+        cumulWeight += pointsSorted[i].second;
+        if(cumulWeight >= 0.25 * totalWeight && q1 == 0)
+            q1 = i;
+
+        if(cumulWeight >= 0.75 * totalWeight && q3 == pointsSorted.size() - 1)
+            q3 = i;
+    }
+
+    const double iqr = pointsSorted[q3].first - pointsSorted[q1].first;
     const double myBinSize = 2 * iqr * std::pow(double(pointsSorted.size()), -1.0 / 3.0);
 
     int resolution;
@@ -228,17 +257,32 @@ Posterior2D::addPoint(double x1, double x2, double prob, double like)
 void
 Posterior2D::generate(double scale1, double scale2)
 {
-    std::vector<double> points1Sorted = points1_;
-    std::sort(points1Sorted.begin(), points1Sorted.end());
+    std::vector<std::pair<double, double> > points1Sorted(points1_.size());
+    double totalWeight = 0;
+    for(int i = 0; i < points1_.size(); ++i)
+    {
+        points1Sorted[i].first = points1_[i];
+        points1Sorted[i].second = probs_[i];
+        totalWeight += probs_[i];
+    }
 
-    unsigned int q1 = (unsigned int) (0.25 * points1Sorted.size());
-    if(q1 > points1Sorted.size())
-        q1 = 0;
-    unsigned int q3 = (unsigned int) (0.75 * points1Sorted.size());
-    if(q3 > points1Sorted.size())
-        q3 = points1Sorted.size() - 1;
+    LessPairFirst less;
 
-    const double iqr1 = points1Sorted[q3] - points1Sorted[q1];
+    std::sort(points1Sorted.begin(), points1Sorted.end(), less);
+
+    int q1 = 0, q3 = points1Sorted.size() - 1;
+    double cumulWeight = 0;
+    for(int i = 0; i < points1Sorted.size(); ++i)
+    {
+        cumulWeight += points1Sorted[i].second;
+        if(cumulWeight >= 0.25 * totalWeight && q1 == 0)
+            q1 = i;
+
+        if(cumulWeight >= 0.75 * totalWeight && q3 == points1Sorted.size() - 1)
+            q3 = i;
+    }
+
+    const double iqr1 = points1Sorted[q3].first - points1Sorted[q1].first;
     const double myBinSize1 = 2 * iqr1 * std::pow(double(points1Sorted.size()), -1.0 / 3.0);
 
     int res1, res2;
@@ -253,12 +297,30 @@ Posterior2D::generate(double scale1, double scale2)
         scale1 = iqr1 / 8;
     }
 
-    std::vector<double> points2Sorted = points2_;
-    std::sort(points2Sorted.begin(), points2Sorted.end());
-
+    std::vector<std::pair<double, double> > points2Sorted(points2_.size());
+    for(int i = 0; i < points1_.size(); ++i)
+    {
+        points2Sorted[i].first = points2_[i];
+        points2Sorted[i].second = probs_[i];
+    }
+    
     check(points2Sorted.size() == points1Sorted.size(), "");
 
-    const double iqr2 = points2Sorted[q3] - points2Sorted[q1];
+    std::sort(points2Sorted.begin(), points2Sorted.end(), less);
+
+    q1 = 0, q3 = points2Sorted.size() - 1;
+    cumulWeight = 0;
+    for(int i = 0; i < points2Sorted.size(); ++i)
+    {
+        cumulWeight += points2Sorted[i].second;
+        if(cumulWeight >= 0.25 * totalWeight && q1 == 0)
+            q1 = i;
+
+        if(cumulWeight >= 0.75 * totalWeight && q3 == points2Sorted.size() - 1)
+            q3 = i;
+    }
+
+    const double iqr2 = points2Sorted[q3].first - points2Sorted[q1].first;
     const double myBinSize2 = 2 * iqr2 * std::pow(double(points2Sorted.size()), -1.0 / 3.0);
 
     if(myBinSize2 == 0 || points2Sorted.size() < 5)

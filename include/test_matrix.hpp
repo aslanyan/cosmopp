@@ -12,6 +12,10 @@ protected:
     std::string name() const;
     unsigned int numberOfSubtests() const;
     void runSubTest(unsigned int i, double& res, double& expected, std::string& subTestName);
+
+private:
+    void runSubTest0(double& res, double& expected, std::string& subTestName);
+    void runSubTest1(double& res, double& expected, std::string& subTestName);
 };
 
 #endif

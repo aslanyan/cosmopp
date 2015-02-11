@@ -138,11 +138,16 @@ MnScanner::setParamGeneral(int i, const std::string& name, double min, double ma
     paramPriors_[i][1 + epsilon] = max;
 }
 
+namespace
+{
+
 void myLogLike(double *cube, int &ndim, int &npars, double &lnew, void *context)
 {
     MnScanner* scanner = (MnScanner*) context;
     scanner->logLike(cube, ndim, npars, lnew);
 }
+
+} // namespace
 
 void
 MnScanner::logLike(double *cube, int &ndim, int &npars, double &lnew)
@@ -171,11 +176,16 @@ MnScanner::logLike(double *cube, int &ndim, int &npars, double &lnew)
     lnew = - like_.calculate(&(paramsCurrent_[0]), n_) / 2.0;
 }
 
+namespace
+{
+
 void myDumper(int &nSamples, int &nlive, int &nPar, double **physLive, double **posterior, double **paramConstr, double &maxLogLike, double &logZ, double &INSLogZ, double &logZerr, void *context)
 {
     MnScanner* scanner = (MnScanner*) context;
     scanner->dumper(nSamples, nlive, nPar, physLive, posterior, paramConstr, maxLogLike, logZ, INSLogZ, logZerr);
 }
+
+} // namespace
 
 void
 MnScanner::dumper(int &nSamples, int &nlive, int &nPar, double **physLive, double **posterior, double **paramConstr, double &maxLogLike, double &logZ, double &INSLogZ, double &logZerr)
@@ -336,7 +346,7 @@ MnScanner::run(bool res)
 
     try
     {
-	    nested::run(IS, mmodal, ceff, nLive_, tol, efr, ndims, nPar, nClsPar, maxModes, updInt, Ztol, fileRoot_.c_str(), seed, pWrap, fb, resume, outfile, initMPI,
+	    nested::run(IS, mmodal, ceff, nLive_, tol, efr, ndims, nPar, nClsPar, maxModes, updInt, Ztol, fileRoot_, seed, pWrap, fb, resume, outfile, initMPI,
 	        logZero, maxiter, myLogLike, myDumper, context);
     } 
     catch (std::exception& e)
