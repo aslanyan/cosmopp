@@ -164,7 +164,7 @@ ifdef MPI_COMP
 POLYCHORD_FC = mpifort
 ifeq ($(POLYCHORDCOMPILER),gfortran)
 else
-POLYCHORD_FC = mpif90
+POLYCHORD_FC = mpiifort
 endif
 endif
 POLYCHORD_FC_FLAGS = -cpp -c -I $(POLYCHORD)/src
