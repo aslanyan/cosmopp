@@ -15,7 +15,7 @@
 class LearnAsYouGo
 {
 public:
-    LearnAsYouGo(int nPoints, int nData, const Math::RealFunctionMultiToMulti& f, const Math::RealFunctionMultiDim& errorFunc, unsigned long minCount = 1000, double precision = 0.1, const char* fileName = "");
+    LearnAsYouGo(int nPoints, int nData, const Math::RealFunctionMultiToMulti& f, const Math::RealFunctionMultiDim& errorFunc, unsigned long minCount = 10000, double precision = 0.1, const char* fileName = "");
 
     ~LearnAsYouGo();
     

@@ -70,7 +70,7 @@ LearnAsYouGo::construct()
     newPointsCount_ = 0;
     updateCount_ = 10;
     updateErrorThreshold_ = minCount_;
-    testSize_ = updateErrorThreshold_ / 20;
+    testSize_ = std::max(updateErrorThreshold_ / 20, (unsigned long) 1000);
 
     newCommunicateCount_ = 0;
     communicateCount_ = 10;
@@ -372,8 +372,8 @@ LearnAsYouGo::addDataPoint(const std::vector<double>& p, const std::vector<doubl
             fast_->reset(points_, data_, points_.size() - testSize_, points_.size());
             if(processId_ == 0)
                 fast_->getPosterior()->writeIntoFile("fast_approximator_error_ratio.txt");
-            updateErrorThreshold_ = points_.size() + points_.size() / 5;
-            testSize_ = updateErrorThreshold_ / 20;
+            updateErrorThreshold_ = points_.size() + points_.size() / 4;
+            testSize_ = std::max(updateErrorThreshold_ / 20, (unsigned long) 1000);
         }
 
         fa_->reset(points_.size(), points_, data_, false);
@@ -420,8 +420,8 @@ LearnAsYouGo::constructFast()
             fast_->getPosterior()->writeIntoFile("fast_approximator_error_ratio.txt");
 
         fa_->reset(points_.size(), points_, data_, false);
-        updateErrorThreshold_ = points_.size() + points_.size() / 5;
-        testSize_ = updateErrorThreshold_ / 20;
+        updateErrorThreshold_ = points_.size() + points_.size() / 4;
+        testSize_ = std::max(updateErrorThreshold_ / 20, (unsigned long) 1000);
     }
     else
     {

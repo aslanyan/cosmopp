@@ -588,6 +588,7 @@ MetropolisHastings::run(unsigned long maxChainLength, int writeResumeInformation
             if(newPrior != 0)
             {
                 currentLike_ = like_->calculate(&(current_[0]), n_);
+                /*
                 if(iteration_ > burnin_ / 3 && likelihoodApproximate_ && std::abs(currentLike_ - oldLike) > 10)
                 {
                     const double approxLike = currentLike_;
@@ -595,6 +596,7 @@ MetropolisHastings::run(unsigned long maxChainLength, int writeResumeInformation
                     output_screen1("The approximate likelihood is too far from the previous point, calculating it exactly." << std::endl);
                     output_screen1("Approx like = " << approxLike << std::endl << "Exact like = " << currentLike_ << std::endl);
                 }
+                */
             }
 
             double p = newPrior / currentPrior_;
