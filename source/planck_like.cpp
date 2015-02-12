@@ -1,7 +1,3 @@
-#ifdef COSMO_MPI
-#include <mpi.h>
-#endif
-
 #include <string>
 #include <sstream>
 #include <cstring>

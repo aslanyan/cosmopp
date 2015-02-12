@@ -1,6 +1,4 @@
-#ifdef COSMO_MPI
-#include <mpi.h>
-#endif
+#include <cosmo_mpi.hpp>
 
 #include <fstream>
 #include <sstream>
@@ -107,6 +105,9 @@ void
 PolyChord::run(bool res)
 {
     check(!running_, "an instance of PolyChord is currently running");
+
+    CosmoMPI::create().barrier();
+
     running_ = true;
     myPolyChordScanner = this;
 
@@ -171,12 +172,7 @@ PolyChord::run(bool res)
         }
     }
 
-#ifdef COSMO_MPI
-    int hasMpiInit;
-    MPI_Initialized(&hasMpiInit);
-    if(!hasMpiInit)
-        MPI_Init(NULL, NULL);
-#endif
+    CosmoMPI::create();
 
     double logZ, errorZ, nDead, nLike, logZPlusLogP;
 
@@ -185,21 +181,9 @@ PolyChord::run(bool res)
 
     running_ = false;
 
-    int processRank = 0;
+    CosmoMPI::create().barrier();
 
-#ifdef COSMO_MPI
-#ifdef CHECKS_ON
-    MPI_Initialized(&hasMpiInit);
-    check(hasMpiInit, "MPI not initialized");
-
-    int hasMpiFinalized;
-    MPI_Finalized(&hasMpiFinalized);
-    check(!hasMpiFinalized, "MPI already finalized");
-#endif
-    MPI_Comm_rank(MPI_COMM_WORLD, &processRank);
-#endif
-
-    if(processRank)
+    if(CosmoMPI::create().isMaster())
         return;
 
     output_screen_clean("PolyChord has successfully finished" << std::endl);

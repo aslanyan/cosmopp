@@ -347,12 +347,12 @@ GaussianProcess::set(const std::vector<std::vector<double> >& x, const std::vect
             upar.Add(paramName.str().c_str(), starting[i], error[i], min[i], max[i]);
         }
 
-        Timer t1("GAUSSIAN PROCESS MINIMIZATION");
-        t1.start();
+        //Timer t1("GAUSSIAN PROCESS MINIMIZATION");
+        //t1.start();
         ROOT::Minuit2::MnMigrad migrad(fcn, upar);
         ROOT::Minuit2::FunctionMinimum minRes = migrad();
         ROOT::Minuit2::MnUserParameters result = minRes.UserParameters();
-        t1.end();
+        //t1.end();
         
         for(int i = 0; i <= dim_; ++i)
         {
@@ -365,7 +365,7 @@ GaussianProcess::set(const std::vector<std::vector<double> >& x, const std::vect
             const double param = result.Value(paramName.str().c_str());
             const double e = result.Error(paramName.str().c_str());
 
-            output_screen(paramName.str() << " = " << param << " +/- " << e << std::endl);
+            output_screen2(paramName.str() << " = " << param << " +/- " << e << std::endl);
 
             if(i < dim_)
                 l2_[i] = param * param;

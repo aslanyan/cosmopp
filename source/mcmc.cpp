@@ -611,16 +611,19 @@ MetropolisHastings::run(unsigned long maxChainLength, int writeResumeInformation
                 p /= externalProposal_->calculate(&(currentOld[0]), n_, &(block[0]), i);
             }
 
-            if(notAcceptedCount > 100)
+            if(notAcceptedCount > 2 * n_)
             {
-                output_screen("WARNING! Haven't moved for " << notAcceptedCount << "iterations!" << std::endl);
+                output_screen("WARNING! Haven't moved for " << notAcceptedCount << " iterations because the likelihood difference is too large!" << std::endl);
                 output_screen("\tcurrent like = " << currentLike_ << std::endl);
                 output_screen("\told like = " << oldLike << std::endl);
                 output_screen("\tcurrent prior = " << currentPrior_ << std::endl);
                 output_screen("\tnew prior = " << newPrior << std::endl);
                 output_screen("\tp = " << p << std::endl);
-                output_screen("Forcing to move!" << std::endl);
-                p = 1;
+                if(likelihoodApproximate_)
+                {
+                    output_screen("Forcing to move since the likelihood is approximate!" << std::endl);
+                    p = 1;
+                }
             }
 
             if(p > 1)
@@ -632,7 +635,8 @@ MetropolisHastings::run(unsigned long maxChainLength, int writeResumeInformation
             {
                 currentPrior_ = newPrior;
                 ++accepted[i];
-                notAcceptedCount = 0;
+                if(deltaLike > 10)
+                    notAcceptedCount = 0;
             }
             else
             {

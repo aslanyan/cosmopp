@@ -32,7 +32,7 @@ TestMultinestPlanckFast::runSubTest(unsigned int i, double& res, double& expecte
     const double pivot = 0.05;
     LambdaCDMParams par(0.022, 0.12, 0.7, 0.1, 1.0, std::exp(3.0) / 1e10, pivot);
 
-    PlanckLikeFast planckLike(&par, true, true, false, true, false, false, 5, 0.2, 50000);
+    PlanckLikeFast planckLike(&par, true, true, false, true, false, false, 5, 0.4, 50000);
     std::string root = "slow_test_files/multinest_planck_fast_test";
     MnScanner mn(20, planckLike, 300, root);
 

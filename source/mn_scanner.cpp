@@ -1,6 +1,4 @@
-#ifdef COSMO_MPI
-#include <mpi.h>
-#endif
+#include <cosmo_mpi.hpp>
 
 #include <fstream>
 #include <sstream>
@@ -277,9 +275,7 @@ MnScanner::dumper(int &nSamples, int &nlive, int &nPar, double **physLive, doubl
 void
 MnScanner::run(bool res)
 {
-#ifdef COSMO_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
+    CosmoMPI::create().barrier();
 
     StandardException exc;
 
@@ -312,14 +308,8 @@ MnScanner::run(bool res)
 	int resume = res;					// resume from a previous job?
 	int outfile = 1;				// write output files?
 
-	int initMPI = 1;				// initialize MPI routines?, relevant only if compiling with MPI
+	int initMPI = 0;				// initialize MPI routines?, relevant only if compiling with MPI
 							// set it to F if you want your main program to handle MPI initialization
-#ifdef COSMO_MPI
-    int hasMpiInit;
-    MPI_Initialized(&hasMpiInit);
-    if(hasMpiInit)
-        initMPI = 0;
-#endif
 
 	double logZero = -1E90;				// points with loglike < logZero will be ignored by MultiNest
 	int maxiter = 0;				// max no. of iterations, a non-positive value means infinity. MultiNest will terminate if either it 
@@ -359,9 +349,7 @@ MnScanner::run(bool res)
         throw e;
     }
 
-#ifdef COSMO_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
+    CosmoMPI::create().barrier();
 }
 
 void

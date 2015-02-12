@@ -1,6 +1,4 @@
-#ifdef COSMO_MPI
-#include <mpi.h>
-#endif
+#include <cosmo_mpi.hpp>
 
 #include <string>
 #include <sstream>
@@ -433,22 +431,10 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
     {
         std::stringstream pkFileNameStr;
         pkFileNameStr << "cosmo_pk";
-#ifdef COSMO_MPI
-        int mpif;
-        MPI_Initialized(&mpif);
-        if(mpif)
-        {
-            int n;
-            MPI_Comm_size(MPI_COMM_WORLD, &n);
-            if(n > 1)
-            {
-                int p;
-                MPI_Comm_rank(MPI_COMM_WORLD, &p);
 
-                pkFileNameStr << '_' << p;
-            }
-        }
-#endif
+        if(CosmoMPI::create().numProcesses() > 1)
+            pkFileNameStr << '_' << CosmoMPI::create().processId();
+
         pkFileNameStr << ".txt";
         std::string pkFileName = pkFileNameStr.str();
 
