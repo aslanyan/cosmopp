@@ -183,7 +183,7 @@ PolyChord::run(bool res)
 
     CosmoMPI::create().barrier();
 
-    if(CosmoMPI::create().isMaster())
+    if(!CosmoMPI::create().isMaster())
         return;
 
     output_screen_clean("PolyChord has successfully finished" << std::endl);
