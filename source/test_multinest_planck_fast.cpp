@@ -71,7 +71,7 @@ TestMultinestPlanckFast::runSubTest(unsigned int i, double& res, double& expecte
     if(!isMaster())
         return;
 
-    MarkovChain chain("slow_test_files/multinest_planck_test.txt");
+    MarkovChain chain("slow_test_files/multinest_planck_fast_test.txt");
 
     const int nPoints = 1000;
 
@@ -80,12 +80,12 @@ TestMultinestPlanckFast::runSubTest(unsigned int i, double& res, double& expecte
     const double expectedMedian[6] = {0.02205, 0.1199, 0.673, 0.089, 0.9603, 3.089};
     const double expectedSigma[6] = {0.00028, 0.0027, 0.012, 0.013, 0.0073, 0.025};
 
-    std::ofstream outParamLimits("slow_test_files/multinest_planck_param_limits.txt");
+    std::ofstream outParamLimits("slow_test_files/multinest_planck_fast_param_limits.txt");
     for(int i = 0; i < 20; ++i)
     {
         const std::string& paramName = mn.getParamName(i);
         std::stringstream fileName;
-        fileName << "slow_test_files/multinest_planck_" << paramName << ".txt";
+        fileName << "slow_test_files/multinest_planck_fast_" << paramName << ".txt";
         Posterior1D* p = chain.posterior(i);
 
         std::ofstream out(fileName.str().c_str());

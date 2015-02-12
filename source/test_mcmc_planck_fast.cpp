@@ -91,12 +91,12 @@ TestMCMCPlanckFast::runSubTest(unsigned int i, double& res, double& expected, st
     smoothingScale[4] = 0.0009;
     smoothingScale[5] = 0.006;
 
-    std::ofstream outParamLimits("slow_test_files/mcmc_planck_param_limits.txt");
+    std::ofstream outParamLimits("slow_test_files/mcmc_planck_fast_param_limits.txt");
     for(int i = 0; i < 20; ++i)
     {
         const std::string& paramName = mh.getParamName(i);
         std::stringstream fileName;
-        fileName << "slow_test_files/mcmc_planck_" << paramName << ".txt";
+        fileName << "slow_test_files/mcmc_planck_fast_" << paramName << ".txt";
         Posterior1D* p = chain.posterior(i, Posterior1D::GAUSSIAN_SMOOTHING, smoothingScale[i]);
 
         std::ofstream out(fileName.str().c_str());
