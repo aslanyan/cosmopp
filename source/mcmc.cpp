@@ -635,14 +635,14 @@ MetropolisHastings::run(unsigned long maxChainLength, int writeResumeInformation
             {
                 currentPrior_ = newPrior;
                 ++accepted[i];
-                if(deltaLike > 10)
-                    notAcceptedCount = 0;
+                notAcceptedCount = 0;
             }
             else
             {
                 current_ = currentOld;
                 currentLike_ = oldLike;
-                ++notAcceptedCount;
+                if(deltaLike > 10)
+                    ++notAcceptedCount;
             }
 
             blockBegin = blockEnd;
