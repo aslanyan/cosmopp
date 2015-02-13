@@ -16,6 +16,8 @@ public:
     double calculate(double* params, int nPar) { return doCalculation(params, nPar, false); }
     double calculateExact(double* params, int nPar) { return doCalculation(params, nPar, true); }
 
+    void setPrecision(double p);
+
 private:
     double doCalculation(double* params, int nPar, bool exact);
 

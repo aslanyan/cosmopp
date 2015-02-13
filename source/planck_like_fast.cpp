@@ -239,3 +239,10 @@ PlanckLikeFast::doCalculation(double* params, int nPar, bool exact)
     return res;
 }
 
+void
+PlanckLikeFast::setPrecision(double p)
+{
+    check(p > 0, "");
+    layg_->setPrecision(p);
+}
+
