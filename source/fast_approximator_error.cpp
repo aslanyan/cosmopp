@@ -1,6 +1,12 @@
+#include <cosmo_mpi.hpp>
+
+#include <sstream>
+#include <string>
+#include <iomanip>
+
 #include <fast_approximator_error.hpp>
 
-FastApproximatorError::FastApproximatorError(FastApproximator& fa, const std::vector<std::vector<double> >& testPoints, const std::vector<std::vector<double> >& testData, unsigned long begin, unsigned long end, const Math::RealFunctionMultiDim& f, ErrorMethod method, double precision) : fa_(fa), method_(method), posterior_(NULL), distances_(NULL), nearestNeighbors_(NULL), val_(fa.nData()), linVal_(fa.nData()), f_(f), precision_(precision), posteriorGood_(false)
+FastApproximatorError::FastApproximatorError(FastApproximator& fa, const std::vector<std::vector<double> >& testPoints, const std::vector<std::vector<double> >& testData, unsigned long begin, unsigned long end, const Math::RealFunctionMultiDim& f, ErrorMethod method, double precision) : fa_(fa), method_(method), posterior_(NULL), distances_(NULL), nearestNeighbors_(NULL), val_(fa.nData()), linVal_(fa.nData()), f_(f), precision_(precision), posteriorGood_(false), mean_(0), var_(0), logFileOpen_(false)
 {
     check(precision_ > 0, "invalid precision " << precision_);
 
@@ -38,6 +44,33 @@ FastApproximatorError::~FastApproximatorError()
 
     if(nearestNeighbors_)
         delete nearestNeighbors_;
+
+    if(logFileOpen_)
+        outLog_.close();
+}
+
+void
+FastApproximatorError::logIntoFile(const char* fileNameRoot)
+{
+    check(!logFileOpen_, "already logging into a file");
+    std::stringstream name;
+    name << fileNameRoot;
+
+    if(CosmoMPI::create().numProcesses() > 1)
+        name << "_" << CosmoMPI::create().processId();
+
+    name << ".txt";
+    outLog_.open(name.str().c_str());
+    if(!outLog_)
+    {
+        StandardException exc;
+        std::stringstream exceptionStr;
+        exceptionStr << "Cannot write into output log file " << name.str() << ".";
+        exc.set(exceptionStr.str());
+        throw exc;
+    }
+
+    outLog_ << std::setprecision(6);
 }
 
 void
@@ -61,9 +94,12 @@ FastApproximatorError::reset(const std::vector<std::vector<double> >& testPoints
         delete posterior_;
 
     posterior_ = new Posterior1D;
+    mean_ = 0;
+    var_ = 0;
+    double mean2 = 0;
+    unsigned long goodCount = 0;
 
     ProgressMeter meter(end - begin);
-    unsigned long goodCount = 0;
     for(unsigned long i = begin; i < end; ++i)
     {
         fa_.findNearestNeighbors(testPoints[i], distances_, nearestNeighbors_);
@@ -80,17 +116,8 @@ FastApproximatorError::reset(const std::vector<std::vector<double> >& testPoints
             fa_.getApproximation(linVal_, FastApproximator::LINEAR_INTERPOLATION);
 
         const double estimatedError = evaluateError();
-        const double correctError = std::abs(f_.evaluate(testData[i]) - f_.evaluate(val_));
+        const double correctError = f_.evaluate(testData[i]) - f_.evaluate(val_);
 
-        //output_screen1("Estimated error = " << estimatedError << std::endl << "Correct error = " << correctError << std::endl << testData[i][100] << '\t' << val_[100] << std::endl);
-        if(correctError > 10)
-        {
-            for(int j = 0; j < val_.size(); ++j)
-            {
-                //output_screen1("\t" << testData[i][j] << "\t" << val_[j] << std::endl);
-            }
-        }
-        
         if(estimatedError == 0)
         {
             check(correctError == 0, "");
@@ -98,7 +125,9 @@ FastApproximatorError::reset(const std::vector<std::vector<double> >& testPoints
         else
         {
             const double ratio = correctError / estimatedError;
-            posterior_->addPoint(ratio, 1, 1);
+            posterior_->addPoint(std::abs(ratio), 1, 1);
+            mean_ += ratio;
+            mean2 += ratio * ratio;
             ++goodCount;
         }
         meter.advance();
@@ -111,9 +140,21 @@ FastApproximatorError::reset(const std::vector<std::vector<double> >& testPoints
         output_screen1("Posterior 1 sigma is: " << posterior_->get1SigmaUpper() << std::endl);
         output_screen1("Posterior 2 sigma is: " << posterior_->get2SigmaUpper() << std::endl);
         posterior_->writeIntoFile("fast_approximator_error_ratio.txt");
+
+        mean_ /= goodCount;
+        mean2 /= goodCount;
+
+        var_ = mean2 - mean_ * mean_;
+        check(var_ >= 0, "");
+
+        output_screen("Error ratio distrib = " << mean_ << " +/- " << std::sqrt(var_) << std::endl);
     }
     else
+    {
         posteriorGood_ = false;
+        mean_ = 0;
+        var_ = 0;
+    }
 
     t.end();
 }
@@ -211,21 +252,22 @@ FastApproximatorError::approximate(const std::vector<double>& point, std::vector
         fa_.getApproximation(linVal_, FastApproximator::LINEAR_INTERPOLATION);
     }
     const double e = evaluateError();
-    if(!posteriorGood_)
+
+    double estimatedError = 1e10, estMean = 0, estVar = 0;
+    if(posteriorGood_)
     {
-        if(e == 0)
-        {
-            output_screen1("Error = " << 0 << std::endl);
-            fa_.getApproximation(val);
-            return true;
-        }
-        return false;
+        estimatedError = e * posterior_->get2SigmaUpper();
+        estMean = e * mean_;
+        estVar = e * var_;
     }
 
-    const double estimatedError = e * posterior_->get2SigmaUpper();
-    //const double estimatedError = e * posterior_->get1SigmaUpper();
-
-    output_screen1("Error = " << estimatedError << std::endl);
+    if(logFileOpen_)
+    {
+        check(outLog_, "");
+        for(int i = 0; i < point.size(); ++i)
+            outLog_ << point[i] << '\t';
+        outLog_ << estimatedError << '\t' << estMean << '\t' << estVar << std::endl;
+    }
 
     if(estimatedError > precision_)
         return false;

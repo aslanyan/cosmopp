@@ -17,6 +17,7 @@ public:
     double calculateExact(double* params, int nPar) { return doCalculation(params, nPar, true); }
 
     void setPrecision(double p);
+    void logError(const char* fileNameBase);
 
 private:
     double doCalculation(double* params, int nPar, bool exact);

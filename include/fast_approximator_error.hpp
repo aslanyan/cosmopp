@@ -1,6 +1,8 @@
 #ifndef COSMO_PP_FAST_APPROXIMATOR_ERROR_HPP
 #define COSMO_PP_FAST_APPROXIMATOR_ERROR_HPP
 
+#include <fstream>
+
 #include <function.hpp>
 #include <fast_approximator.hpp>
 #include <markov_chain.hpp>
@@ -22,6 +24,8 @@ public:
 
     Posterior1D* getPosterior() { return posterior_; }
 
+    void logIntoFile(const char* fileNameBase);
+
 private:
     double evaluateError();
 
@@ -32,6 +36,7 @@ private:
 
     Posterior1D* posterior_;
     bool posteriorGood_;
+    double mean_, var_;
 
     std::vector<double> val_;
     std::vector<double> linVal_;
@@ -45,6 +50,9 @@ private:
     std::vector<double> ge_;
 
     double precision_;
+
+    std::ofstream outLog_;
+    bool logFileOpen_;
 };
 
 class BasicFAErrorFunctionAvg : public Math::RealFunctionMultiDim

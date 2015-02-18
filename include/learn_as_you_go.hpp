@@ -29,6 +29,7 @@ public:
     bool readFromFile(const char* fileName);
 
     void logIntoFile(const char* fileNameBase);
+    void logErrorIntoFile(const char* fileNameBase);
 
     unsigned long getTotalCount() const { return totalCount_; }
     unsigned long getSuccessfulCount() const { return successfulCount_; }
@@ -120,6 +121,8 @@ private:
     std::vector<std::vector<double> > receiveBuff_;
 
     std::map<std::vector<double>, unsigned long, PointComp> pointMap_;
+
+    std::string errorLogFileName_;
 };
 
 #endif

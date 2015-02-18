@@ -245,4 +245,9 @@ PlanckLikeFast::setPrecision(double p)
     check(p > 0, "");
     layg_->setPrecision(p);
 }
-
+ 
+void
+PlanckLikeFast::logError(const char* fileNameBase)
+{
+    layg_->logErrorIntoFile(fileNameBase);
+}

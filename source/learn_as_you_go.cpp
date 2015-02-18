@@ -428,6 +428,9 @@ LearnAsYouGo::constructFast()
         fa_ = new FastApproximator(nPoints_, nData_, points_.size(), points_, data_, k);
         fast_ = new FastApproximatorError(*fa_, points_, data_, points_.size(), points_.size(), errorFunc_, FastApproximatorError::AVG_INV_DISTANCE, precision_);
     }
+
+    if(errorLogFileName_ != "")
+        fast_->logIntoFile(errorLogFileName_.c_str());
 }
 
 void
@@ -523,3 +526,11 @@ LearnAsYouGo::communicate()
 #endif
 }
 
+void
+LearnAsYouGo::logErrorIntoFile(const char* fileNameBase)
+{
+    errorLogFileName_ = fileNameBase;
+
+    if(fast_)
+        fast_->logIntoFile(fileNameBase);
+}
