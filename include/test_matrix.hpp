@@ -16,6 +16,14 @@ protected:
 private:
     void runSubTest0(double& res, double& expected, std::string& subTestName);
     void runSubTest1(double& res, double& expected, std::string& subTestName);
+    void runSubTest2(double& res, double& expected, std::string& subTestName);
+    void runSubTest3(double& res, double& expected, std::string& subTestName);
+    void runSubTest4(double& res, double& expected, std::string& subTestName);
+    void runSubTest5(double& res, double& expected, std::string& subTestName);
+    void runSubTest6(double& res, double& expected, std::string& subTestName);
+    void runSubTest7(double& res, double& expected, std::string& subTestName);
+    void runSubTest8(double& res, double& expected, std::string& subTestName);
+    void runSubTest9(double& res, double& expected, std::string& subTestName);
 };
 
 #endif
