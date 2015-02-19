@@ -72,6 +72,7 @@ FastApproximatorError::logIntoFile(const char* fileNameRoot)
     }
 
     outLog_ << std::setprecision(6);
+    logFileOpen_ = true;
 }
 
 void
