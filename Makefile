@@ -631,7 +631,7 @@ obj/test_k_nearest_neighbors.o: source/test_k_nearest_neighbors.cpp $(MACROS_HPP
 obj/fast_approximator.o: source/fast_approximator.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(GAUSSIAN_PROCESS_HPP) $(FAST_APPROXIMATOR_HPP)
 	$(CC) $(CFLAGS) source/fast_approximator.cpp -o $@
 
-obj/fast_approximator_error.o: source/fast_approximator_error.cpp $(COSMO_MPI_HPP) $(EXCEPTION_HANDLER_HPP) $(FAST_APPROXIMATOR_ERROR_HPP)
+obj/fast_approximator_error.o: source/fast_approximator_error.cpp $(EXCEPTION_HANDLER_HPP) $(FAST_APPROXIMATOR_ERROR_HPP)
 	$(CC) $(CFLAGS) source/fast_approximator_error.cpp -o $@
 
 obj/learn_as_you_go.o: source/learn_as_you_go.cpp $(COSMO_MPI_HPP) $(LEARN_AS_YOU_GO_HPP)
@@ -649,7 +649,7 @@ obj/gaussian_process.o: source/gaussian_process.cpp $(MACROS_HPP) $(EXCEPTION_HA
 obj/test_gaussian_process.o: source/test_gaussian_process.cpp $(MACROS_HPP) $(GAUSSIAN_PROCESS_HPP) $(RANDOM_HPP) $(MARKOV_CHAIN_HPP) $(TEST_GAUSSIAN_PROCESS_HPP)
 	$(CC) $(CFLAGS) source/test_gaussian_process.cpp -o $@
 
-obj/planck_like_fast.o: source/planck_like_fast.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(CUBIC_SPLINE_HPP) $(PLANCK_LIKE_FAST_HPP)
+obj/planck_like_fast.o: source/planck_like_fast.cpp $(COSMO_MPI_HPP) $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(CUBIC_SPLINE_HPP) $(PLANCK_LIKE_FAST_HPP)
 	$(CC) $(CFLAGS) source/planck_like_fast.cpp -o $@
 
 obj/test_mcmc_planck_fast.o: source/test_mcmc_planck_fast.cpp $(TEST_MCMC_PLANCK_FAST_HPP) $(MCMC_HPP) $(PLANCK_LIKE_FAST_HPP) $(MARKOV_CHAIN_HPP) $(NUMERICS_HPP) $(TIMER_HPP)

@@ -1,6 +1,7 @@
 #ifndef COSMO_PP_PLANCK_LIKE_FAST_HPP
 #define COSMO_PP_PLANCK_LIKE_FAST_HPP
 
+#include <fstream>
 #include <vector>
 
 #include <planck_like.hpp>
@@ -47,6 +48,9 @@ private:
     void* errorFunc_;
 
     std::vector<double> cl_, clTT_;
+
+    std::ofstream outError_;
+    bool logError_;
 };
 
 #endif

@@ -19,7 +19,7 @@ public:
 
     ~LearnAsYouGo();
     
-    void evaluate(const std::vector<double>& x, std::vector<double>* res);
+    void evaluate(const std::vector<double>& x, std::vector<double>* res, double *error1Sigma = NULL, double *error2Sigma = NULL, double *errorMean = NULL, double *errorVar = NULL);
 
     void evaluateExact(const std::vector<double>& x, std::vector<double>* res);
 
@@ -29,7 +29,6 @@ public:
     bool readFromFile(const char* fileName);
 
     void logIntoFile(const char* fileNameBase);
-    void logErrorIntoFile(const char* fileNameBase);
 
     unsigned long getTotalCount() const { return totalCount_; }
     unsigned long getSuccessfulCount() const { return successfulCount_; }
@@ -121,8 +120,6 @@ private:
     std::vector<std::vector<double> > receiveBuff_;
 
     std::map<std::vector<double>, unsigned long, PointComp> pointMap_;
-
-    std::string errorLogFileName_;
 };
 
 #endif

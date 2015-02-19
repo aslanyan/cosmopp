@@ -255,7 +255,7 @@ LearnAsYouGo::setPrecision(double p)
 }
 
 void
-LearnAsYouGo::evaluate(const std::vector<double>& x, std::vector<double>* res)
+LearnAsYouGo::evaluate(const std::vector<double>& x, std::vector<double>* res, double *error1Sigma, double *error2Sigma, double *errorMean, double *errorVar)
 {
     receive();
 
@@ -269,17 +269,29 @@ LearnAsYouGo::evaluate(const std::vector<double>& x, std::vector<double>* res)
     {
         *res = data_[it->second];
         ++sameCount_;
+
+        if(error1Sigma) *error1Sigma = 0;
+        if(error2Sigma) *error2Sigma = 0;
+        if(errorMean) *errorMean = 0;
+        if(errorVar) *errorVar = 0;
+
         log();
         return;
     }
 
     bool good = false;
     if(fast_)
-        good = fast_->approximate(x, *res);
+        good = fast_->approximate(x, *res, error1Sigma, error2Sigma, errorMean, errorVar);
 
     if(!good)
     {
         actual(x, res);
+
+        if(error1Sigma) *error1Sigma = 0;
+        if(error2Sigma) *error2Sigma = 0;
+        if(errorMean) *errorMean = 0;
+        if(errorVar) *errorVar = 0;
+
         log();
         return;
     }
@@ -428,9 +440,6 @@ LearnAsYouGo::constructFast()
         fa_ = new FastApproximator(nPoints_, nData_, points_.size(), points_, data_, k);
         fast_ = new FastApproximatorError(*fa_, points_, data_, points_.size(), points_.size(), errorFunc_, FastApproximatorError::AVG_INV_DISTANCE, precision_);
     }
-
-    if(errorLogFileName_ != "")
-        fast_->logIntoFile(errorLogFileName_.c_str());
 }
 
 void
@@ -526,11 +535,3 @@ LearnAsYouGo::communicate()
 #endif
 }
 
-void
-LearnAsYouGo::logErrorIntoFile(const char* fileNameBase)
-{
-    errorLogFileName_ = fileNameBase;
-
-    if(fast_)
-        fast_->logIntoFile(fileNameBase);
-}

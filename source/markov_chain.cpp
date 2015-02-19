@@ -451,13 +451,13 @@ bool lessMarkovChainElementPointer(MarkovChain::Element* i, MarkovChain::Element
     return (*i) < (*j);
 }
 
-MarkovChain::MarkovChain(const char* fileName, unsigned long burnin, unsigned int thin)
+MarkovChain::MarkovChain(const char* fileName, unsigned long burnin, unsigned int thin, const char *errorLogFileName)
 {
     minLike_ = std::numeric_limits<double>::max();
-    addFile(fileName, burnin, thin);
+    addFile(fileName, burnin, thin, errorLogFileName);
 }
 
-MarkovChain::MarkovChain(int nChains, const char* fileNameRoot, unsigned long burnin, unsigned int thin)
+MarkovChain::MarkovChain(int nChains, const char* fileNameRoot, unsigned long burnin, unsigned int thin, const char *errorLogFileNameBase)
 {
     check(nChains > 0, "need at least 1 chain");
 
@@ -493,7 +493,7 @@ MarkovChain::~MarkovChain()
 }
 
 void
-MarkovChain::addFile(const char* fileName, unsigned long burnin, unsigned int thin)
+MarkovChain::addFile(const char* fileName, unsigned long burnin, unsigned int thin, const char *errorLogFileName)
 {
     std::vector<Element*> bigChain;
     double maxP;

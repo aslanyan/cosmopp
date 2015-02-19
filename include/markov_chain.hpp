@@ -179,14 +179,14 @@ public:
     /// \param fileName The name of the file containing the chain.
     /// \param burnin The number of elements to ignore from the beginning of the chain.
     /// \param thin The thinning factor. Must be positive.
-    MarkovChain(const char* fileName, unsigned long burnin = 0, unsigned int thin = 1);
+    MarkovChain(const char* fileName, unsigned long burnin = 0, unsigned int thin = 1, const char *errorLogFileName = "");
 
     /// Constructor for the case of multiple chains.
     /// \param nChains The number of chains.
     /// \param fileNameRoot The root of the names of the files containing the chains. The actual file names should be this root followed by _ then the index of the chain (from 0 to nChains - 1) and then .txt
     /// \param burnin The number of elements to ignore from the beginning of the chain.
     /// \param thin The thinning factor. Must be positive.
-    MarkovChain(int nChains, const char* fileNameRoot, unsigned long burnin = 0, unsigned int thin = 1);
+    MarkovChain(int nChains, const char* fileNameRoot, unsigned long burnin = 0, unsigned int thin = 1, const char *errorLogFileNameBase = "");
 
     /// Destructor.
     ~MarkovChain();
@@ -195,7 +195,7 @@ public:
     /// \param fileName The name of the file containing the chain.
     /// \param burnin The number of elements to ignore from the beginning of the chain.
     /// \param thin The thinning factor. Must be positive.
-    void addFile(const char* fileName, unsigned long burnin = 0, unsigned int thin = 1);
+    void addFile(const char* fileName, unsigned long burnin = 0, unsigned int thin = 1, const char *errorLogFileName = "");
 
     /// Returns the number of parameters.
     int nParams() const { return nParams_; }

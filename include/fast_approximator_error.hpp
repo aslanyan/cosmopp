@@ -18,13 +18,11 @@ public:
 
     void reset(const std::vector<std::vector<double> >& testPoints, const std::vector<std::vector<double> >& testData, unsigned long begin, unsigned long end);
 
-    bool approximate(const std::vector<double>& point, std::vector<double>& val);
+    bool approximate(const std::vector<double>& point, std::vector<double>& val, double *error1Sigma, double *error2Sigma = NULL, double *errorMean = NULL, double *errorVar = NULL);
 
     void setPrecision(double p) { check(p > 0, "invalid precision " << p); precision_ = p; }
 
     Posterior1D* getPosterior() { return posterior_; }
-
-    void logIntoFile(const char* fileNameBase);
 
 private:
     double evaluateError();
@@ -50,9 +48,6 @@ private:
     std::vector<double> ge_;
 
     double precision_;
-
-    std::ofstream outLog_;
-    bool logFileOpen_;
 };
 
 class BasicFAErrorFunctionAvg : public Math::RealFunctionMultiDim

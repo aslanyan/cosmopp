@@ -1,5 +1,3 @@
-#include <cosmo_mpi.hpp>
-
 #include <sstream>
 #include <string>
 #include <iomanip>
@@ -7,7 +5,7 @@
 #include <exception_handler.hpp>
 #include <fast_approximator_error.hpp>
 
-FastApproximatorError::FastApproximatorError(FastApproximator& fa, const std::vector<std::vector<double> >& testPoints, const std::vector<std::vector<double> >& testData, unsigned long begin, unsigned long end, const Math::RealFunctionMultiDim& f, ErrorMethod method, double precision) : fa_(fa), method_(method), posterior_(NULL), distances_(NULL), nearestNeighbors_(NULL), val_(fa.nData()), linVal_(fa.nData()), f_(f), precision_(precision), posteriorGood_(false), mean_(0), var_(0), logFileOpen_(false)
+FastApproximatorError::FastApproximatorError(FastApproximator& fa, const std::vector<std::vector<double> >& testPoints, const std::vector<std::vector<double> >& testData, unsigned long begin, unsigned long end, const Math::RealFunctionMultiDim& f, ErrorMethod method, double precision) : fa_(fa), method_(method), posterior_(NULL), distances_(NULL), nearestNeighbors_(NULL), val_(fa.nData()), linVal_(fa.nData()), f_(f), precision_(precision), posteriorGood_(false), mean_(0), var_(0)
 {
     check(precision_ > 0, "invalid precision " << precision_);
 
@@ -45,34 +43,6 @@ FastApproximatorError::~FastApproximatorError()
 
     if(nearestNeighbors_)
         delete nearestNeighbors_;
-
-    if(logFileOpen_)
-        outLog_.close();
-}
-
-void
-FastApproximatorError::logIntoFile(const char* fileNameRoot)
-{
-    check(!logFileOpen_, "already logging into a file");
-    std::stringstream name;
-    name << fileNameRoot;
-
-    if(CosmoMPI::create().numProcesses() > 1)
-        name << "_" << CosmoMPI::create().processId();
-
-    name << ".txt";
-    outLog_.open(name.str().c_str());
-    if(!outLog_)
-    {
-        StandardException exc;
-        std::stringstream exceptionStr;
-        exceptionStr << "Cannot write into output log file " << name.str() << ".";
-        exc.set(exceptionStr.str());
-        throw exc;
-    }
-
-    outLog_ << std::setprecision(6);
-    logFileOpen_ = true;
 }
 
 void
@@ -245,7 +215,7 @@ FastApproximatorError::evaluateError()
 }
 
 bool
-FastApproximatorError::approximate(const std::vector<double>& point, std::vector<double>& val)
+FastApproximatorError::approximate(const std::vector<double>& point, std::vector<double>& val, double *error1Sigma, double *error2Sigma, double *errorMean, double *errorVar)
 {
     fa_.findNearestNeighbors(point, distances_, nearestNeighbors_);
     if(method_ == LIN_QUAD_DIFF)
@@ -255,23 +225,21 @@ FastApproximatorError::approximate(const std::vector<double>& point, std::vector
     }
     const double e = evaluateError();
 
-    double estimatedError = 1e10, estMean = 0, estVar = 0;
+    double estimatedError1 = 1e10, estimatedError2 = 1e10, estMean = 0, estVar = 1e20;
     if(posteriorGood_)
     {
-        estimatedError = e * posterior_->get2SigmaUpper();
+        estimatedError1 = e * posterior_->get1SigmaUpper();
+        estimatedError2 = e * posterior_->get2SigmaUpper();
         estMean = e * mean_;
-        estVar = e * var_;
+        estVar = e * e * var_;
     }
 
-    if(logFileOpen_)
-    {
-        check(outLog_, "");
-        for(int i = 0; i < point.size(); ++i)
-            outLog_ << point[i] << '\t';
-        outLog_ << estimatedError << '\t' << estMean << '\t' << estVar << std::endl;
-    }
+    if(error1Sigma) *error1Sigma = estimatedError1;
+    if(error2Sigma) *error2Sigma = estimatedError2;
+    if(errorMean) *errorMean = estMean;
+    if(errorVar) *errorVar = estVar;
 
-    if(estimatedError > precision_)
+    if(estimatedError2 > precision_)
         return false;
 
     if(method_ == LIN_QUAD_DIFF)

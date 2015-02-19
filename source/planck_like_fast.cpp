@@ -1,5 +1,8 @@
+#include <cosmo_mpi.hpp>
+
 #include <string>
 #include <sstream>
+#include <iomanip>
 
 #include <macros.hpp>
 #include <exception_handler.hpp>
@@ -130,7 +133,7 @@ private:
 
 } // namespace
 
-PlanckLikeFast::PlanckLikeFast(CosmologicalParams* params, bool useCommander, bool useCamspec, bool useLensing, bool usePolarization, bool useActSpt, bool includeTensors, double kPerDecade, double precision, unsigned long minCount) : cosmoParams_(params), useCommander_(useCommander), useCamspec_(useCamspec), useLensing_(useLensing), usePol_(usePolarization), useActSpt_(useActSpt), like_(useCommander, useCamspec, useLensing, usePolarization, useActSpt, includeTensors, kPerDecade, false)
+PlanckLikeFast::PlanckLikeFast(CosmologicalParams* params, bool useCommander, bool useCamspec, bool useLensing, bool usePolarization, bool useActSpt, bool includeTensors, double kPerDecade, double precision, unsigned long minCount) : cosmoParams_(params), useCommander_(useCommander), useCamspec_(useCamspec), useLensing_(useLensing), usePol_(usePolarization), useActSpt_(useActSpt), like_(useCommander, useCamspec, useLensing, usePolarization, useActSpt, includeTensors, kPerDecade, false), logError_(false)
 {
     check(useCommander_ || useCamspec_ || useLensing_ || usePol_ || useActSpt_, "at least one likelihood must be used");
 
@@ -176,6 +179,8 @@ PlanckLikeFast::~PlanckLikeFast()
     delete layg_;
     delete (PlanckLikeFastFunc*) func_;
     delete (PlanckLikeFastErrorFunc*) errorFunc_;
+
+    if(logError_) outError_.close();
 }
 
 double
@@ -190,10 +195,12 @@ PlanckLikeFast::doCalculation(double* params, int nPar, bool exact)
     for(int i = 0; i < nCosmoParams; ++i)
         cosmoParamsVec_[i] = params[i];
 
+    double error1Sigma = 0, error2Sigma = 0, errorMean = 0, errorVar = 0;
+
     if(exact)
         layg_->evaluateExact(cosmoParamsVec_, &res_);
     else
-        layg_->evaluate(cosmoParamsVec_, &res_);
+        layg_->evaluate(cosmoParamsVec_, &res_, &error1Sigma, &error2Sigma, &errorMean, &errorVar);
 
     const int lSize = lList_.size();
     double res = res_[lSize] + res_[lSize + 1] + res_[lSize + 2];
@@ -236,6 +243,13 @@ PlanckLikeFast::doCalculation(double* params, int nPar, bool exact)
 
     check(currentParams == nParams_, "");
 
+    if(logError_)
+    {
+        for(int i = 0; i < nPar; ++i)
+            outError_ << params[i] << '\t';
+    }
+    outError_ << res << '\t' << error1Sigma << '\t' << error2Sigma << '\t' << errorMean << '\t' << errorVar << std::endl;
+
     return res;
 }
 
@@ -249,5 +263,23 @@ PlanckLikeFast::setPrecision(double p)
 void
 PlanckLikeFast::logError(const char* fileNameBase)
 {
-    layg_->logErrorIntoFile(fileNameBase);
+    check(!logError_, "this function has already been called");
+    std::stringstream str;
+    str << fileNameBase;
+    if(CosmoMPI::create().numProcesses() > 1)
+        str << "_" << CosmoMPI::create().processId();
+    str << ".txt";
+
+    outError_.open(str.str().c_str());
+    if(!outError_)
+    {
+        StandardException exc;
+        std::stringstream exceptionStr;
+        exceptionStr << "Cannot write into file " << str.str();
+        exc.set(exceptionStr.str());
+        throw exc;
+    }
+
+    outError_ << std::setprecision(10);
+    logError_ = true;
 }
