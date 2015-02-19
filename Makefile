@@ -631,7 +631,7 @@ obj/test_k_nearest_neighbors.o: source/test_k_nearest_neighbors.cpp $(MACROS_HPP
 obj/fast_approximator.o: source/fast_approximator.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(GAUSSIAN_PROCESS_HPP) $(FAST_APPROXIMATOR_HPP)
 	$(CC) $(CFLAGS) source/fast_approximator.cpp -o $@
 
-obj/fast_approximator_error.o: source/fast_approximator_error.cpp $(FAST_APPROXIMATOR_ERROR_HPP)
+obj/fast_approximator_error.o: source/fast_approximator_error.cpp $(COSMO_MPI_HPP) $(EXCEPTION_HANDLER_HPP) $(FAST_APPROXIMATOR_ERROR_HPP)
 	$(CC) $(CFLAGS) source/fast_approximator_error.cpp -o $@
 
 obj/learn_as_you_go.o: source/learn_as_you_go.cpp $(COSMO_MPI_HPP) $(LEARN_AS_YOU_GO_HPP)

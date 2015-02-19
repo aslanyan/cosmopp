@@ -4,6 +4,7 @@
 #include <string>
 #include <iomanip>
 
+#include <exception_handler.hpp>
 #include <fast_approximator_error.hpp>
 
 FastApproximatorError::FastApproximatorError(FastApproximator& fa, const std::vector<std::vector<double> >& testPoints, const std::vector<std::vector<double> >& testData, unsigned long begin, unsigned long end, const Math::RealFunctionMultiDim& f, ErrorMethod method, double precision) : fa_(fa), method_(method), posterior_(NULL), distances_(NULL), nearestNeighbors_(NULL), val_(fa.nData()), linVal_(fa.nData()), f_(f), precision_(precision), posteriorGood_(false), mean_(0), var_(0), logFileOpen_(false)
