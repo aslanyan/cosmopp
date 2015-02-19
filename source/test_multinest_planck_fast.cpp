@@ -33,6 +33,7 @@ TestMultinestPlanckFast::runSubTest(unsigned int i, double& res, double& expecte
     LambdaCDMParams par(0.022, 0.12, 0.7, 0.1, 1.0, std::exp(3.0) / 1e10, pivot);
 
     PlanckLikeFast planckLike(&par, true, true, false, true, false, false, 5, 0.4, 50000);
+    planckLike.logError("slow_test_files/multinest_planck_fast_error_log");
     std::string root = "slow_test_files/multinest_planck_fast_test";
     MnScanner mn(20, planckLike, 300, root);
 
