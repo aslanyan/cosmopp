@@ -6,18 +6,24 @@
 namespace Math
 {
 
+template<typename T> class SymmetricMatrix;
+
 template<typename T>
 class Matrix
 {
+    friend class SymmetricMatrix<T>;
+
 public:
     typedef T DataType;
 
 public:
-    Matrix(int rows = 0, int cols = 0);
+    Matrix() : Matrix(0, 0) {}
+    Matrix(int rows, int cols);
     Matrix(int rows, int cols, DataType val);
     Matrix(const char* fileName, bool textFile = false);
     Matrix(const Matrix<DataType>& other) { copy(other); }
     Matrix(const std::vector<DataType>& vec, bool columnVector = true);
+    Matrix(const SymmetricMatrix<DataType>& other);
 
     ~Matrix() {}
 
@@ -35,6 +41,9 @@ public:
 
     void writeIntoTextFile(const char* fileName, int precision = 3) const;
     void readFromTextFile(const char* fileName);
+
+    Matrix<DataType> getRow(int i) const;
+    Matrix<DataType> getCol(int i) const;
 
     void copy(const Matrix<DataType>& other);
 
@@ -69,7 +78,7 @@ public:
     int invert();
 
     Matrix<DataType> getInverse() const;
-    void getInverse(Matrix<DataType>* res) const;
+    int getInverse(Matrix<DataType>* res) const;
 
     double determinantFromLUFactorization(std::vector<int> *pivot) const;
     double determinant() const;
@@ -84,6 +93,82 @@ private:
     std::vector<DataType> v_;
     int rows_;
     int cols_;
+};
+
+template<typename T>
+class SymmetricMatrix
+{
+public:
+    typedef T DataType;
+
+public:
+    SymmetricMatrix() : SymmetricMatrix(0) {}
+    SymmetricMatrix(int size) { resize(size); }
+    SymmetricMatrix(int size, DataType val) { resize(size, val); }
+    SymmetricMatrix(const char* fileName, bool textFile = false);
+    SymmetricMatrix(const SymmetricMatrix<DataType>& other) { copy(other); }
+
+    ~SymmetricMatrix() {}
+
+    const DataType& operator()(int i, int j) const;
+    DataType& operator()(int i, int j);
+
+    int size() const { return n_; }
+
+    void resize(int size);
+    void resize(int size, DataType val);
+
+    void writeIntoFile(const char* fileName) const;
+    void readFromFile(const char* fileName);
+
+    void writeIntoTextFile(const char* fileName, int precision = 3) const;
+    void readFromTextFile(const char* fileName);
+
+    void copy(const SymmetricMatrix<DataType>& other);
+
+    const SymmetricMatrix<DataType>& operator=(const SymmetricMatrix<DataType>& other) { copy(other); return *this; }
+
+    void add(const SymmetricMatrix<DataType>& other);
+    static void addMatrices(const SymmetricMatrix<DataType>& a, const SymmetricMatrix<DataType>& b, SymmetricMatrix<DataType>* res) { res->copy(a); res->add(b); }
+
+    const SymmetricMatrix<DataType>& operator+=(const SymmetricMatrix<DataType>& other) { add(other); return *this; }
+    SymmetricMatrix<DataType> operator+(const SymmetricMatrix<DataType>& other) const { SymmetricMatrix<DataType> res; addMatrices(*this, other, &res); return res; }
+
+    void subtract(const SymmetricMatrix<DataType>& other);
+    static void subtractMatrices(const SymmetricMatrix<DataType>& a, const SymmetricMatrix<DataType>& b, SymmetricMatrix<DataType>* res) { res->copy(a); res->subtract(b); }
+
+    const SymmetricMatrix<DataType>& operator-=(const SymmetricMatrix<DataType>& other) { subtract(other); return *this; }
+    SymmetricMatrix<DataType> operator-(const SymmetricMatrix<DataType>& other) const { SymmetricMatrix<DataType> res; subtractMatrices(*this, other, &res); return res; }
+
+    void multiply(const SymmetricMatrix<DataType>& other) { SymmetricMatrix<DataType> x; multiplyMatrices(*this, other, &x); copy(x); }
+    static void multiplyMatrices(const SymmetricMatrix<DataType>& a, const SymmetricMatrix<DataType>& b, SymmetricMatrix<DataType>* res);
+
+    const SymmetricMatrix<DataType>& operator*=(const SymmetricMatrix<DataType>& other) { multiply(other); return *this; }
+    SymmetricMatrix<DataType> operator*(const SymmetricMatrix<DataType>& other) const { SymmetricMatrix<DataType> res; multiplyMatrices(*this, other, &res); return res; }
+
+
+    int choleskyFactorize();
+
+    int invertFromCholeskyFactorization();
+    int invert();
+
+    SymmetricMatrix<DataType> getInverse() const;
+    int getInverse(SymmetricMatrix<DataType>* res) const;
+
+    double determinantFromCholeskyFactorization() const;
+    double determinant() const;
+
+    double logDetFromCholeskyFactorization(int *sign) const;
+    double logDet(int *sign) const;
+
+    int getEigen(std::vector<double>* eigenvals, Matrix<double>* eigenvecs, bool positiveDefinite = false) const;
+
+private:
+    void checkIndices(int i, int j) const;
+
+private:
+    std::vector<DataType> v_;
+    int n_;
 };
 
 } // namespace Math

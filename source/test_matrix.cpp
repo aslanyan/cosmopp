@@ -1,3 +1,4 @@
+#include <macros.hpp>
 #include <matrix_impl.hpp>
 #include <test_matrix.hpp>
 #include <numerics.hpp>
@@ -11,7 +12,7 @@ TestMatrix::name() const
 unsigned int
 TestMatrix::numberOfSubtests() const
 {
-    return 10;
+    return 22;
 }
 
 void
@@ -48,6 +49,42 @@ TestMatrix::runSubTest(unsigned int i, double& res, double& expected, std::strin
         break;
     case 9:
         runSubTest9(res, expected, subTestName);
+        break;
+    case 10:
+        runSubTest10(res, expected, subTestName);
+        break;
+    case 11:
+        runSubTest11(res, expected, subTestName);
+        break;
+    case 12:
+        runSubTest12(res, expected, subTestName);
+        break;
+    case 13:
+        runSubTest13(res, expected, subTestName);
+        break;
+    case 14:
+        runSubTest14(res, expected, subTestName);
+        break;
+    case 15:
+        runSubTest15(res, expected, subTestName);
+        break;
+    case 16:
+        runSubTest16(res, expected, subTestName);
+        break;
+    case 17:
+        runSubTest17(res, expected, subTestName);
+        break;
+    case 18:
+        runSubTest18(res, expected, subTestName);
+        break;
+    case 19:
+        runSubTest19(res, expected, subTestName);
+        break;
+    case 20:
+        runSubTestEigen(res, expected, subTestName, false);
+        break;
+    case 21:
+        runSubTestEigen(res, expected, subTestName, true);
         break;
     default:
         check(false, "");
@@ -145,7 +182,7 @@ TestMatrix::runSubTest5(double& res, double& expected, std::string& subTestName)
 
     res = mat2(0, 1);
     expected = mat(0, 1) - mat1(0, 1);
-    subTestName = "simple_add";
+    subTestName = "simple_subtract";
 }
 
 void
@@ -240,6 +277,284 @@ TestMatrix::runSubTest9(double& res, double& expected, std::string& subTestName)
 
     res = mat.determinant();
     expected = mat(0, 0) * mat(1, 1) - mat(0, 1) * mat(1, 0);
+
+#else
+    output_screen_clean("This test (below) is skipped because Cosmo++ has not been linked to lapack" << std::endl);
+    res = 1;
+    expected = 1;
+#endif
+}
+
+void
+TestMatrix::runSubTest10(double& res, double& expected, std::string& subTestName)
+{
+    Math::SymmetricMatrix<int> mat(3, -1);
+
+    mat(2, 1) = 7;
+    res = mat(1, 2);
+    expected = mat(2, 1);
+    subTestName = "simple_symmetric";
+}
+
+void
+TestMatrix::runSubTest11(double& res, double& expected, std::string& subTestName)
+{
+    Math::SymmetricMatrix<int> mat(3);
+
+    mat(0, 1) = -7;
+
+    std::string fileName = "test_files/matrix_test_11.dat";
+
+    mat.writeIntoFile(fileName.c_str());
+
+    Math::SymmetricMatrix<int> mat2(fileName.c_str());
+
+    res = mat2(1, 0);
+    expected = mat(0, 1);
+    subTestName = "simple_symmetric_read_write";
+}
+
+void
+TestMatrix::runSubTest12(double& res, double& expected, std::string& subTestName)
+{
+    Math::SymmetricMatrix<int> mat(3);
+
+    mat(0, 1) = -7;
+
+    std::string fileName = "test_files/matrix_test_12.txt";
+
+    mat.writeIntoTextFile(fileName.c_str());
+
+    Math::SymmetricMatrix<int> mat2;
+    mat2.readFromTextFile(fileName.c_str());
+
+    res = mat2(1, 0);
+    expected = mat(0, 1);
+    subTestName = "simple_symmetric_read_write_text";
+}
+
+void
+TestMatrix::runSubTest13(double& res, double& expected, std::string& subTestName)
+{
+    Math::SymmetricMatrix<int> mat(4);
+
+    mat(0, 1) = -7;
+
+    Math::SymmetricMatrix<int> mat2;
+    mat2 = mat;
+
+    res = mat2(1, 0);
+    expected = mat(0, 1);
+    subTestName = "simple_symmetric_copy";
+}
+
+void
+TestMatrix::runSubTest14(double& res, double& expected, std::string& subTestName)
+{
+    Math::SymmetricMatrix<int> mat(2, 5), mat1(2, 3);
+
+    mat(0, 1) = -7;
+    mat1(1, 0) = 5;
+
+    Math::SymmetricMatrix<int> mat2 = mat + mat1;
+
+    res = mat2(1, 0);
+    expected = mat(1, 0) + mat1(0, 1);
+    subTestName = "simple_symmetric_add";
+}
+
+void
+TestMatrix::runSubTest15(double& res, double& expected, std::string& subTestName)
+{
+    Math::SymmetricMatrix<int> mat(2, 10), mat1(2, -20);
+
+    mat(0, 1) = -7;
+    mat1(0, 1) = 5;
+
+    Math::SymmetricMatrix<int> mat2 = mat;
+    mat2 -= mat1;
+
+    res = mat2(0, 1);
+    expected = mat(1, 0) - mat1(0, 1);
+    subTestName = "simple_symmetric_subtract";
+}
+
+void
+TestMatrix::runSubTest16(double& res, double& expected, std::string& subTestName)
+{
+    Math::SymmetricMatrix<int> mat(3);
+
+    mat(1, 0) = -7;
+
+    Math::Matrix<int> mat2 = mat;
+
+    res = mat2(0, 1);
+    expected = mat(0, 1);
+
+    subTestName = "simple_matrix_from_symmetric";
+}
+
+void
+TestMatrix::runSubTest17(double& res, double& expected, std::string& subTestName)
+{
+    Math::SymmetricMatrix<double> mat(3, 5), mat1(3, 7);
+
+    Math::SymmetricMatrix<double> mat2 = mat * mat1;
+
+    res = mat2(1, 2);
+    expected = mat(0, 1) * mat1(2, 0) * mat.size();
+    subTestName = "simple_symmetric_multiply";
+}
+
+void
+TestMatrix::runSubTest18(double& res, double& expected, std::string& subTestName)
+{
+    expected = 1;
+    subTestName = "simple_symmetric_invert";
+
+#ifdef COSMO_LAPACK
+    Math::SymmetricMatrix<double> mat(2);
+    mat(0, 0) = 2;
+    mat(1, 1) = 3;
+    mat(1, 0) = 1;
+
+    mat.writeIntoTextFile("test_files/matrix_test_18_original.txt");
+
+    Math::SymmetricMatrix<double> invMat = mat;
+    invMat.invert();
+
+    invMat.writeIntoTextFile("test_files/matrix_test_18_inverse.txt");
+
+    Math::SymmetricMatrix<double> prod = mat;
+    prod *= invMat;
+    prod.writeIntoTextFile("test_files/matrix_test_18_product.txt");
+
+    res = 1;
+    for(int i = 0; i < prod.size(); ++i)
+    {
+        for(int j = 0; j < prod.size(); ++j)
+        {
+            if(i == j)
+            {
+                if(!Math::areEqual(prod(i, j), 1.0, 1e-5))
+                {
+                    output_screen("FAIL! Diagonal element " << i << " must be 1 but it is " << prod(i, j) << std::endl);
+                    res = 0;
+                }
+            }
+            else
+            {
+                if(!Math::areEqual(prod(i, j), 0.0, 1e-5))
+                {
+                    output_screen("FAIL! Non-diagonal element " << i << " " << j << " must be 0 but it is " << prod(i, j) << std::endl);
+                    res = 0;
+                }
+            }
+        }
+    }
+#else
+    output_screen_clean("This test (below) is skipped because Cosmo++ has not been linked to lapack" << std::endl);
+    res = 1;
+#endif
+}
+
+void
+TestMatrix::runSubTest19(double& res, double& expected, std::string& subTestName)
+{
+    subTestName = "simple_symmetric_determinant";
+
+#ifdef COSMO_LAPACK
+    Math::SymmetricMatrix<double> mat(2);
+    mat(0, 0) = 3;
+    mat(1, 1) = 4;
+    mat(0, 1) = 2;
+
+    res = mat.determinant();
+    expected = mat(0, 0) * mat(1, 1) - mat(0, 1) * mat(1, 0);
+
+#else
+    output_screen_clean("This test (below) is skipped because Cosmo++ has not been linked to lapack" << std::endl);
+    res = 1;
+    expected = 1;
+#endif
+}
+
+void
+TestMatrix::runSubTestEigen(double& res, double& expected, std::string& subTestName, bool pd)
+{
+    subTestName = "simple_symmetric_eigen";
+    if(pd)
+        subTestName = "simple_symmetric_positive_eigen";
+
+#ifdef COSMO_LAPACK
+    Math::SymmetricMatrix<double> mat(3);
+    mat(0, 0) = 3;
+    mat(1, 1) = 10;
+    mat(2, 2) = 4;
+    mat(0, 2) = 2;
+
+    std::vector<double> eigenvals;
+    Math::Matrix<double> eigenvecs;
+
+    const int info = mat.getEigen(&eigenvals, &eigenvecs, pd);
+    if(info)
+    {
+        output_screen_clean("FAIL! Eigenvalue/eigenvector decomposition failed. Info = " << info << std::endl);
+        res = 0;
+        return;
+    }
+
+    //output_screen_clean("Eigenvalues: " << eigenvals[0] << ", " << eigenvals[1] << ", " << eigenvals[2] << std::endl);
+
+    if(pd)
+        eigenvecs.writeIntoTextFile("test_files/matrix_test_eigenvecs.txt");
+    else
+        eigenvecs.writeIntoTextFile("test_files/matrix_test_eigenvecs_pos.txt");
+
+    res = 1;
+    expected = 1;
+
+    Math::Matrix<double> m = mat;
+
+    for(int i = 0; i < 3; ++i)
+    {
+        Math::Matrix<double> v = eigenvecs.getCol(i);
+        Math::Matrix<double> prod = m * v;
+        for(int j = 0; j < 3; ++j)
+        {
+            if(!Math::areEqual(prod(j, 0), eigenvals[i] * v(j, 0), 1e-5))
+            {
+                output_screen_clean("FAIL! The eigenvalue " << i << " times the eigenvector doesn't match the matrix times the eigenvector." << std::endl);
+                output_screen_clean("\tLooking at index " << j << ", expected " << eigenvals[i] * v(j, 0) << " obtained " << prod(j, 0) << std::endl);
+                res = 0;
+            }
+        }
+    }
+
+    Math::Matrix<double> diag = eigenvecs.getTranspose() * mat * eigenvecs;
+
+    for(int i = 0; i < 3; ++i)
+    {
+        for(int j = 0; j < 3; ++j)
+        {
+            if(i == j)
+            {
+                if(!Math::areEqual(diag(i, i), eigenvals[i], 1e-5))
+                {
+                    output_screen_clean("FAIL! The diagonalized matrix has " << diag(i, i) << " on the diagonal at index " << i << " but the corresponding eigenvalue is " << eigenvals[i] << std::endl);
+                    res = 0;
+                }
+            }
+            else
+            {
+                if(!Math::areEqual(diag(i, j), 0.0, 1e-5))
+                {
+                    output_screen_clean("FAIL! The diagonalized matrix has " << diag(i, j) << " as the off-diagonal element (" << i << ", " << j << "). Must be 0." << std::endl);
+                    res = 0;
+                }
+            }
+        }
+    }
 
 #else
     output_screen_clean("This test (below) is skipped because Cosmo++ has not been linked to lapack" << std::endl);

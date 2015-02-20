@@ -514,7 +514,7 @@ obj/test_legendre.o: source/test_legendre.cpp $(MACROS_HPP) $(TEST_LEGENDRE_HPP)
 obj/test_spherical_harmonics.o: source/test_spherical_harmonics.cpp $(MACROS_HPP) $(TEST_SPHERICAL_HARMONICS_HPP) $(SPHERICAL_HARMONICS_HPP)
 	$(CC) $(CFLAGS) source/test_spherical_harmonics.cpp -o $@
 
-obj/test_matrix.o: source/test_matrix.cpp $(MATRIX_IMPL_HPP) $(TEST_MATRIX_HPP) $(NUMERICS_HPP)
+obj/test_matrix.o: source/test_matrix.cpp $(MACROS_HPP) $(MATRIX_IMPL_HPP) $(TEST_MATRIX_HPP) $(NUMERICS_HPP)
 	$(CC) $(CFLAGS) source/test_matrix.cpp -o $@
 
 obj/test_mcmc.o: source/test_mcmc.cpp $(TEST_MCMC_HPP) $(MCMC_HPP) $(MARKOV_CHAIN_HPP) $(NUMERICS_HPP)

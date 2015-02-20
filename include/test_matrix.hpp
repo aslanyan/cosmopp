@@ -24,6 +24,18 @@ private:
     void runSubTest7(double& res, double& expected, std::string& subTestName);
     void runSubTest8(double& res, double& expected, std::string& subTestName);
     void runSubTest9(double& res, double& expected, std::string& subTestName);
+    void runSubTest10(double& res, double& expected, std::string& subTestName);
+    void runSubTest11(double& res, double& expected, std::string& subTestName);
+    void runSubTest12(double& res, double& expected, std::string& subTestName);
+    void runSubTest13(double& res, double& expected, std::string& subTestName);
+    void runSubTest14(double& res, double& expected, std::string& subTestName);
+    void runSubTest15(double& res, double& expected, std::string& subTestName);
+    void runSubTest16(double& res, double& expected, std::string& subTestName);
+    void runSubTest17(double& res, double& expected, std::string& subTestName);
+    void runSubTest18(double& res, double& expected, std::string& subTestName);
+    void runSubTest19(double& res, double& expected, std::string& subTestName);
+
+    void runSubTestEigen(double& res, double& expected, std::string& subTestName, bool pd);
 };
 
 #endif
