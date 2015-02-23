@@ -5,9 +5,10 @@
 #include <exception_handler.hpp>
 #include <fast_approximator_error.hpp>
 
-FastApproximatorError::FastApproximatorError(FastApproximator& fa, const std::vector<std::vector<double> >& testPoints, const std::vector<std::vector<double> >& testData, unsigned long begin, unsigned long end, const Math::RealFunctionMultiDim& f, ErrorMethod method, double precision) : fa_(fa), method_(method), posterior_(NULL), distances_(NULL), nearestNeighbors_(NULL), val_(fa.nData()), linVal_(fa.nData()), f_(f), precision_(precision), posteriorGood_(false), mean_(0), var_(0)
+FastApproximatorError::FastApproximatorError(FastApproximator& fa, const std::vector<std::vector<double> >& testPoints, const std::vector<std::vector<double> >& testData, unsigned long begin, unsigned long end, const Math::RealFunctionMultiDim& f, ErrorMethod method, double precision, DecisionMethod dm) : fa_(fa), method_(method), posterior_(NULL), distances_(NULL), nearestNeighbors_(NULL), val_(fa.nData()), linVal_(fa.nData()), f_(f), precision_(precision), decMethod_(dm), posteriorGood_(false), mean_(0), var_(0)
 {
     check(precision_ > 0, "invalid precision " << precision_);
+    check(decMethod_ >= 0 && decMethod_ < DECISION_METHOD_MAX, "");
 
     check(method_ >= 0 && method_ < ERROR_METHOD_MAX, "invalid method");
 
@@ -239,7 +240,24 @@ FastApproximatorError::approximate(const std::vector<double>& point, std::vector
     if(errorMean) *errorMean = estMean;
     if(errorVar) *errorVar = estVar;
 
-    if(estimatedError2 > precision_)
+    double errorChoice;
+    switch(decMethod_)
+    {
+    case ONE_SIGMA:
+        errorChoice = estimatedError1;
+        break;
+    case TWO_SIGMA:
+        errorChoice = estimatedError2;
+        break;
+    case SQRT_VAR:
+        errorChoice = std::sqrt(estVar);
+        break;
+    default:
+        check(false, "");
+        break;
+    }
+
+    if(errorChoice > precision_)
         return false;
 
     if(method_ == LIN_QUAD_DIFF)

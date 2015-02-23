@@ -79,32 +79,15 @@ TestMCMCPlanck::runSubTest(unsigned int i, double& res, double& expected, std::s
     const double expectedMedian[6] = {0.02205, 0.1199, 0.673, 0.089, 0.9603, 3.089};
     const double expectedSigma[6] = {0.00028, 0.0027, 0.012, 0.013, 0.0073, 0.025};
 
-    std::vector<double> smoothingScale(20, 0.0);
-    smoothingScale[0] = 0.00003;
-    smoothingScale[1] = 0.0003;
-    smoothingScale[2] = 0.0015;
-    smoothingScale[3] = 0.003;
-    smoothingScale[4] = 0.0009;
-    smoothingScale[5] = 0.006;
-
     std::ofstream outParamLimits("slow_test_files/mcmc_planck_param_limits.txt");
     for(int i = 0; i < 20; ++i)
     {
         const std::string& paramName = mh.getParamName(i);
         std::stringstream fileName;
         fileName << "slow_test_files/mcmc_planck_" << paramName << ".txt";
-        Posterior1D* p = chain.posterior(i, Posterior1D::GAUSSIAN_SMOOTHING, smoothingScale[i]);
+        Posterior1D* p = chain.posterior(i, Posterior1D::GAUSSIAN_SMOOTHING);
 
-        std::ofstream out(fileName.str().c_str());
-        const double delta = (p->max() - p->min()) / nPoints;
-        for(int j = 0; j <= nPoints; ++j)
-        {
-            double t = p->min() + j * delta;
-            if(j == nPoints)
-                t = p->max();
-            out << t << ' ' << p->evaluate(t) << std::endl;
-        }
-        out.close();
+        p->writeIntoFile(fileName.str().c_str(), nPoints);
 
         const double median = p->median();
         double lower, upper;

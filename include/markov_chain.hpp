@@ -4,7 +4,9 @@
 #include <vector>
 #include <limits>
 #include <ctime>
+#include <set>
 
+#include <macros.hpp>
 #include <function.hpp>
 #include <table_function.hpp>
 #include <random.hpp>
@@ -16,7 +18,7 @@ public:
     enum SmoothingMethod { GAUSSIAN_SMOOTHING = 0, SPLINE_SMOOTHING, SMOOTHING_MAX };
 public:
     ///Constructior.
-    Posterior1D(int seed = 0) : smooth_(NULL), cumulInv_(NULL), min_(std::numeric_limits<double>::max()), max_(-std::numeric_limits<double>::max()), minLike_(std::numeric_limits<double>::max()), generator_((seed == 0 ? std::time(0) : seed), 1e-5, 1.0 - 1e-5) {}
+    Posterior1D(int seed = 0) : smooth_(NULL), cumulInv_(NULL), min_(std::numeric_limits<double>::max()), max_(-std::numeric_limits<double>::max()), minLike_(std::numeric_limits<double>::max()), generator_((seed == 0 ? std::time(0) : seed), 1e-5, 1.0 - 1e-5), method_(SMOOTHING_MAX) {}
 
     /// Destructor.
     ~Posterior1D() { if(smooth_) delete smooth_; if(cumulInv_) delete cumulInv_; }
@@ -25,7 +27,7 @@ public:
     /// \param x The value of the parameter.
     /// \param prob The probability (weight) of the sample point.
     /// \param like The likelihood value for that given parameter value.
-    void addPoint(double x, double prob, double like);
+    void addPoint(double x, double prob, double like, double errMean = 0, double errVar = 0);
 
     /// Generate the distribution. This function should be called after all of the sample points have been added with addPoint.
     /// \param method The smoothing method. Can be GAUSSIAN_SMOOTHING for Gaussian smoothing or SPLINE_SMOOTHING for cubic spline smoothing.
@@ -75,22 +77,28 @@ public:
     /// Calculate the distribution at a given point. Must be called after calling generate.
     virtual double evaluate(double x) const { check(smooth_, "not generated"); const double res = smooth_->evaluate(x) / norm_; return (res >= 0.0 ? res : 0.0); }
 
+    double evaluateError(double x) const;
+
     /// Generate a random sample from this distribution
     double generateSample() { return cumulInv_->evaluate(generator_.generate() * norm_); }
 
     /// Write the distribution into a text file.
     /// \param fileName The name of the file.
     /// \param n The number of points (10,000 by default).
-    void writeIntoFile(const char* fileName, int n = 10000) const;
+    void writeIntoFile(const char* fileName, int n = 10000, bool includeError = false) const;
 
 private:
     double min_, max_;
     double minLike_, maxLikePoint_;
     double mean_;
     std::vector<double> points_, probs_;
+    std::vector<double> likes_;
+    std::vector<double> errMean_, errVar_;
     Math::RealFunction* smooth_;
+    SmoothingMethod method_;
     Math::TableFunction<double, double>* cumulInv_;
     double norm_;
+    double deltaNorm_;
 
     Math::UniformRealGenerator generator_;
 };
@@ -168,6 +176,8 @@ public:
         double like;
         std::vector<double> params;
 
+        double errMean, errVar;
+
         bool operator <(const Element& other) const
         {
             return like < other.like;
@@ -179,14 +189,14 @@ public:
     /// \param fileName The name of the file containing the chain.
     /// \param burnin The number of elements to ignore from the beginning of the chain.
     /// \param thin The thinning factor. Must be positive.
-    MarkovChain(const char* fileName, unsigned long burnin = 0, unsigned int thin = 1, const char *errorLogFileName = "");
+    MarkovChain(const char* fileName, unsigned long burnin = 0, unsigned int thin = 1, const char *errorLogFileNameBase = NULL, int nError = 1);
 
     /// Constructor for the case of multiple chains.
     /// \param nChains The number of chains.
     /// \param fileNameRoot The root of the names of the files containing the chains. The actual file names should be this root followed by _ then the index of the chain (from 0 to nChains - 1) and then .txt
     /// \param burnin The number of elements to ignore from the beginning of the chain.
     /// \param thin The thinning factor. Must be positive.
-    MarkovChain(int nChains, const char* fileNameRoot, unsigned long burnin = 0, unsigned int thin = 1, const char *errorLogFileNameBase = "");
+    MarkovChain(int nChains, const char* fileNameRoot, unsigned long burnin = 0, unsigned int thin = 1, const char *errorLogFileNameBase = NULL);
 
     /// Destructor.
     ~MarkovChain();
@@ -195,7 +205,7 @@ public:
     /// \param fileName The name of the file containing the chain.
     /// \param burnin The number of elements to ignore from the beginning of the chain.
     /// \param thin The thinning factor. Must be positive.
-    void addFile(const char* fileName, unsigned long burnin = 0, unsigned int thin = 1, const char *errorLogFileName = "");
+    void addFile(const char* fileName, unsigned long burnin = 0, unsigned int thin = 1);
 
     /// Returns the number of parameters.
     int nParams() const { return nParams_; }
@@ -227,11 +237,29 @@ public:
 private:
     void readFile(const char* fileName, unsigned long burnin, unsigned int thin, std::vector<Element*>& bigChain, double& maxP);
     void filterChain(std::vector<Element*>& bigChain, double minP);
+    
+    void readErrorFiles(int nError, const char *fileNameBase);
+
+private:
+    struct ErrorEntry
+    {
+        std::vector<double> params;
+        double like;
+        double mean;
+        double var;
+
+        bool operator<(const ErrorEntry& other) const
+        {
+            return like < other.like;
+        }
+    };
 
 private:
     std::vector<Element*> chain_;
     int nParams_;
     double minLike_;
+
+    std::vector<ErrorEntry> errors_;
 };
 
 #endif

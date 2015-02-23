@@ -331,7 +331,7 @@ MCMC_HPP = include/mcmc.hpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(MATH_CONSTA
 MN_SCANNER_HPP = include/mn_scanner.hpp $(LIKELIHOOD_FUNCTION_HPP) $(TABLE_FUNCTION_HPP)
 WIGNER_3J_HPP = include/wigner_3j.hpp $(MACROS_HPP)
 CONJUGATE_GRADIENT_HPP = include/conjugate_gradient.hpp $(MACROS_HPP)
-MARKOV_CHAIN_HPP = include/markov_chain.hpp $(FUNCTION_HPP) $(TABLE_FUNCTION_HPP) $(RANDOM_HPP)
+MARKOV_CHAIN_HPP = include/markov_chain.hpp $(MACROS_HPP) $(FUNCTION_HPP) $(TABLE_FUNCTION_HPP) $(RANDOM_HPP)
 K_NEAREST_NEIGHBORS_HPP = include/k_nearest_neighbors.hpp
 FAST_APPROXIMATOR_HPP = include/fast_approximator.hpp $(MACROS_HPP) $(K_NEAREST_NEIGHBORS_HPP) $(TIMER_HPP) $(PROGRESS_METER_HPP)
 FAST_APPROXIMATOR_ERROR_HPP = include/fast_approximator_error.hpp $(FUNCTION_HPP) $(FAST_APPROXIMATOR_HPP) $(MARKOV_CHAIN_HPP)
@@ -541,7 +541,7 @@ endif
 obj/mcmc.o: source/mcmc.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(MCMC_HPP)
 	$(CC) $(CFLAGS) source/mcmc.cpp -o $@
 
-obj/markov_chain.o: source/markov_chain.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(CUBIC_SPLINE_HPP) $(GAUSS_SMOOTH_HPP) $(PROGRESS_METER_HPP) $(MARKOV_CHAIN_HPP)
+obj/markov_chain.o: source/markov_chain.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(CUBIC_SPLINE_HPP) $(GAUSS_SMOOTH_HPP) $(PROGRESS_METER_HPP) $(MARKOV_CHAIN_HPP) $(NUMERICS_HPP)
 	$(CC) $(CFLAGS) source/markov_chain.cpp -o $@
 
 obj/test_unit_conversions.o: source/test_unit_conversions.cpp $(MACROS_HPP) $(TEST_UNIT_CONVERSIONS_HPP) $(UNIT_CONVERSIONS_HPP)
@@ -655,7 +655,7 @@ obj/planck_like_fast.o: source/planck_like_fast.cpp $(COSMO_MPI_HPP) $(MACROS_HP
 obj/test_mcmc_planck_fast.o: source/test_mcmc_planck_fast.cpp $(TEST_MCMC_PLANCK_FAST_HPP) $(MCMC_HPP) $(PLANCK_LIKE_FAST_HPP) $(MARKOV_CHAIN_HPP) $(NUMERICS_HPP) $(TIMER_HPP)
 	$(CC) $(CFLAGS) source/test_mcmc_planck_fast.cpp -o $@
 
-obj/test_multinest_planck_fast.o: source/test_multinest_planck_fast.cpp $(TEST_MULTINEST_PLANCK_FAST_HPP) $(MN_SCANNER_HPP) $(PLANCK_LIKE_FAST_HPP) $(MARKOV_CHAIN_HPP) $(NUMERICS_HPP) $(TIMER_HPP)
+obj/test_multinest_planck_fast.o: source/test_multinest_planck_fast.cpp $(COSMO_MPI_HPP) $(TEST_MULTINEST_PLANCK_FAST_HPP) $(MN_SCANNER_HPP) $(PLANCK_LIKE_FAST_HPP) $(MARKOV_CHAIN_HPP) $(NUMERICS_HPP) $(TIMER_HPP)
 	$(CC) $(CFLAGS) source/test_multinest_planck_fast.cpp -o $@
 
 obj/polychord.o: source/polychord.cpp $(MACROS_HPP) $(EXCEPTION_HANDLER_HPP) $(MATH_CONSTANTS_HPP) $(POLYCHORD_HPP) $(POLYCHORD_WRAPPER_H)

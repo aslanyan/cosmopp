@@ -12,12 +12,16 @@
 #include <gauss_smooth.hpp>
 #include <progress_meter.hpp>
 #include <markov_chain.hpp>
+#include <numerics.hpp>
 
 void
-Posterior1D::addPoint(double x, double prob, double like)
+Posterior1D::addPoint(double x, double prob, double like, double errMean, double errVar)
 {
     points_.push_back(x);
     probs_.push_back(prob);
+    likes_.push_back(like);
+    errMean_.push_back(errMean);
+    errVar_.push_back(errVar);
 
     if(x < min_)
         min_ = x;
@@ -47,6 +51,8 @@ struct LessPairFirst
 void
 Posterior1D::generate(SmoothingMethod method, double scale)
 {
+    method_ = method;
+
     check(points_.size() >= 2, "at least 2 different data points need to be added before generating");
     check(points_.size() == probs_.size(), "");
     check(max_ > min_, "at least 2 different data points need to be added before generating");
@@ -95,7 +101,7 @@ Posterior1D::generate(SmoothingMethod method, double scale)
 
     check(resolution > 0, "");
 
-    std::vector<double> x(resolution + 2), y(resolution + 2, 0);
+    std::vector<double> x(resolution + 2), y(resolution + 2, 0), vars(resolution + 2, 0);
     const double d = (max_ - min_) / resolution;
     x[0] = min_;
     x[resolution + 1] = max_;
@@ -116,7 +122,31 @@ Posterior1D::generate(SmoothingMethod method, double scale)
         y[k + 1] += probs_[i];
         mean_ += p * probs_[i];
         totalP += probs_[i];
+        vars[k + 1] += probs_[i] * errVar_[i] / 4; // divide by 4 since the variance is for -2logL, want logL
     }
+
+    double varNorm = 0;
+
+    //output_screen_clean("DISTRIBUTION HISTOGRAM:" << std::endl);
+    for(int i = 0; i < vars.size(); ++i)
+    {
+        if(y[i] != 0)
+        {
+            vars[i] = std::sqrt(vars[i]);
+
+            // re-weighing the points so that each point has a weight of 1 on average
+            vars[i] /= std::sqrt(points_.size() / totalP);
+        }
+        else
+        {
+            check(vars[i] == 0, "");
+        }
+        varNorm += vars[i] * vars[i];
+
+        //output_screen_clean(x[i] << "\t" << y[i] << "\t" << vars[i] << std::endl);
+    }
+
+    varNorm = std::sqrt(varNorm);
 
     // to make sure edges are smooth
     y[0] = y[1];
@@ -135,7 +165,7 @@ Posterior1D::generate(SmoothingMethod method, double scale)
     switch(method)
     {
     case GAUSSIAN_SMOOTHING:
-        smooth_ = new Math::GaussSmooth(x, y, scale);
+        smooth_ = new Math::GaussSmooth(x, y, scale, &vars);
         break;
     case SPLINE_SMOOTHING:
         smooth_ = new Math::CubicSpline(x, y);
@@ -174,8 +204,23 @@ Posterior1D::generate(SmoothingMethod method, double scale)
         (*cumulInv_)[norm_] = v;
     }
 
+    deltaNorm_ = varNorm / totalP * norm_;
+
     points_.clear();
     probs_.clear();
+}
+
+double
+Posterior1D::evaluateError(double x) const
+{
+    check(smooth_, "not generated");
+
+    if(method_ != GAUSSIAN_SMOOTHING)
+        return 0;
+
+    Math::GaussSmooth* gs = (Math::GaussSmooth*) smooth_;
+    const double a = gs->evaluate(x), deltaA = gs->evaluateError(x);
+    return a / norm_ * std::sqrt(deltaA * deltaA / (a * a) + deltaNorm_ * deltaNorm_ / (norm_ * norm_));
 }
 
 double
@@ -201,7 +246,7 @@ Posterior1D::peak() const
 }
 
 void
-Posterior1D::writeIntoFile(const char* fileName, int n) const
+Posterior1D::writeIntoFile(const char* fileName, int n, bool includeError) const
 {
     check(n >= 2, "invalid number of points " << n << ", should be at least 2.");
     std::ofstream out(fileName);
@@ -223,7 +268,11 @@ Posterior1D::writeIntoFile(const char* fileName, int n) const
 
         check(x >= min() && x <= max(), "");
 
-        out << x << '\t' << evaluate(x) << std::endl;
+        out << x << '\t' << evaluate(x);
+        if(includeError)
+            out << '\t' << evaluateError(x);
+
+        out << std::endl;
     }
     out.close();
 }
@@ -451,15 +500,21 @@ bool lessMarkovChainElementPointer(MarkovChain::Element* i, MarkovChain::Element
     return (*i) < (*j);
 }
 
-MarkovChain::MarkovChain(const char* fileName, unsigned long burnin, unsigned int thin, const char *errorLogFileName)
+MarkovChain::MarkovChain(const char* fileName, unsigned long burnin, unsigned int thin, const char *errorLogFileNameBase, int nError)
 {
+    if(errorLogFileNameBase)
+        readErrorFiles(nError, errorLogFileNameBase);
+
     minLike_ = std::numeric_limits<double>::max();
-    addFile(fileName, burnin, thin, errorLogFileName);
+    addFile(fileName, burnin, thin);
 }
 
 MarkovChain::MarkovChain(int nChains, const char* fileNameRoot, unsigned long burnin, unsigned int thin, const char *errorLogFileNameBase)
 {
     check(nChains > 0, "need at least 1 chain");
+
+    if(errorLogFileNameBase)
+        readErrorFiles(nChains, errorLogFileNameBase);
 
     minLike_ = std::numeric_limits<double>::max();
 
@@ -493,7 +548,7 @@ MarkovChain::~MarkovChain()
 }
 
 void
-MarkovChain::addFile(const char* fileName, unsigned long burnin, unsigned int thin, const char *errorLogFileName)
+MarkovChain::addFile(const char* fileName, unsigned long burnin, unsigned int thin)
 {
     std::vector<Element*> bigChain;
     double maxP;
@@ -527,6 +582,8 @@ MarkovChain::readFile(const char* fileName, unsigned long burnin, unsigned int t
     unsigned long line = 0;
     maxP = std::numeric_limits<double>::min();
 
+    int notFound = 0, found = 0;
+
     while(!in.eof())
     {
         std::string s;
@@ -537,6 +594,9 @@ MarkovChain::readFile(const char* fileName, unsigned long burnin, unsigned int t
         std::stringstream str(s);
         Element* elem = new Element;
         str >> elem->prob >> elem->like;
+
+        elem->errMean = 0;
+        elem->errVar = 0;
 
         if(elem->prob > maxP)
             maxP = elem->prob;
@@ -568,10 +628,49 @@ MarkovChain::readFile(const char* fileName, unsigned long burnin, unsigned int t
         if(line >= burnin && (line - burnin) % thin == 0)
             bigChain.push_back(elem);
 
+        if(!errors_.empty())
+        {
+            ErrorEntry err;
+            err.like = elem->like - 0.05;
+
+            std::vector<ErrorEntry>::const_iterator it = std::lower_bound(errors_.begin(), errors_.end(), err);
+            err.like = elem->like + 0.05;
+            std::vector<ErrorEntry>::const_iterator end = std::lower_bound(errors_.begin(), errors_.end(), err);
+
+            while(it != end)
+            {
+                bool equal = true;
+                for(int i = 0; i < elem->params.size(); ++i)
+                {
+                    if(!Math::areEqual(elem->params[i], it->params[i], 1e-5))
+                    {
+                        equal = false;
+                        break;
+                    }
+                }
+
+                if(equal)
+                {
+                    elem->errMean = it->mean;
+                    elem->errVar = it->var;
+                    ++found;
+                    break;
+                }
+                ++it;
+            }
+            if(it == end)
+                ++notFound;
+        }
+
         ++line;
     }
     output_screen("OK" << std::endl);
     output_screen("Successfully read the chain. It has " << bigChain.size() << " elements, " << nParams_ << " parameters." << std::endl);
+
+    if(!errors_.empty())
+    {
+        output_screen("Entries found in the error log: " << found << " not found: " << notFound << std::endl);
+    }
 }
 
 void
@@ -604,7 +703,7 @@ MarkovChain::posterior(int paramIndex, Posterior1D::SmoothingMethod method, doub
     Posterior1D* post = new Posterior1D;
 
     for(unsigned long i = 0; i < chain_.size(); ++i)
-        post->addPoint(chain_[i]->params[paramIndex], chain_[i]->prob, chain_[i]->like);
+        post->addPoint(chain_[i]->params[paramIndex], chain_[i]->prob, chain_[i]->like, chain_[i]->errMean, chain_[i]->errVar);
 
     post->generate(method, scale);
     return post;
@@ -702,3 +801,79 @@ MarkovChain::getRange(std::vector<Element*>& container, double pUpper, double pL
         ++it;
     }
 }
+
+void
+MarkovChain::readErrorFiles(int nError, const char *fileNameBase)
+{
+    StandardException exc;
+    for(int i = 0; i < nError; ++i)
+    {
+        std::stringstream fileName;
+        fileName << fileNameBase;
+        if(nError > 1)
+            fileName << "_" << i;
+        fileName << ".txt";
+        std::ifstream in(fileName.str().c_str());
+        if(!in)
+        {
+            std::stringstream exceptionStr;
+            exceptionStr << "Cannot open input file " << fileName.str() << ".";
+            exc.set(exceptionStr.str());
+            throw exc;
+        }
+        output_screen("Reading error file " << fileName.str() << "..." << std::endl);
+        int nPar = -1;
+        while(!in.eof())
+        {
+            std::string s;
+            std::getline(in, s);
+            if(s == "")
+                break;
+
+            std::stringstream str(s);
+            ErrorEntry e;
+            while(!str.eof())
+            {
+                double val = std::numeric_limits<double>::min();
+                str >> val;
+                if(val == std::numeric_limits<double>::min())
+                    break;
+
+                e.params.push_back(val);
+            }
+            if(e.params.size() < 6)
+            {
+                std::stringstream exceptionStr;
+                exceptionStr << "Invalid error log file " << fileName.str() << ". Each line should contain at least 6 elements.";
+                exc.set(exceptionStr.str());
+                throw exc;
+            }
+            e.var = e.params.back();
+            e.params.pop_back();
+            e.mean = e.params.back();
+            e.params.pop_back();
+            e.params.pop_back();
+            e.params.pop_back();
+            e.like = e.params.back();
+            e.params.pop_back();
+            if(nPar == -1)
+            {
+                nPar = e.params.size();
+                output_screen("The number of parameters is " << nPar << std::endl);
+            }
+            else if(nPar != e.params.size())
+            {
+                std::stringstream exceptionStr;
+                exceptionStr << "Invalid error log file " << fileName.str() << ". Inconsistency in number of parameters between different rows.";
+                exc.set(exceptionStr.str());
+                throw exc;
+            }
+
+            errors_.push_back(e);
+        }
+        output_screen("OK" << std::endl);
+    }
+    std::sort(errors_.begin(), errors_.end());
+    output_screen("Successfully read all of error files. A total of " << errors_.size() << " elements read." << std::endl);
+}
+

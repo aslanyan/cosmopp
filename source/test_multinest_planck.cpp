@@ -85,16 +85,7 @@ TestMultinestPlanck::runSubTest(unsigned int i, double& res, double& expected, s
         fileName << "slow_test_files/multinest_planck_" << paramName << ".txt";
         Posterior1D* p = chain.posterior(i);
 
-        std::ofstream out(fileName.str().c_str());
-        const double delta = (p->max() - p->min()) / nPoints;
-        for(int j = 0; j <= nPoints; ++j)
-        {
-            double t = p->min() + j * delta;
-            if(j == nPoints)
-                t = p->max();
-            out << t << ' ' << p->evaluate(t) << std::endl;
-        }
-        out.close();
+        p->writeIntoFile(fileName.str().c_str(), nPoints);
 
         const double median = p->median();
         double lower, upper;

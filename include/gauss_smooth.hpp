@@ -14,23 +14,32 @@ namespace Math
 class GaussSmooth : public RealFunction
 {
 public:
-    inline GaussSmooth(const std::vector<double>& x, const std::vector<double>& y, double sigma);
+    inline GaussSmooth(const std::vector<double>& x, const std::vector<double>& y, double sigma, const std::vector<double> *error = NULL);
 
     ~GaussSmooth() {}
 
     inline virtual double evaluate(double x) const;
+    
+    double evaluateError(double x) const;
 
 private:
     inline double kernel(double x, double x1) const;
 
 private:
     const std::vector<double> x_, y_;
+    std::vector<double> e_;
     const double sigmaSq_;
     const double sigma_;
 };
 
-GaussSmooth::GaussSmooth(const std::vector<double>& x, const std::vector<double>& y, double sigma) : x_(x), y_(y), sigmaSq_(sigma * sigma), sigma_(sigma)
+GaussSmooth::GaussSmooth(const std::vector<double>& x, const std::vector<double>& y, double sigma, const std::vector<double> *error) : x_(x), y_(y), sigmaSq_(sigma * sigma), sigma_(sigma)
 {
+    if(error)
+    {
+        e_ = *error;
+        check(e_.size() == x_.size(), "");
+    }
+
     check(!x_.empty(), "need to have at least 1 point");
     check(x_.size() == y_.size(), "the sizes of vectors x and y must match");
     check(sigma > 0, "invalid sigma = " << sigma << ", must be positive");
@@ -63,6 +72,29 @@ GaussSmooth::evaluate(double x) const
         return 0;
 
     return res / norm;
+}
+
+double
+GaussSmooth::evaluateError(double x) const
+{
+    check(x_.size() == e_.size(), "error not initialized or improperly initialized");
+
+    double res = 0, norm = 0;
+    const std::vector<double>::const_iterator lower = std::lower_bound(x_.begin(), x_.end(), x - 4 * sigma_), upper = std::upper_bound(x_.begin(), x_.end(), x + 4 * sigma_);
+    for(std::vector<double>::const_iterator it = lower; it != upper; ++it)
+    {
+        const unsigned long i = it - x_.begin();
+        check(*it == x_[i], "");
+        check(e_[i] >= 0, "");
+
+        const double k = kernel(x, (*it));
+        res += (k * k * e_[i] * e_[i]);
+        norm += k;
+    }
+    if(norm == 0)
+        return 0;
+
+    return std::sqrt(res) / norm;
 }
 
 double

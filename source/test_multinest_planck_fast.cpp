@@ -1,3 +1,5 @@
+#include <cosmo_mpi.hpp>
+
 #include <fstream>
 #include <vector>
 #include <string>
@@ -33,7 +35,8 @@ TestMultinestPlanckFast::runSubTest(unsigned int i, double& res, double& expecte
     LambdaCDMParams par(0.022, 0.12, 0.7, 0.1, 1.0, std::exp(3.0) / 1e10, pivot);
 
     PlanckLikeFast planckLike(&par, true, true, false, true, false, false, 5, 0.4, 50000);
-    planckLike.logError("slow_test_files/multinest_planck_fast_error_log");
+    std::string errorLogRoot = "slow_test_files/multinest_planck_fast_error_log";
+    planckLike.logError(errorLogRoot.c_str());
     std::string root = "slow_test_files/multinest_planck_fast_test";
     MnScanner mn(20, planckLike, 300, root);
 
@@ -72,7 +75,7 @@ TestMultinestPlanckFast::runSubTest(unsigned int i, double& res, double& expecte
     if(!isMaster())
         return;
 
-    MarkovChain chain("slow_test_files/multinest_planck_fast_test.txt");
+    MarkovChain chain("slow_test_files/multinest_planck_fast_test.txt", 0, 1, errorLogRoot.c_str(), CosmoMPI::create().numProcesses());
 
     const int nPoints = 1000;
 
@@ -89,16 +92,7 @@ TestMultinestPlanckFast::runSubTest(unsigned int i, double& res, double& expecte
         fileName << "slow_test_files/multinest_planck_fast_" << paramName << ".txt";
         Posterior1D* p = chain.posterior(i);
 
-        std::ofstream out(fileName.str().c_str());
-        const double delta = (p->max() - p->min()) / nPoints;
-        for(int j = 0; j <= nPoints; ++j)
-        {
-            double t = p->min() + j * delta;
-            if(j == nPoints)
-                t = p->max();
-            out << t << ' ' << p->evaluate(t) << std::endl;
-        }
-        out.close();
+        p->writeIntoFile(fileName.str().c_str(), nPoints, true);
 
         const double median = p->median();
         double lower, upper;
