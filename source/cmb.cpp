@@ -293,7 +293,7 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
         pt_->has_pk_matter = true;
         pt_->has_density_transfers = true;
         sp_->z_max_pk = zMaxPk;
-        pt_->k_max_for_pk = kMax_;
+        //pt_->k_max_for_pk = kMax_;
         //nl_->method = nl_halofit;
         //pr_->halofit_dz = 0.1;
         //pr_->halofit_min_k_nonlinear = 0.0035;

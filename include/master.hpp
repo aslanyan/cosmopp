@@ -6,8 +6,7 @@
 #include <string>
 
 #include <macros.hpp>
-
-#include <gmd.h>
+#include <matrix.hpp>
 
 #include <healpix_map.h>
 
@@ -92,7 +91,7 @@ private:
     std::string couplingKernelFileName_;
     
     std::vector<std::vector<double> > coupling_;
-    LaGenMatDouble k_, kInv_;
+    Math::Matrix<double> k_, kInv_;
     
     std::map<double, double> ps_;
 };

@@ -8,13 +8,7 @@
 #include <scale_factor.hpp>
 #include <unit_conversions.hpp>
 #include <matter_likelihood.hpp>
-
-#include <gmd.h>
-#include <lavd.h>
-#include <laslv.h>
-#include <lavli.h>
-#include <blas2pp.h>
-#include <blas3pp.h>
+#include <matrix_impl.hpp>
 
 MatterLikelihood::MatterLikelihood(const char* pkFileName, const char* covFileName, bool isLog, double khMin, double khMax) : scale_(false)
 {
@@ -33,7 +27,7 @@ MatterLikelihood::calculateLin(const Math::RealFunction& matterPk, const Cosmolo
     const int n = data_.size();
 
     check(kh_.size() == n, "");
-    check(cInv_.size(0) == n && cInv_.size(1) == n, "need to initialize the covariance matrix first");
+    check(cInv_.size() == n, "need to initialize the covariance matrix first");
 
     const double h = params.getH();
 
@@ -55,7 +49,7 @@ MatterLikelihood::calculateLin(const Math::RealFunction& matterPk, const Cosmolo
         p2[i] = 1.0;
     }
 
-    LaGenMatDouble A(2, 2);
+    Math::Matrix<double> A(2, 2);
 
     A(0, 0) = 0;
     A(0, 1) = 0;
@@ -89,9 +83,7 @@ MatterLikelihood::calculateLin(const Math::RealFunction& matterPk, const Cosmolo
     const double detA = A(0, 0) * A(1, 1) - A(1, 0) * A(1, 0);
 
     // inverting A
-    LaVectorLongInt pivotA(2);
-    LUFactorizeIP(A, pivotA);
-    LaLUInverseIP(A, pivotA);
+    A.invert();
 
     const double bAb = b0 * A(0, 0) * b0 + b0 * A(0, 1) * b1 + b1 * A(1, 0) * b0 + b1 * A(1, 1) * b1;
 
@@ -161,7 +153,7 @@ MatterLikelihood::calculate(const Math::RealFunction& matterPk, const Cosmologic
     const int n = data_.size();
 
     check(kh_.size() == n, "");
-    check(cInv_.size(0) == n && cInv_.size(1) == n, "need to initialize the covariance matrix first");
+    check(cInv_.size(), "need to initialize the covariance matrix first");
 
     const double h = params.getH();
 
@@ -183,7 +175,7 @@ MatterLikelihood::calculate(const Math::RealFunction& matterPk, const Cosmologic
         p2[i] = p1[i] * kh * kh;
     }
 
-    LaGenMatDouble A(2, 2);
+    Math::Matrix<double> A(2, 2);
 
     A(0, 0) = 0;
     A(0, 1) = 0;
@@ -217,9 +209,7 @@ MatterLikelihood::calculate(const Math::RealFunction& matterPk, const Cosmologic
     const double detA = A(0, 0) * A(1, 1) - A(1, 0) * A(1, 0);
 
     // inverting A
-    LaVectorLongInt pivotA(2);
-    LUFactorizeIP(A, pivotA);
-    LaLUInverseIP(A, pivotA);
+    A.invert();
 
     const double bAb = b0 * A(0, 0) * b0 + b0 * A(0, 1) * b1 + b1 * A(1, 0) * b0 + b1 * A(1, 1) * b1;
 
@@ -329,7 +319,7 @@ MatterLikelihood::readCov(const char* fileName)
         throw exc;
     }
 
-    cInv_.resize(n, n);
+    cInv_.resize(n);
 
     std::string s;
     for(int i = 0; i < nIgnored_; ++i)
@@ -358,9 +348,7 @@ MatterLikelihood::readCov(const char* fileName)
     out.close();
 
     // inverting the covariance matrix
-    LaVectorLongInt pivotC(n);
-    LUFactorizeIP(cInv_, pivotC);
-    LaLUInverseIP(cInv_, pivotC);
+    cInv_.invert();
 }
 
 void
@@ -382,7 +370,7 @@ MatterLikelihood::readLogCov(const char* fileName)
         throw exc;
     }
 
-    cInv_.resize(n, n);
+    cInv_.resize(n);
 
     for(int i = 0; i < n; ++i)
         for(int j = 0; j < n; ++j)
@@ -441,7 +429,5 @@ MatterLikelihood::readLogCov(const char* fileName)
     out.close();
 
     // inverting the covariance matrix
-    LaVectorLongInt pivotC(n);
-    LUFactorizeIP(cInv_, pivotC);
-    LaLUInverseIP(cInv_, pivotC);
+    cInv_.invert();
 }

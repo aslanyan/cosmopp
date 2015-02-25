@@ -10,14 +10,8 @@
 #include <numerics.hpp>
 #include <whole_matrix.hpp>
 #include <random.hpp>
+#include <matrix_impl.hpp>
 #include <simulate.hpp>
-
-#include <gmd.h>
-#include <lavd.h>
-#include <laslv.h>
-#include <lavli.h>
-#include <blas2pp.h>
-#include <blas3pp.h>
 
 #include "alm.h"
 #include "xcomplex.h"
@@ -45,7 +39,7 @@ Simulate::simulateAlm(const WholeMatrix& wholeMatrix, Alm<xcomplex<double> >& al
     
     //output_screen("Preparing the real and imaginary covariance matrices..." << std::endl);
     const int matrixSize = index(lMax, lMax, lMin) + 1;
-    LaGenMatDouble reMatrix(matrixSize, matrixSize), imMatrix(matrixSize, matrixSize);
+    Math::SymmetricMatrix<double> reMatrix(matrixSize), imMatrix(matrixSize);
     
     for(int l1 = lMin; l1 <= lMax; ++l1)
     {
@@ -68,26 +62,26 @@ Simulate::simulateAlm(const WholeMatrix& wholeMatrix, Alm<xcomplex<double> >& al
     }
     //output_screen("OK" << std::endl);
     
-    LaVectorDouble reEigenvalsRe(matrixSize), reEigenvalsIm(matrixSize), imEigenvalsRe(matrixSize), imEigenvalsIm(matrixSize);
-    LaGenMatDouble reVecs(matrixSize, matrixSize), imVecs(matrixSize, matrixSize);
+    std::vector<double> reEigenvalsRe, imEigenvalsRe;
+    Math::Matrix<double> reVecs, imVecs;
 
-    diagonalizeMatrix(reMatrix, reEigenvalsRe, reEigenvalsIm, reVecs);
-    diagonalizeMatrix(imMatrix, imEigenvalsRe, imEigenvalsIm, imVecs);
+    reMatrix.getEigen(&reEigenvalsRe, &reVecs, true);
+    imMatrix.getEigen(&imEigenvalsRe, &imVecs, true);
     
     //output_screen("Simulating with seed " << seed << "..." << std::endl)
     Math::GaussianGenerator generator(seed, 0, 1);
     
     const xcomplex<double> zero(0, 0);
-    LaVectorDouble re(matrixSize), im(matrixSize), reRot(matrixSize), imRot(matrixSize);
+    Math::Matrix<double> re(matrixSize, 1), im(matrixSize, 1), reRot(matrixSize, 1), imRot(matrixSize, 1);
         
     for(int i = 0; i < matrixSize; ++i)
     {
-        re(i) = generator.generate() * std::sqrt(reEigenvalsRe(i));
-        im(i) = generator.generate() * std::sqrt(imEigenvalsRe(i));
+        re(i, 0) = generator.generate() * std::sqrt(reEigenvalsRe[i]);
+        im(i, 0) = generator.generate() * std::sqrt(imEigenvalsRe[i]);
     }
     
-    Blas_Mat_Vec_Mult(reVecs, re, reRot);
-    Blas_Mat_Vec_Mult(imVecs, im, imRot);
+    Math::Matrix<double>::multiplyMatrices(reVecs, re, &reRot);
+    Math::Matrix<double>::multiplyMatrices(imVecs, im, &imRot);
     
     alm.Set(lMax, lMax);
     for(int l = 0; l <= lMax; ++l)
@@ -103,7 +97,7 @@ Simulate::simulateAlm(const WholeMatrix& wholeMatrix, Alm<xcomplex<double> >& al
             const int i = index(l, m, lMin);
             check(i < matrixSize, "");
             
-            alm(l, m) = xcomplex<double>(reRot(i), imRot(i));
+            alm(l, m) = xcomplex<double>(reRot(i, 0), imRot(i, 0));
         }
     }
     //output_screen("OK" << std::endl);
@@ -112,7 +106,7 @@ Simulate::simulateAlm(const WholeMatrix& wholeMatrix, Alm<xcomplex<double> >& al
     {
         check(dof, "");
         int size1 = index1(lMax, lMax, lMin) + 1;
-        LaGenMatDouble wholeMat(size1, size1);
+        Math::Matrix<double> wholeMat(size1, size1);
         for(int l1 = lMin; l1 <= lMax; ++l1)
             for(int m1 = -l1; m1 <= l1; ++m1)
                 for(int l = lMin; l <= lMax; ++l)
@@ -125,9 +119,7 @@ Simulate::simulateAlm(const WholeMatrix& wholeMatrix, Alm<xcomplex<double> >& al
                         wholeMat(i, j) = wholeMatrix.element(l1, m1, l, m);
                     }
 
-        LaVectorLongInt pivot(size1);
-        LUFactorizeIP(wholeMat, pivot);
-        LaLUInverseIP(wholeMat, pivot);
+        wholeMat.invert();
         
         xcomplex<double> chi2Complex = xcomplex<double>(0, 0);
         for(int l1 = lMin; l1 <= lMax; ++l1)
@@ -197,72 +189,6 @@ Simulate::simulateAlm(const std::vector<double>& cl, Alm<xcomplex<double> >& alm
         }
     }
     //output_screen("OK" << std::endl);
-}
-
-void
-Simulate::diagonalizeMatrix(const LaGenMatDouble& matrix, LaVectorDouble& eigenvalsRe, LaVectorDouble& eigenvalsIm, LaGenMatDouble& vecs)
-{
-    const int matrixSize = matrix.rows();
-    check(matrix.cols() == matrixSize, "the matrix to be diagonalized is not square");
-
-    eigenvalsRe.resize(matrixSize);
-    eigenvalsIm.resize(matrixSize);
-    vecs.resize(matrixSize, matrixSize);
-
-    //output_screen("Diagonalizing the covariance matrix..." << std::endl);
-    LaEigSolve(matrix, eigenvalsRe, eigenvalsIm, vecs);
-    //output_screen("OK" << std::endl);
-    
-#ifdef CHECKS_ON
-    //output_screen("Checking that eigenvalues are real and positive..." << std::endl);
-    for(int i = 0; i < matrixSize; ++i)
-    {
-        check(Math::areEqual(eigenvalsIm(i), 0.0, 1e-10), "The eigenvalue imaginary part " << i << " is supposed to be 0 but it is " << eigenvalsIm(i));
-        check(eigenvalsRe(i) >= 0, "The eigenvalue " << i << " is non-positive, it is " << eigenvalsRe(i));
-    }
-    //output_screen("OK" << std::endl);
-    
-    //output_screen("Checking that the eigenvectors diagonalize the matrix with correct eigenvalues..." << std::endl);
-    LaGenMatDouble mat1(matrixSize, matrixSize), diag(matrixSize, matrixSize);
-    Blas_Mat_Mat_Mult(vecs, matrix, mat1, true);
-    Blas_Mat_Mat_Mult(mat1, vecs, diag, false);
-    
-    for(int i = 0; i < matrixSize; ++i)
-    {
-        for(int j = 0; j < matrixSize; ++j)
-        {
-            if(i == j)
-            {
-                //check(Math::areEqual(diag(i, i), eigenvalsRe(i), 0.1), "The diagonal element " << i << " of the matrix " << diag(i, i) << " is not equal to the eigenvalue " << eigenvalsRe(i));
-            }
-            else
-            {
-                //check(Math::areEqual(diag(i, j), 0.0, 0.1), "The off diagonal element (" << i << " , " << j << ") of the matrix must be 0 but it is " << diag(i, j));
-            }
-        }
-    }
-    //output_screen("OK" << std::endl);
-    
-    //output_screen("Checking that the eigenvectors are orthogonal..." << std::endl);
-    LaGenMatDouble mat2(matrixSize, matrixSize);
-    Blas_Mat_Mat_Mult(vecs, vecs, mat2, true);
-    
-    for(int i = 0; i < matrixSize; ++i)
-    {
-        for(int j = 0; j < matrixSize; ++j)
-        {
-            if(i == j)
-            {
-                //check(Math::areEqual(mat2(i, i), 1.0, 0.1), "The diagonal element " << i << " of the matrix " << mat2(i, i) << " is not equal to 1");
-            }
-            else
-            {
-                //check(Math::areEqual(mat2(i, j), 0.0, 0.1), "The off diagonal element (" << i << " , " << j << ") of the matrix must be 0 but it is " << mat2(i, j));
-            }
-        }
-    }
-    //output_screen("OK" << std::endl);
-#endif
 }
 
 void

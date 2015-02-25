@@ -12,13 +12,7 @@
 #include <three_rotation.hpp>
 #include <likelihood.hpp>
 #include <utils.hpp>
-
-#include <gmd.h>
-#include <lavd.h>
-#include <laslv.h>
-#include <lavli.h>
-#include <blas2pp.h>
-#include <blas3pp.h>
+#include <matrix_impl.hpp>
 
 #include "healpix_base.h"
 #include "alm.h"
@@ -39,7 +33,7 @@ Likelihood::Likelihood(const CMatrix& cMatrix, const CMatrix& fiducialMatrix, co
     construct(cMatrix, fiducialMatrix, noiseMatrix, maskFileName, foregroundFileName);
 }
 
-Likelihood::Likelihood(const CMatrix& cMatrix, const CMatrix& fiducialMatrix, const CMatrix& noiseMatrix, const std::vector<int>& goodPixels, const LaVectorDouble& foreground)
+Likelihood::Likelihood(const CMatrix& cMatrix, const CMatrix& fiducialMatrix, const CMatrix& noiseMatrix, const std::vector<int>& goodPixels, const std::vector<double>& foreground)
 {
     construct(cMatrix, fiducialMatrix, noiseMatrix, goodPixels, foreground);
 }
@@ -49,7 +43,7 @@ Likelihood::construct(const CMatrix& cMatrix, const CMatrix& fiducialMatrix, con
 {
     long nSideMask, nSideFore;
     std::vector<int> goodPixels;
-    LaVectorDouble f;
+    std::vector<double> f;
     
     Utils::readMask(maskFileName, nSideMask, goodPixels);
     if(foregroundFileName != NULL)
@@ -70,7 +64,7 @@ Likelihood::construct(const CMatrix& cMatrix, const CMatrix& fiducialMatrix, con
 }
 
 void
-Likelihood::construct(const CMatrix& cMatrix, const CMatrix& fiducialMatrix, const CMatrix& noiseMatrix, const std::vector<int>& goodPixels, const LaVectorDouble& foreground)
+Likelihood::construct(const CMatrix& cMatrix, const CMatrix& fiducialMatrix, const CMatrix& noiseMatrix, const std::vector<int>& goodPixels, const std::vector<double>& foreground)
 {
     StandardException exc;
     
@@ -101,54 +95,44 @@ Likelihood::construct(const CMatrix& cMatrix, const CMatrix& fiducialMatrix, con
         throw exc;
     }
     
-    cInv_.resize(goodPixels_.size(), goodPixels_.size());
+    cInv_.resize(goodPixels_.size());
     
 #pragma omp parallel for default(shared)
     for(int i = 0; i < goodPixels_.size(); ++i)
     {
-        for(int j = 0; j < goodPixels_.size(); ++j)
+        //for(int j = 0; j < goodPixels_.size(); ++j)
+        for(int j = i; j < goodPixels_.size(); ++j)
         {
             cInv_(i, j) = cMatrix.element(i, j) + fiducialMatrix.element(i, j) + noiseMatrix.element(i, j);
         }
     }
     
-    //output_screen("LU factorization of the covariance matrix..." << std::endl);
-    LaVectorLongInt pivotC(goodPixels_.size());
-    LUFactorizeIP(cInv_, pivotC);
+    //output_screen("Cholesky factorization of the covariance matrix..." << std::endl);
+    cInv_.choleskyFactorize();
     //output_screen("OK" << std::endl);
     
     //output_screen("Calculating the determinant of c..." << std::endl);
-    logDet_ = 0;
     int signC = 1;
-    for(int i = 0; i < goodPixels_.size(); ++i)
-    {
-        if(Math::areEqual(cInv_(i, i), 0.0, 1e-15))
-        {
-            std::string exceptionStr = "The determinant of the covariance matrix is 0. The covariance matrix must be positive definite.";
-            exc.set(exceptionStr);
-            throw exc;
-        }
-        signC *= (cInv_(i, i) < 0 ? -1 : 1);
-        logDet_ += std::log(std::abs(cInv_(i, i)));
-    }
-    /*if(signC != 1)
+    logDet_ = cInv_.logDetFromCholeskyFactorization(&signC); 
+
+    if(signC != 1)
      {
      std::string exceptionStr = "The determinant of the covariance matrix is not positive. The covariance matrix must be positive definite.";
      exc.set(exceptionStr);
      throw exc;
-     }*/
+     }
     
     const double detOffset = -29677.0566; // to be done better
     logDet_ -= detOffset;
     //output_screen("OK" << std::endl);
     
-    //output_screen("Taking the inverse of the covariance matrix from LU factorization..." << std::endl);
-    LaLUInverseIP(cInv_, pivotC);
+    //output_screen("Taking the inverse of the covariance matrix from Cholesky factorization..." << std::endl);
+    cInv_.invertFromCholeskyFactorization();
     //output_screen("OK" << std::endl);
 }
 
 double
-Likelihood::vmv(int n, const LaVectorDouble& a, const LaGenMatDouble& matrix, const LaVectorDouble& b) const
+Likelihood::vmv(int n, const std::vector<double>& a, const Math::SymmetricMatrix<double>& matrix, const std::vector<double>& b) const
 {
     std::vector<double> res(n, 0);
     
@@ -156,7 +140,7 @@ Likelihood::vmv(int n, const LaVectorDouble& a, const LaGenMatDouble& matrix, co
 	for(int i = 0; i < n; ++i)
 	{
 		for(int j = 0; j < n; ++j)
-			res[i] += a(i) * matrix(i, j) * b(j);
+			res[i] += a[i] * matrix(i, j) * b[j];
 	}
     
     double result = 0;
@@ -168,14 +152,14 @@ Likelihood::vmv(int n, const LaVectorDouble& a, const LaGenMatDouble& matrix, co
 double
 Likelihood::calculate(const char* mapName, const char* noiseMapName, double& chi2, double& logDet) const
 {
-    LaVectorDouble t;
+    std::vector<double> t;
     long nSide;
     readMapAndNoise(mapName, noiseMapName, goodPixels_, nSide, t);
     return calculate(t, chi2, logDet);
 }
 
 double
-Likelihood::calculate(const LaVectorDouble& t, double& chi2, double& logDet) const
+Likelihood::calculate(const std::vector<double>& t, double& chi2, double& logDet) const
 {
     check(t.size() == goodPixels_.size(), "");
     
@@ -194,7 +178,7 @@ Likelihood::calculate(const LaVectorDouble& t, double& chi2, double& logDet) con
 }
 
 void
-Likelihood::readMapAndNoise(const char* mapName, const char* noiseMapName, const std::vector<int>& goodPixels, long& nSide, LaVectorDouble& t)
+Likelihood::readMapAndNoise(const char* mapName, const char* noiseMapName, const std::vector<int>& goodPixels, long& nSide, std::vector<double>& t)
 {
     StandardException exc;
     
@@ -231,12 +215,12 @@ Likelihood::readMapAndNoise(const char* mapName, const char* noiseMapName, const
     for(int i = 0; i < goodPixels.size(); ++i)
     {
         int index = goodPixels[i];
-        t(i) = (double)(map[index] + noise[index]);
+        t[i] = (double)(map[index] + noise[index]);
     }
 }
 
 void
-Likelihood::readForeground(const char* foregroundFileName, const std::vector<int>& goodPixels, long& nSide, LaVectorDouble& f)
+Likelihood::readForeground(const char* foregroundFileName, const std::vector<int>& goodPixels, long& nSide, std::vector<double>& f)
 {
     Healpix_Map<double> fore;
     read_Healpix_map_from_fits(std::string(foregroundFileName), fore);
@@ -255,12 +239,12 @@ Likelihood::readForeground(const char* foregroundFileName, const std::vector<int
     for(int i = 0; i < goodPixels.size(); ++i)
     {
         int index = goodPixels[i];
-        f(i) = (double)(fore[index]);
+        f[i] = (double)(fore[index]);
     }
 }
 
 void
-Likelihood::readInput(const char* inputListName, const std::vector<int>& goodPixels, std::vector<LaVectorDouble>& t, std::vector<std::string>& mapNames)
+Likelihood::readInput(const char* inputListName, const std::vector<int>& goodPixels, std::vector<std::vector<double> >& t, std::vector<std::string>& mapNames)
 {
     StandardException exc;
     std::ifstream inList(inputListName);
@@ -296,7 +280,7 @@ Likelihood::readInput(const char* inputListName, const std::vector<int>& goodPix
 }
 
 void
-Likelihood::calculateAll(const std::vector<LaVectorDouble>& t, const std::vector<std::string>& mapNames, std::vector<LikelihoodResult>& results) const
+Likelihood::calculateAll(const std::vector<std::vector<double> >& t, const std::vector<std::string>& mapNames, std::vector<LikelihoodResult>& results) const
 {
     StandardException exc;
     omp_lock_t lock;
@@ -339,7 +323,7 @@ void
 Likelihood::calculateAll(const char* inputListName, std::vector<LikelihoodResult>& results) const
 {
     std::vector<std::string> mapNames;
-    std::vector<LaVectorDouble> t;
+    std::vector<std::vector<double> > t;
     readInput(inputListName, goodPixels_, t, mapNames);
     check(mapNames.size() == t.size(), "");
     calculateAll(t, mapNames, results);
@@ -377,8 +361,8 @@ LikelihoodPolarization::LikelihoodPolarization(const CMatrix& cMatrix, long nSid
     in.close();
     
     nInv_.resize(2 * goodSize, 2 * goodSize);
-    LaGenMatDouble cMat(2 * goodSize, 2 * goodSize), nInvCMat(2 * goodSize, 2 * goodSize);
-    cInv_.resize(2 * goodSize, 2 * goodSize);
+    Math::SymmetricMatrix<double> cMat(2 * goodSize);
+    cInv_.resize(2 * goodSize);
     
     for(int i = 0; i < goodSize; ++i)
     {
@@ -397,30 +381,18 @@ LikelihoodPolarization::LikelihoodPolarization(const CMatrix& cMatrix, long nSid
     }
     
     cInv_ = nInv_;
-    Blas_Mat_Mat_Mult(nInv_, cMat, nInvCMat);
-    Blas_Mat_Mat_Mult(nInvCMat, nInv_, cInv_, 1.0, 1.0);
+    cInv_ += nInv_ * cMat * nInv_;
     
-    LaVectorLongInt pivotC(2 * goodSize);
-    LUFactorizeIP(cInv_, pivotC);
+    cInv_.choleskyFactorize();
     
     //output_screen("Calculating the determinant of c..." << std::endl);
-    logDet_ = 0;
     int signC = 1;
-    for(int i = 0; i < 2 * goodSize; ++i)
-    {
-        if(Math::areEqual(cInv_(i, i), 0.0, 1e-15))
-        {
-            std::string exceptionStr = "The determinant of the covariance matrix is 0. The covariance matrix must be positive definite.";
-            exc.set(exceptionStr);
-            throw exc;
-        }
-        signC *= (cInv_(i, i) < 0 ? -1 : 1);
-        logDet_ += std::log(std::abs(cInv_(i, i)));
-    }
-    
+    logDet_ = cInv_.logDetFromCholeskyFactorization(&signC);
+
     const double detOffset = 16078.083180; // to be done better
     logDet_ -= detOffset;
-    LaLUInverseIP(cInv_, pivotC);
+
+    cInv_.invertFromCholeskyFactorization();
     
     Utils::readPixelWindowFunction(beam_, nSide, lMax, 0);
 }
@@ -495,7 +467,7 @@ LikelihoodPolarization::readMaps(const char* qMapName, const char* uMapName, con
 }
 
 void
-LikelihoodPolarization::readInput(const char* inputListName, const std::vector<int>& goodPixels, std::vector<LaVectorDouble>& t, std::vector<std::string>& mapNames, const std::vector<int>& goodPixelsPol, std::vector<std::vector<double> > & v, std::vector<AlmType>& alm, int lMaxPol)
+LikelihoodPolarization::readInput(const char* inputListName, const std::vector<int>& goodPixels, std::vector<std::vector<double> >& t, std::vector<std::string>& mapNames, const std::vector<int>& goodPixelsPol, std::vector<std::vector<double> > & v, std::vector<AlmType>& alm, int lMaxPol)
 {
     StandardException exc;
     std::ifstream inList(inputListName);
@@ -666,9 +638,8 @@ LikelihoodPolarization::combineWholeMatrices(const WholeMatrix& tt, const WholeM
     check(etttInverse.getLMin() == lMin, "");
     check(etttInverse.getLMax() == lMax, "");
     
-    //inverting the tt matrix
     int size = myIndex(lMax, lMax, lMin) + 1;
-    LaGenMatDouble ttMat(size, size);
+    Math::SymmetricMatrix<double> ttMat(size);
     for(int l1 = lMin; l1 <= lMax; ++l1)
         for(int m1 = -l1; m1 <= l1; ++m1)
             for(int l = lMin; l <= lMax; ++l)
@@ -683,9 +654,7 @@ LikelihoodPolarization::combineWholeMatrices(const WholeMatrix& tt, const WholeM
                     check(Math::areEqual(tt.element(l1, m1, l, m), tt.element(l, m, l1, m1), 1e-10), l1 << ' ' << m1 << ' ' << l << ' ' << m << ' ' << tt.element(l1, m1, l, m) << ' ' << tt.element(l, m, l1, m1));
                 }
     
-    LaVectorLongInt pivot(size);
-    LUFactorizeIP(ttMat, pivot);
-    LaLUInverseIP(ttMat, pivot);
+    ttMat.invert();
     
     WholeMatrix ttInverse(lMin, lMax);
     for(int l1 = lMin; l1 <= lMax; ++l1)
@@ -700,7 +669,6 @@ LikelihoodPolarization::combineWholeMatrices(const WholeMatrix& tt, const WholeM
                     ttInverse.element(l1, m1, l, m) = ttMat(i, j);
                 }
     
-    //Multiplying matrices
     for(int l1 = lMin; l1 <= lMax; ++l1)
         for(int m1 = -l1; m1 <= l1; ++m1)
             for(int l = lMin; l <= lMax; ++l)
