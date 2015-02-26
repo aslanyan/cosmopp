@@ -18,6 +18,16 @@ endif(${CMAKE_CXX_COMPILER_ID} MATCHES GNU)
 # specific options
 SET(CMAKE_INSTALL_PREFIX /Users/aslanyan/code/install_cosmo_pp)
 
+#lapack
+if(${CMAKE_CXX_COMPILER_ID} MATCHES Intel)
+	if($ENV{MKLROOT})
+		find_library(MKL_CORE mkl_core "$ENV{MKLROOT}/lib/intel64")
+		if(MKL_CORE_FOUND)
+			MESSAGE("mkl_core found")
+		endif(MKL_CORE_FOUND)
+	endif($ENV{MKLROOT})
+endif(${CMAKE_CXX_COMPILER_ID} MATCHES Intel)
+
 # cosmo++ specific compiler flags
 # include -D CREATE_LOG to create log file. CREATE_LOG1 will create a log file with more output and CREATE_LOG2 will have even more detailed output.
 # include -D VERBOSE to compile in verbose mode. VERBOSE1 will have more output on the screen and VERBOSE2 will have even more output.
@@ -31,9 +41,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp -D COSMO_OMP")
 #check for MPI
 find_package(MPI)
 if(MPI_FOUND)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D COSMO_MPI")
-    include_directories(SYSTEM ${MPI_INCLUDE_PATH})
-    MESSAGE("${MPI_C_LIBRARIES}")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D COSMO_MPI")
+	include_directories(SYSTEM ${MPI_INCLUDE_PATH})
 endif(MPI_FOUND)
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
