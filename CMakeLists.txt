@@ -3,12 +3,17 @@ cmake_minimum_required (VERSION 2.8)
 project ("Cosmo++" CXX)
 
 # compiler options
-set(CMAKE_CXX_COMPILER g++)
 set(CMAKE_BUILD_TYPE RELEASE)
 
 set(CMAKE_CXX_FLAGS "-std=c++11 -fpic")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -ggdb")
-set(CMAKE_CXX_FLAGS_RELEASE "-O4 -ffast-math")
+if(${CMAKE_CXX_COMPILER_ID} MATCHES GNU)
+	set(CMAKE_CXX_FLAGS_RELEASE "-O4 -ffast-math")
+elseif(${CMAKE_CXX_COMPILER_ID} MATCHES Intel)
+	set(CMAKE_CXX_FLAGS_RELEASE "-Ofast")
+else(${CMAKE_CXX_COMPILER_ID} MATCHES GNU)
+	set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+endif(${CMAKE_CXX_COMPILER_ID} MATCHES GNU)
 
 # specific options
 SET(CMAKE_INSTALL_PREFIX /Users/aslanyan/code/install_cosmo_pp)
@@ -28,6 +33,7 @@ find_package(MPI)
 if(MPI_FOUND)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D COSMO_MPI")
     include_directories(SYSTEM ${MPI_INCLUDE_PATH})
+    MESSAGE("${MPI_C_LIBRARIES}")
 endif(MPI_FOUND)
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
