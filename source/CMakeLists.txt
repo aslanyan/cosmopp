@@ -105,7 +105,6 @@ if(PLANCK_DIR)
 endif(PLANCK_DIR)
 if(WMAP9_DIR)
 	target_link_libraries(cosmo_test ${WMAP9LIB})
-	target_link_libraries(cosmo_test ${WMAP9_LIB_FLAGS})
 endif(WMAP9_DIR)
 
 
