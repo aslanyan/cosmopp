@@ -75,6 +75,9 @@ if(MPI_FOUND)
 	set(CMAKE_CXX_COMPILE_FLAGS ${CMAKE_CXX_COMPILE_FLAGS} ${MPI_COMPILE_FLAGS})
 	set(CMAKE_CXX_LINK_FLAGS ${CMAKE_CXX_LINK_FLAGS} ${MPI_LINK_FLAGS})
 	include_directories(SYSTEM ${MPI_INCLUDE_PATH})
+	if(NOT MPI_CXX_LIBRARIES)
+		message(FATAL_ERROR "MPI found but the MPI C++ libraries not found!")
+	endif(NOT MPI_CXX_LIBRARIES)
 endif(MPI_FOUND)
 
 #lapack
