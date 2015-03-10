@@ -2,38 +2,89 @@
 #define COSMO_PP_MATRIX_HPP
 
 #include <vector>
-#include <fstream>
-#include <iomanip>
-#include <string>
-#include <sstream>
-
-#include <macros.hpp>
-#include <exception_handler.hpp>
 
 namespace Math
 {
 
+template<typename T> class SymmetricMatrix;
+
 template<typename T>
 class Matrix
 {
+    friend class SymmetricMatrix<T>;
+
 public:
     typedef T DataType;
 
 public:
-    Matrix(int rows = 0, int cols = 0);
+    Matrix() : Matrix(0, 0) {}
+    Matrix(int rows, int cols);
     Matrix(int rows, int cols, DataType val);
     Matrix(const char* fileName, bool textFile = false);
+    Matrix(const Matrix<DataType>& other) { copy(other); }
+    Matrix(const std::vector<DataType>& vec, bool columnVector = true);
+    Matrix(const SymmetricMatrix<DataType>& other);
 
-    ~Matrix();
+    ~Matrix() {}
 
     const DataType& operator()(int i, int j) const;
     DataType& operator()(int i, int j);
+
+    int rows() const { return rows_; }
+    int cols() const { return cols_; }
 
     void resize(int rows, int cols);
     void resize(int rows, int cols, DataType val);
 
     void writeIntoFile(const char* fileName) const;
     void readFromFile(const char* fileName);
+
+    void writeIntoTextFile(const char* fileName, int precision = 3) const;
+    void readFromTextFile(const char* fileName);
+
+    Matrix<DataType> getRow(int i) const;
+    Matrix<DataType> getCol(int i) const;
+
+    void copy(const Matrix<DataType>& other);
+
+    const Matrix<DataType>& operator=(const Matrix<DataType>& other) { copy(other); return *this; }
+
+    void add(const Matrix<DataType>& other);
+    static void addMatrices(const Matrix<DataType>& a, const Matrix<DataType>& b, Matrix<DataType>* res) { res->copy(a); res->add(b); }
+
+    const Matrix<DataType>& operator+=(const Matrix<DataType>& other) { add(other); return *this; }
+    Matrix<DataType> operator+(const Matrix<DataType>& other) const { Matrix<DataType> res; addMatrices(*this, other, &res); return res; }
+
+    void subtract(const Matrix<DataType>& other);
+    static void subtractMatrices(const Matrix<DataType>& a, const Matrix<DataType>& b, Matrix<DataType>* res) { res->copy(a); res->subtract(b); }
+
+    const Matrix<DataType>& operator-=(const Matrix<DataType>& other) { subtract(other); return *this; }
+    Matrix<DataType> operator-(const Matrix<DataType>& other) const { Matrix<DataType> res; subtractMatrices(*this, other, &res); return res; }
+
+    void multiply(const Matrix<DataType>& other) { Matrix<DataType> x; multiplyMatrices(*this, other, &x); copy(x); }
+    static void multiplyMatrices(const Matrix<DataType>& a, const Matrix<DataType>& b, Matrix<DataType>* res);
+
+    const Matrix<DataType>& operator*=(const Matrix<DataType>& other) { multiply(other); return *this; }
+    Matrix<DataType> operator*(const Matrix<DataType>& other) const { Matrix<DataType> res; multiplyMatrices(*this, other, &res); return res; }
+
+    void getTranspose(Matrix<DataType>* res) const;
+    Matrix<DataType> getTranspose() const { Matrix<DataType> res; getTranspose(&res); return res; }
+    void transpose() { Matrix<DataType> x; getTranspose(&x); copy(x); }
+
+
+    int luFactorize(std::vector<int>* pivot);
+
+    int invertFromLUFactorization(std::vector<int> *pivot);
+    int invert();
+
+    Matrix<DataType> getInverse() const;
+    int getInverse(Matrix<DataType>* res) const;
+
+    double determinantFromLUFactorization(std::vector<int> *pivot) const;
+    double determinant() const;
+
+    double logDetFromLUFactorization(std::vector<int> *pivot, int *sign) const;
+    double logDet(int *sign) const;
 
 private:
     void checkIndices(int i, int j) const;
@@ -44,146 +95,81 @@ private:
     int cols_;
 };
 
-} // namespace Math
-
-namespace Math
-{
-
 template<typename T>
-Matrix<T>::Matrix(int rows, int cols)
+class SymmetricMatrix
 {
-    resize(rows, cols);
-}
+public:
+    typedef T DataType;
 
-template<typename T>
-Matrix<T>::Matrix(int rows, int cols, DataType val)
-{
-    resize(rows, cols, val);
-}
+public:
+    SymmetricMatrix() : SymmetricMatrix(0) {}
+    SymmetricMatrix(int size) { resize(size); }
+    SymmetricMatrix(int size, DataType val) { resize(size, val); }
+    SymmetricMatrix(const char* fileName, bool textFile = false);
+    SymmetricMatrix(const SymmetricMatrix<DataType>& other) { copy(other); }
 
-template<typename T>
-Matrix<T>::Matrix(const char* fileName, bool textFile)
-{
-    if(textFile)
-    {
-    }
-    else
-        readFromFile(fileName);
-}
+    ~SymmetricMatrix() {}
 
-template<typename T>
-Matrix<T>::~Matrix()
-{
-}
+    const DataType& operator()(int i, int j) const;
+    DataType& operator()(int i, int j);
 
-template<typename T>
-void
-Matrix<T>::resize(int rows, int cols)
-{
-    check(rows >= 0, "");
-    check(cols >= 0, "");
+    int size() const { return n_; }
 
-    rows_ = rows;
-    cols_ = cols;
-    v_.clear();
-    v_.resize(rows_ * cols_);
-}
+    void resize(int size);
+    void resize(int size, DataType val);
 
-template<typename T>
-void
-Matrix<T>::resize(int rows, int cols, DataType val)
-{
-    check(rows >= 0, "");
-    check(cols >= 0, "");
+    void writeIntoFile(const char* fileName) const;
+    void readFromFile(const char* fileName);
 
-    rows_ = rows;
-    cols_ = cols;
-    v_.clear();
-    v_.resize(rows_ * cols_, val);
-}
+    void writeIntoTextFile(const char* fileName, int precision = 3) const;
+    void readFromTextFile(const char* fileName);
 
-template<typename T>
-const T&
-Matrix<T>::operator()(int i, int j) const
-{
-    checkIndices(i, j);
-    return v_[i * cols_ + j];
-}
+    void copy(const SymmetricMatrix<DataType>& other);
 
-template<typename T>
-T&
-Matrix<T>::operator()(int i, int j)
-{
-    checkIndices(i, j);
-    return v_[i * cols_ + j];
-}
+    const SymmetricMatrix<DataType>& operator=(const SymmetricMatrix<DataType>& other) { copy(other); return *this; }
 
-template<typename T>
-void
-Matrix<T>::checkIndices(int i, int j) const
-{
-    check(i >= 0 && i < rows_, "invalid index i = " << i << ", should be non-negative and less than " << rows_);
-    check(j >= 0 && j < cols_, "invalid index j = " << j << ", should be non-negative and less than " << cols_);
-}
+    void add(const SymmetricMatrix<DataType>& other);
+    static void addMatrices(const SymmetricMatrix<DataType>& a, const SymmetricMatrix<DataType>& b, SymmetricMatrix<DataType>* res) { res->copy(a); res->add(b); }
 
-template<typename T>
-void
-Matrix<T>::writeIntoFile(const char* fileName) const
-{
-    std::ofstream out(fileName, std::ios::binary | std::ios::out);
-    StandardException exc;
-    if(!out)
-    {
-        std::stringstream exceptionStr;
-        exceptionStr << "Cannot write into output file " << fileName;
-        exc.set(exceptionStr.str());
-        throw exc;
-    }
+    const SymmetricMatrix<DataType>& operator+=(const SymmetricMatrix<DataType>& other) { add(other); return *this; }
+    SymmetricMatrix<DataType> operator+(const SymmetricMatrix<DataType>& other) const { SymmetricMatrix<DataType> res; addMatrices(*this, other, &res); return res; }
 
-    out.write((char*)(&rows_), sizeof(rows_));
-    out.write((char*)(&cols_), sizeof(cols_));
-    out.write((char*)(&(v_[0])), v_.size() * sizeof(DataType));
-    out.close();
-}
+    void subtract(const SymmetricMatrix<DataType>& other);
+    static void subtractMatrices(const SymmetricMatrix<DataType>& a, const SymmetricMatrix<DataType>& b, SymmetricMatrix<DataType>* res) { res->copy(a); res->subtract(b); }
 
-template<typename T>
-void
-Matrix<T>::readFromFile(const char* fileName)
-{
-    std::ifstream in(fileName, std::ios::binary | std::ios::in);
-    StandardException exc;
-    if(!in)
-    {
-        std::stringstream exceptionStr;
-        exceptionStr << "Cannot read from file " << fileName;
-        exc.set(exceptionStr.str());
-        throw exc;
-    }
+    const SymmetricMatrix<DataType>& operator-=(const SymmetricMatrix<DataType>& other) { subtract(other); return *this; }
+    SymmetricMatrix<DataType> operator-(const SymmetricMatrix<DataType>& other) const { SymmetricMatrix<DataType> res; subtractMatrices(*this, other, &res); return res; }
 
-    in.read((char*)(&rows_), sizeof(rows_));
-    if(rows_ < 0)
-    {
-        std::stringstream exceptionStr;
-        exceptionStr << "Invalid number of rows " << rows_ << " in the file " << fileName << ". Must be non-negative.";
-        exc.set(exceptionStr.str());
-        throw exc;
-    }
+    void multiply(const SymmetricMatrix<DataType>& other) { SymmetricMatrix<DataType> x; multiplyMatrices(*this, other, &x); copy(x); }
+    static void multiplyMatrices(const SymmetricMatrix<DataType>& a, const SymmetricMatrix<DataType>& b, SymmetricMatrix<DataType>* res);
 
-    in.read((char*)(&cols_), sizeof(cols_));
-    if(cols_ < 0)
-    {
-        std::stringstream exceptionStr;
-        exceptionStr << "Invalid number of columns " << cols_ << " in the file " << fileName << ". Must be non-negative.";
-        exc.set(exceptionStr.str());
-        throw exc;
-    }
+    const SymmetricMatrix<DataType>& operator*=(const SymmetricMatrix<DataType>& other) { multiply(other); return *this; }
+    SymmetricMatrix<DataType> operator*(const SymmetricMatrix<DataType>& other) const { SymmetricMatrix<DataType> res; multiplyMatrices(*this, other, &res); return res; }
 
-    v_.clear();
-    v_.resize(rows_ * cols_);
 
-    in.read((char*)(&(v_[0])), v_.size() * sizeof(DataType));
-    in.close();
-}
+    int choleskyFactorize();
+
+    int invertFromCholeskyFactorization();
+    int invert();
+
+    SymmetricMatrix<DataType> getInverse() const;
+    int getInverse(SymmetricMatrix<DataType>* res) const;
+
+    double determinantFromCholeskyFactorization() const;
+    double determinant() const;
+
+    double logDetFromCholeskyFactorization(int *sign) const;
+    double logDet(int *sign) const;
+
+    int getEigen(std::vector<double>* eigenvals, Matrix<double>* eigenvecs, bool positiveDefinite = false) const;
+
+private:
+    void checkIndices(int i, int j) const;
+
+private:
+    std::vector<DataType> v_;
+    int n_;
+};
 
 } // namespace Math
 

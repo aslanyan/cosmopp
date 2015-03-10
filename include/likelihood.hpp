@@ -7,9 +7,7 @@
 #include <complex_types.hpp>
 #include <c_matrix.hpp>
 #include <whole_matrix.hpp>
-
-#include <gmd.h>
-#include <lavd.h>
+#include <matrix.hpp>
 
 #include "alm.h"
 #include "xcomplex.h"
@@ -57,7 +55,7 @@ public:
     /// \param noiseMatrix The noise covariance matrix.
     /// \param goodPixels A vector containing the indices of the unmasked pixels.
     /// \param foreground A vector containing the foreground map. This can be read by the function readForeground. If it's empty foreground marginalization is not done.
-    Likelihood(const CMatrix& cMatrix, const CMatrix& fiducialMatrix, const CMatrix& noiseMatrix, const std::vector<int>& goodPixels, const LaVectorDouble& foreground);
+    Likelihood(const CMatrix& cMatrix, const CMatrix& fiducialMatrix, const CMatrix& noiseMatrix, const std::vector<int>& goodPixels, const std::vector<double>& foreground);
     
     /// Calculate likelihood for a single map.
     
@@ -82,7 +80,7 @@ public:
     /// \param t A vector of temperature maps (noise added). This can be read by the function readInput.
     /// \param mapNames A vector with the names of the maps. This can be read by the function readInput.
     /// \param results A vector to return the calculated results in. The new results are added to what exists in the vector.
-    void calculateAll(const std::vector<LaVectorDouble>& t, const std::vector<std::string>& mapNames, std::vector<LikelihoodResult>& results) const;
+    void calculateAll(const std::vector<std::vector<double> >& t, const std::vector<std::string>& mapNames, std::vector<LikelihoodResult>& results) const;
     
     /// Calculate likelihood for a single map.
     
@@ -91,7 +89,7 @@ public:
     /// \param chi2 The chi squared value to be returned.
     /// \param logDet The logarithm of the determinant of the covariance matrix to be returned.
     /// \return -2Log(likelihood) which is the sum of chi2 and logDet.
-    double calculate(const LaVectorDouble& t, double& chi2, double& logDet) const;
+    double calculate(const std::vector<double>& t, double& chi2, double& logDet) const;
     
     /// Read input from many maps.
     
@@ -100,7 +98,7 @@ public:
     /// \param goodPixels A vector containing the indices of the unmasked pixels.
     /// \param t A vector where the maps are returned in.
     /// \param mapNames A vector where the map names are returned in.
-    static void readInput(const char* inputListName, const std::vector<int>& goodPixels, std::vector<LaVectorDouble>& t, std::vector<std::string>& mapNames);
+    static void readInput(const char* inputListName, const std::vector<int>& goodPixels, std::vector<std::vector<double> >& t, std::vector<std::string>& mapNames);
     
     /// Read a single map and noise map.
     
@@ -110,7 +108,7 @@ public:
     /// \param goodPixels A vector containing the indices of unmasked pixels.
     /// \param nSide NSide of the map to be returned.
     /// \param t The map (with added noise) to be returned.
-    static void readMapAndNoise(const char* mapName, const char* noiseMapName, const std::vector<int>& goodPixels, long& nSide, LaVectorDouble& t);
+    static void readMapAndNoise(const char* mapName, const char* noiseMapName, const std::vector<int>& goodPixels, long& nSide, std::vector<double>& t);
     
     /// Read the foreground map.
     
@@ -119,17 +117,17 @@ public:
     /// \param goodPixels A vector containing the unmasked pixels.
     /// \param nSide NSide of the foreground map to be returned.
     /// \param f The foreground map to be returned.
-    static void readForeground(const char* foregroundFileName, const std::vector<int>& goodPixels, long& nSide, LaVectorDouble& f);
+    static void readForeground(const char* foregroundFileName, const std::vector<int>& goodPixels, long& nSide, std::vector<double>& f);
     
 private:
     void construct(const CMatrix& cMatrix, const CMatrix& fiducialMatrix, const CMatrix& noiseMatrix, const char* maskFileName, const char* foregroundFileName);
-    void construct(const CMatrix& cMatrix, const CMatrix& fiducialMatrix, const CMatrix& noiseMatrix, const std::vector<int>& goodPixels, const LaVectorDouble& foreground);
-    double vmv(int n, const LaVectorDouble& a, const LaGenMatDouble& matrix, const LaVectorDouble& b) const; // transpose(a) * matrix * b
+    void construct(const CMatrix& cMatrix, const CMatrix& fiducialMatrix, const CMatrix& noiseMatrix, const std::vector<int>& goodPixels, const std::vector<double>& foreground);
+    double vmv(int n, const std::vector<double>& a, const Math::SymmetricMatrix<double>& matrix, const std::vector<double>& b) const; // transpose(a) * matrix * b
     
 private:
-    LaGenMatDouble cInv_;
+    Math::SymmetricMatrix<double> cInv_;
     double logDet_;
-    LaVectorDouble f_;
+    std::vector<double> f_;
     std::vector<int> goodPixels_;
 };
 
@@ -227,10 +225,10 @@ public:
     /// \param v A vector that will contain Q and U maps upon return.
     /// \param alm A vector that will contain TT Alm-s upon return.
     /// \param lMaxPol Maximum value of l for polarization analysis.
-    static void readInput(const char* inputListName, const std::vector<int>& goodPixels, std::vector<LaVectorDouble>& t, std::vector<std::string>& mapNames, const std::vector<int>& goodPixelsPol, std::vector<std::vector<double> >& v, std::vector<AlmType>& alm, int lMaxPol);
+    static void readInput(const char* inputListName, const std::vector<int>& goodPixels, std::vector<std::vector<double> >& t, std::vector<std::string>& mapNames, const std::vector<int>& goodPixelsPol, std::vector<std::vector<double> >& v, std::vector<AlmType>& alm, int lMaxPol);
     
 private:
-    LaGenMatDouble cInv_;
+    Math::SymmetricMatrix<double> cInv_;
     double logDet_;
     std::vector<int> goodPixels_;
     long nSide_;
@@ -240,7 +238,7 @@ private:
     double theta_;
     double psi_;
     
-    LaGenMatDouble nInv_;
+    Math::SymmetricMatrix<double> nInv_;
     
     WholeMatrix etttInverse_;
     std::vector<double> beam_;

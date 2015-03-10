@@ -10,16 +10,12 @@
 #include <limits>
 #include <ctime>
 
-#include <lavd.h>
-#include <gmd.h>
-#include <sybmd.h>
-#include <sybfd.h>
-
 #include <macros.hpp>
 #include <exception_handler.hpp>
 #include <math_constants.hpp>
 #include <likelihood_function.hpp>
 #include <random.hpp>
+#include <matrix_impl.hpp>
 
 namespace Math
 {
@@ -179,10 +175,10 @@ private:
     std::vector<int> blocks_;
 
     unsigned long covarianceElementsNum_;
-    LaGenMatDouble covariance_;
-    LaVectorDouble generatedVec_, rotatedVec_;
-    LaGenMatDouble choleskyMat_;
-    LaSymmBandMatDouble cholesky_;
+    Math::SymmetricMatrix<double> covariance_;
+    std::vector<double> generatedVec_, rotatedVec_;
+    Math::SymmetricMatrix<double> cholesky_;
+
     bool covarianceReady_;
     std::vector<double> paramMean_;
     std::vector<double> paramMeanNew_;
@@ -675,7 +671,7 @@ MetropolisHastings::updateCovarianceMatrix(const CovarianceMatrixUpdateInfo& inf
     for(int i = 0; i < n_; ++i)
     {
         check(info.matrixSum[i].size() == n_, "");
-        for(int j = 0; j < n_; ++j)
+        for(int j = i; j < n_; ++j)
         {
             covariance_(i, j) = double(covarianceElementsNum_ - 1) / double(covarianceElementsNum_ + info.n - 1) * covariance_(i, j) + covFactor_ / double(covarianceElementsNum_ + info.n - 1) * (double(covarianceElementsNum_) * paramMean_[i] * paramMean_[j] - double(covarianceElementsNum_ + info.n) * paramMeanNew_[i] * paramMeanNew_[j] + info.matrixSum[i][j] + info.n * (i == j ? covEpsilon_ : 0.0));
         }
@@ -692,30 +688,11 @@ MetropolisHastings::updateCovarianceMatrix(const CovarianceMatrixUpdateInfo& inf
             cholesky_(i, j) = covariance_(i, j);
     }
 
-    LaSymmBandMatFactorizeIP(cholesky_);
-
-    for(int i = 0; i < n_; ++i)
-    {
-        for(int j = 0; j <= i; ++j)
-            choleskyMat_(i, j) = cholesky_(i, j);
-    }
+    cholesky_.choleskyFactorize();
 
     // to be removed
-    std::ofstream out("covariance_cholesky.txt");
-    for(int i = 0; i < n_; ++i)
-    {
-        for(int j = 0; j < n_; ++j)
-            out << covariance_(i, j) << '\t';
-        out << std::endl;
-    }
-    out << std::endl;
-    for(int i = 0; i < n_; ++i)
-    {
-        for(int j = 0; j < n_; ++j)
-            out << cholesky_(i, j) << '\t';
-        out << std::endl;
-    }
-    out.close();
+    covariance_.writeIntoTextFile("mcmc_covariance_matrix.txt");
+    cholesky_.writeIntoTextFile("mcmc_cholesky_matrix.txt");
 
     if(covarianceElementsNum_ > 100)
         covarianceReady_ = true;
@@ -799,8 +776,8 @@ MetropolisHastings::writeResumeInfo() const
 
         out.write((char*)(&covarianceReady_), sizeof(covarianceReady_));
 
-        check(covariance_.size(0) == n_ && covariance_.size(1) == n_, "");
-        check(choleskyMat_.size(0) == n_ && choleskyMat_.size(1) == n_, "");
+        check(covariance_.size() == n_, "");
+        check(cholesky_.size() == n_, "");
 
         out.write((char*)(&covarianceElementsNum_), sizeof(covarianceElementsNum_));
         for(int i = 0; i < n_; ++i)
@@ -809,7 +786,7 @@ MetropolisHastings::writeResumeInfo() const
             {
                 double x = covariance_(i, j);
                 out.write((char*)(&x), sizeof(double));
-                x = choleskyMat_(i, j);
+                x = cholesky_(i, j);
                 out.write((char*)(&x), sizeof(double));
             }
         }
@@ -849,8 +826,8 @@ MetropolisHastings::readResumeInfo()
 
         in.read((char*)(&covarianceReady_), sizeof(covarianceReady_));
 
-        check(covariance_.size(0) == n_ && covariance_.size(1) == n_, "");
-        check(choleskyMat_.size(0) == n_ && choleskyMat_.size(1) == n_, "");
+        check(covariance_.size() == n_, "");
+        check(cholesky_.size() == n_, "");
 
         in.read((char*)(&covarianceElementsNum_), sizeof(covarianceElementsNum_));
         for(int i = 0; i < n_; ++i)
@@ -861,7 +838,7 @@ MetropolisHastings::readResumeInfo()
                 in.read((char*)(&x), sizeof(double));
                 covariance_(i, j) = x;
                 in.read((char*)(&x), sizeof(double));
-                choleskyMat_(i, j) = x;
+                cholesky_(i, j) = x;
             }
         }
 

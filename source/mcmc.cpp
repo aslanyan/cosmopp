@@ -1,7 +1,5 @@
 #include <cosmo_mpi.hpp>
 
-#include <blas2pp.h>
-
 #include <macros.hpp>
 #include <exception_handler.hpp>
 #include <mcmc.hpp>
@@ -120,24 +118,20 @@ MetropolisHastings::useAdaptiveProposal()
 {
     adapt_ = true;
     covarianceElementsNum_ = 0;
-    covariance_.resize(n_, n_);
+    covariance_.resize(n_);
 
     paramMean_.resize(n_, 0);
     paramMeanNew_.resize(n_);
     generatedVec_.resize(n_);
     rotatedVec_.resize(n_);
 
-    choleskyMat_.resize(n_, n_);
 
 
-    cholesky_.resize(n_, 2 * n_ + 1);
+    cholesky_.resize(n_);
 
     for(int i = 0; i < n_; ++i)
-        for(int j = 0; j < n_; ++j)
-        {
+        for(int j = i; j < n_; ++j)
             covariance_(i, j) = 0;
-            choleskyMat_(i, j) = 0;
-        }
 
     for(int i = 0; i < nChains_; ++i)
     {
@@ -364,7 +358,7 @@ MetropolisHastings::communicate()
                     for(int j = 0; j < n_; ++j)
                     {
                         for(int k = 0; k < n_; ++k)
-                            currentCom[j * n_ + k] = choleskyMat_(j, k);
+                            currentCom[j * n_ + k] = cholesky_(j, k);
                     }
 
                     MPI_Isend(&(currentCom[0]), n_ * n_, MPI_DOUBLE, i, covUpdateReqTag_ + i, MPI_COMM_WORLD, covUpdateReq);
@@ -414,11 +408,11 @@ MetropolisHastings::communicate()
         if(covUpdateFlag)
         {
             output_screen1("Received an updated covariance matrix from the master." << std::endl);
-            check(choleskyMat_.size(0) == n_ && choleskyMat_.size(1) == n_, "");
+            check(cholesky_.size() == n_, "");
             for(int i = 0; i < n_; ++i)
             {
                 for(int j = 0; j < n_; ++j)
-                    choleskyMat_(i, j) = eigenUpdateBuff_[i * n_ + j];
+                    cholesky_(i, j) = eigenUpdateBuff_[i * n_ + j];
             }
 
             covarianceReady_ = true;
@@ -558,15 +552,20 @@ MetropolisHastings::run(unsigned long maxChainLength, int writeResumeInformation
             if(adapt_ && covarianceReady_)
             {
                 for(int j = 0; j < n_; ++j)
-                    generatedVec_(j) = 0;
+                    generatedVec_[j] = 0;
 
                 for(int j = blockBegin; j < blockEnd; ++j)
-                    generatedVec_(j) = generator_->generate();
+                    generatedVec_[j] = generator_->generate();
 
-                Blas_Mat_Vec_Mult(choleskyMat_, generatedVec_, rotatedVec_);
+                for(int i = 0; i < rotatedVec_.size(); ++i)
+                {
+                    rotatedVec_[i] = 0;
+                    for(int j = 0; j < generatedVec_.size(); ++j)
+                        rotatedVec_[i] += cholesky_(i, j) * generatedVec_[j];
+                }
 
                 for(int j = 0; j < n_; ++j)
-                    current_[j] += rotatedVec_(j);
+                    current_[j] += rotatedVec_[j];
             }
             else
             {

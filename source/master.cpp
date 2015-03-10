@@ -7,13 +7,7 @@
 #include <progress_meter.hpp>
 #include <wigner_3j.hpp>
 #include <master.hpp>
-
-#include <gmd.h>
-#include <lavd.h>
-#include <laslv.h>
-#include <lavli.h>
-#include <blas2pp.h>
-#include <blas3pp.h>
+#include <matrix_impl.hpp>
 
 #include <healpix_base.h>
 #include <alm.h>
@@ -408,9 +402,7 @@ Master::calculateK()
     
     output_screen("Taking the inverse of K..." << std::endl);
     kInv_.copy(k_);
-    LaVectorLongInt pivotK(size);
-    LUFactorizeIP(kInv_, pivotK);
-    LaLUInverseIP(kInv_, pivotK);
+    kInv_.invert();
     //out << kInv_ << std::endl;
     //out.close();
     output_screen("OK" << std::endl);

@@ -6,9 +6,6 @@
 
 #include <whole_matrix.hpp>
 
-#include <gmd.h>
-#include <lavd.h>
-
 #include <alm.h>
 #include <xcomplex.h>
 #include <healpix_map.h>
@@ -39,15 +36,6 @@ public:
     /// \param lMax The maximum value of l to use for simulation. In the default case of 0 it is determined from the size of cl.
     /// \param seed A random seed. If 0 then the current time (in seconds) is taken as the seed.
     static void simulateAlm(const std::vector<double>& cl, Alm<xcomplex<double> >& alm, int lMax = 0, time_t seed = 0);
-
-    /// Diagonalize a square positive definite matrix.
-    
-    /// This function finds the eigenvalues of a matrix, then checks (if CHECKS_ON is defined) that the eigenvalues are real and positive, and the eigenvectors are orthonormal.
-    /// \param matrix The matrix to be diagonalized.
-    /// \param eigenvalsRe The vector to write the real parts of eigenvalues in.
-    /// \param eigenvalsIm The vector to write the imaginary parts of eigenvalues in.
-    /// \param vecs The matrix to write the eigenvectors in.
-    static void diagonalizeMatrix(const LaGenMatDouble& matrix, LaVectorDouble& eigenvalsRe, LaVectorDouble& eigenvalsIm, LaGenMatDouble& vecs);
 
     /// White noise map generator.
     

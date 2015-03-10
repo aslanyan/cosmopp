@@ -5,9 +5,7 @@
 
 #include <function.hpp>
 #include <cosmological_params.hpp>
-
-#include <gmd.h>
-#include <lavd.h>
+#include <matrix.hpp>
 
 class MatterLikelihood
 {
@@ -28,7 +26,7 @@ private:
     void readCov(const char* fileName);
 
 private:
-    LaGenMatDouble cInv_;
+    Math::SymmetricMatrix<double> cInv_;
     std::vector<double> kh_, data_;
     bool scale_;
     double dvFid_;

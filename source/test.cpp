@@ -63,7 +63,7 @@ TestFramework* createTest(const std::string& name)
         test = new TestSphericalHarmonics;
     else if(name == "matrix")
         test = new TestMatrix;
-#ifdef COSMO_LAPACKPP
+#ifdef COSMO_LAPACK
     else if(name == "mcmc_fast")
         test = new TestMCMCFast;
 #endif
@@ -77,7 +77,7 @@ TestFramework* createTest(const std::string& name)
 #endif
 #ifdef COSMO_PLANCK
 #ifdef COSMO_CLASS
-#ifdef COSMO_LAPACKPP
+#ifdef COSMO_LAPACK
     else if(name == "mcmc_planck")
         test = new TestMCMCPlanck;
 #endif
@@ -96,7 +96,7 @@ TestFramework* createTest(const std::string& name)
         test = new TestCMB;
 #endif
 #ifdef COSMO_HEALPIX
-#ifdef COSMO_LAPACKPP
+#ifdef COSMO_LAPACK
 #ifdef COSMO_CLASS
     else if(name == "cmb_gibbs")
         test = new TestCMBGibbs;
@@ -136,7 +136,7 @@ TestFramework* createTest(const std::string& name)
         test = new TestMaskApodizer(1e-3);
 #endif
 #ifdef COSMO_CLASS
-#ifdef COSMO_LAPACKPP
+#ifdef COSMO_LAPACK
     else if(name == "matter_likelihood")
         test = new TestMatterLikelihood(1e-3);
 #endif
@@ -212,7 +212,7 @@ int main(int argc, char *argv[])
         fastTests.insert("legendre");
         fastTests.insert("spherical_harmonics");
         fastTests.insert("matrix");
-#ifdef COSMO_LAPACKPP
+#ifdef COSMO_LAPACK
         fastTests.insert("mcmc_fast");
 #endif
 #ifdef COSMO_MULTINEST
@@ -242,7 +242,7 @@ int main(int argc, char *argv[])
         fastTests.insert("cubic_spline");
         fastTests.insert("three_rotation");
 #ifdef COSMO_CLASS
-#ifdef COSMO_LAPACKPP
+#ifdef COSMO_LAPACK
         fastTests.insert("matter_likelihood");
 #endif
 #endif
@@ -261,7 +261,7 @@ int main(int argc, char *argv[])
 
 #ifdef COSMO_PLANCK
 #ifdef COSMO_CLASS
-#ifdef COSMO_LAPACKPP
+#ifdef COSMO_LAPACK
         slowTests.insert("mcmc_planck");
 #endif
 #ifdef COSMO_MULTINEST
@@ -273,7 +273,7 @@ int main(int argc, char *argv[])
 #endif
 #endif
 #ifdef COSMO_HEALPIX
-#ifdef COSMO_LAPACKPP
+#ifdef COSMO_LAPACK
 #ifdef COSMO_CLASS
         slowTests.insert("cmb_gibbs");
         slowTests.insert("like_high");

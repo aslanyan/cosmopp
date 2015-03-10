@@ -78,6 +78,9 @@ CMB::preInitialize(int lMax, bool wantAllL, bool primordialInitialize, bool incl
 
     primordialInitialize_ = primordialInitialize;
 
+    kMin_ = kMin;
+    kMax_ = kMax;
+
     if(primordialInitialize)
     {
         check(kPerDecade >= 1, "");
@@ -86,8 +89,6 @@ CMB::preInitialize(int lMax, bool wantAllL, bool primordialInitialize, bool incl
 
         pr_->k_per_decade_primordial = kPerDecade;
         kPerDecade_ = kPerDecade;
-        kMin_ = kMin;
-        kMax_ = kMax;
     }
 
     if(wantAllL)
@@ -102,6 +103,10 @@ CMB::preInitialize(int lMax, bool wantAllL, bool primordialInitialize, bool incl
         exc.set(exceptionStr);
         throw exc;
     }
+
+    // hack
+    //if(kMax > 2.0)
+        pr_->evolver = rk;
 
     /*
     bs_->x_max = lMax * pr_->k_scalar_max_tau0_over_l_max;
@@ -140,9 +145,6 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
 
     if(init_)
         clean();
-
-    pr_->k_per_decade_for_pk = 100;
-    pr_->k_per_decade_for_bao = 100;
 
     br_->H0 = params.getH() * 1e5 / _c_;
     br_->h = params.getH();
@@ -303,6 +305,7 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
         pt_->has_pk_matter = true;
         pt_->has_density_transfers = true;
         sp_->z_max_pk = zMaxPk;
+        //pt_->k_max_for_pk = kMax_;
         //nl_->method = nl_halofit;
         //pr_->halofit_dz = 0.1;
         //pr_->halofit_min_k_nonlinear = 0.0035;
@@ -325,6 +328,7 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
     //pt_->has_source_t = wantT;
     //pt_->has_source_p = wantPol;
     //pt_->has_source_g = wantLensing;
+
     
     int perturbInitFailures = 0;
     while(perturb_init(pr_, br_, th_, pt_) == _FAILURE_)

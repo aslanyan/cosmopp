@@ -136,7 +136,7 @@ TestLikeLow::runSubTest(unsigned int i, double& res, double& expected, std::stri
 
     check(nSideMask == nSide, "");
 
-    std::vector<LaVectorDouble> t(n);
+    std::vector<std::vector<double> > t(n);
 
     output_screen1("Starting simulations..." << std::endl);
 
@@ -168,9 +168,9 @@ TestLikeLow::runSubTest(unsigned int i, double& res, double& expected, std::stri
         alm2map(alm, map);
         map.swap_scheme();
 
-        LaVectorDouble v(goodPixels.size());
+        std::vector<double> v(goodPixels.size());
         for(int j = 0; j < goodPixels.size(); ++j)
-            v(j) = map[goodPixels[j]] + noiseMap[goodPixels[j]];
+            v[j] = map[goodPixels[j]] + noiseMap[goodPixels[j]];
 
         t[i] = v;
         meter.advance();
@@ -184,7 +184,7 @@ TestLikeLow::runSubTest(unsigned int i, double& res, double& expected, std::stri
     CMatrix* fiducialMatrix = CMatrixGenerator::getFiducialMatrix(clTT, nSide, lMax, fwhm, &goodPixels);
     CMatrix* noiseMatrix = CMatrixGenerator::generateNoiseMatrix(nSide, pixelNoise);
     noiseMatrix->maskMatrix(goodPixels);
-    LaVectorDouble foreground;
+    std::vector<double> foreground;
     Likelihood like(*cMatrix, *fiducialMatrix, *noiseMatrix, goodPixels, foreground);
     std::vector<std::string> mapNames(n, "test_map");
     std::vector<LikelihoodResult> results;
