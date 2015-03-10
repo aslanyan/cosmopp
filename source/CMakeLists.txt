@@ -70,6 +70,7 @@ endif(CLASS_DIR AND POLYCHORD_DIR AND PLANCK_DIR)
 
 
 add_library(cosmopp STATIC ${LIB_FILES})
+install(TARGETS cosmopp DESTINATION lib)
 
 add_executable(cosmo_test test.cpp ${TEST_FILES})
 target_link_libraries(cosmo_test cosmopp)
@@ -106,6 +107,7 @@ endif(PLANCK_DIR)
 if(WMAP9_DIR)
 	target_link_libraries(cosmo_test ${WMAP9LIB})
 endif(WMAP9_DIR)
+install(TARGETS cosmo_test DESTINATION bin)
 
 
 if(HEALPIX_DIR)
@@ -116,6 +118,7 @@ if(HEALPIX_DIR)
 	endif(MPI_FOUND)
 	target_link_libraries(apodize_mask ${CFITSIOLIB})
 	target_link_libraries(apodize_mask ${CHEALPIXLIB} ${HEALPIXCXXLIB} ${CXXSUPPORTLIB} ${SHARPLIB} ${FFTPACKLIB} ${CUTILSLIB})
+	install(TARGETS apodize_mask DESTINATION bin)
 endif(HEALPIX_DIR)
 
 
@@ -128,4 +131,5 @@ if(LAPACK_LIB_FLAGS AND HEALPIX_DIR)
 	target_link_libraries(generate_white_noise ${LAPACK_LIB_FLAGS})
 	target_link_libraries(generate_white_noise ${CFITSIOLIB})
 	target_link_libraries(generate_white_noise ${CHEALPIXLIB} ${HEALPIXCXXLIB} ${CXXSUPPORTLIB} ${SHARPLIB} ${FFTPACKLIB} ${CUTILSLIB})
+	install(TARGETS generate_white_noise DESTINATION bin)
 endif(LAPACK_LIB_FLAGS AND HEALPIX_DIR)

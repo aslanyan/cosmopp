@@ -1,0 +1,53 @@
+#install directory
+#you can either set it below or pass it to cmake by -DCMAKE_INSTALL_PREFIX=...
+set(CMAKE_INSTALL_PREFIX /Users/aslanyan/code/install_cosmo_pp)
+
+#build configuration
+#by default it will be release, you can change it here or pass it to cmake by -DCMAKE_BUILD_TYPE=DEBUG
+#set(CMAKE_BUILD_TYPE DEBUG)
+
+#lapack
+set(LAPACK_LIB_FLAGS "-framework Accelerate")
+
+#example Mac
+#set(LAPACK_LIB_FLAGS "-framework Accelerate")
+#example MKL
+#set(LAPACK_LIB_FLAGS "-lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lmkl_mc3 -lmkl_def")
+#example linux lapack/blas
+#set(LAPACK_LIB_FLAGS "-lblas -llapack")
+
+#cfitsio
+set(CFITSIO_DIR "/usr/local")
+
+#healpix
+set(HEALPIX_DIR "/Users/aslanyan/programs/Healpix_3.20")
+set(HEALPIXPP_DIR "${HEALPIX_DIR}/src/cxx/osx")
+
+#class
+set(CLASS_DIR "/Users/aslanyan/programs/class_public-2.4.2")
+
+#multinest
+set(MULTINEST_DIR "/Users/aslanyan/programs/MultiNest_v3.9_CMake/multinest")
+
+#polychord
+set(POLYCHORD_DIR "/Users/aslanyan/programs/PolyChord_v1.0")
+
+#planck
+set(PLANCK_DIR "/Users/aslanyan/programs/planck/COM_Code_Likelihood-v1.0_R1.10.ext/plc-1.0")
+set(PLANCK_DATA_DIR "/Users/aslanyan/programs/planck")
+set(PLANCK_COMPILE_FLAGS "-D LAPACK_CLIK")
+
+#wmap9
+set(WMAP9_DIR "/Users/aslanyan/programs/wmap_likelihood_v5")
+set(WMAP9_COMPILER "gfortran")
+
+#minuit
+set(MINUIT_DIR "/usr/local")
+
+# cosmo++ specific compiler flags
+# include -DCREATE_LOG to create log file. CREATE_LOG1 will create a log file with more output and CREATE_LOG2 will have even more detailed output.
+# include -DVERBOSE to compile in verbose mode. VERBOSE1 will have more output on the screen and VERBOSE2 will have even more output.
+# include -DCHECKS_ON to turn on the checks (slows down, use it only for debugging)
+# include -DSLOW_CHECKS_ON to turn on all the checks, including slow ones (may extremely slow down, use it only for debugging)
+add_definitions(-DVERBOSE1 -DCREATE_LOG -DCHECKS_ON)
+

@@ -7,46 +7,7 @@ if (NOT CMAKE_BUILD_TYPE)
 	set (CMAKE_BUILD_TYPE RELEASE)
 endif (NOT CMAKE_BUILD_TYPE)
 
-# specific options
-SET(CMAKE_INSTALL_PREFIX /Users/aslanyan/code/install_cosmo_pp)
-
-#lapack
-set(LAPACK_LIB_FLAGS "-framework Accelerate")
-
-#cfitsio
-set(CFITSIO_DIR "/usr/local")
-
-#healpix
-set(HEALPIX_DIR "/Users/aslanyan/programs/Healpix_3.20")
-set(HEALPIXPP_DIR "${HEALPIX_DIR}/src/cxx/osx")
-
-#class
-set(CLASS_DIR "/Users/aslanyan/programs/class_public-2.4.2")
-
-#multinest
-set(MULTINEST_DIR "/Users/aslanyan/programs/MultiNest_v3.9_CMake/multinest")
-
-#polychord
-set(POLYCHORD_DIR "/Users/aslanyan/programs/PolyChord_v1.0")
-
-#planck
-set(PLANCK_DIR "/Users/aslanyan/programs/planck/COM_Code_Likelihood-v1.0_R1.10.ext/plc-1.0")
-set(PLANCK_DATA_DIR "/Users/aslanyan/programs/planck")
-set(PLANCK_COMPILE_FLAGS "-D LAPACK_CLIK")
-
-#wmap9
-set(WMAP9_DIR "/Users/aslanyan/programs/wmap_likelihood_v5")
-set(WMAP9_COMPILER "gfortran")
-
-#minuit
-set(MINUIT_DIR "/usr/local")
-
-# cosmo++ specific compiler flags
-# include -DCREATE_LOG to create log file. CREATE_LOG1 will create a log file with more output and CREATE_LOG2 will have even more detailed output.
-# include -DVERBOSE to compile in verbose mode. VERBOSE1 will have more output on the screen and VERBOSE2 will have even more output.
-# include -DCHECKS_ON to turn on the checks (slows down, use it only for debugging)
-# include -DSLOW_CHECKS_ON to turn on all the checks, including slow ones (may extremely slow down, use it only for debugging)
-add_definitions(-DVERBOSE1 -DCREATE_LOG -DCHECKS_ON)
+include(cmake_settings.txt)
 
 # compiler options
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fpic")
@@ -250,8 +211,7 @@ endif(MINUIT_DIR)
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/test_files)
-file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/slow_test_files)
-file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/data)
+file(COPY ${PROJECT_SOURCE_DIR}/slow_test_files DESTINATION ${PROJECT_BINARY_DIR})
 file(COPY ${PROJECT_SOURCE_DIR}/data DESTINATION ${PROJECT_BINARY_DIR})
 
 include_directories(${PROJECT_SOURCE_DIR}/include)
@@ -259,8 +219,8 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 add_subdirectory(source)
 add_subdirectory(examples)
 
-install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/ DESTINATION include)
-install(DIRECTORY ${PROJECT_BINARY_DIR}/bin/ DESTINATION bin)
-install(DIRECTORY ${PROJECT_BINARY_DIR}/lib/ DESTINATION lib)
-install(DIRECTORY ${PROJECT_SOURCE_DIR}/data/ DESTINATION data)
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/include DESTINATION ${CMAKE_INSTALL_PREFIX})
+#install(DIRECTORY ${PROJECT_BINARY_DIR}/bin DESTINATION bin)
+#install(DIRECTORY ${PROJECT_BINARY_DIR}/lib DESTINATION lib)
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/data DESTINATION ${CMAKE_INSTALL_PREFIX})
 
