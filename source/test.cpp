@@ -143,14 +143,14 @@ TestFramework* createTest(const std::string& name)
 #ifdef COSMO_ANN
     else if(name == "k_nearest_neighbors")
         test = new TestKNearestNeighbors;
-#ifdef COSMO_LAPACKPP
+#ifdef COSMO_LAPACK
     else if(name == "fast_approximator")
         test = new TestFastApproximator(1e-3);
     else if(name == "fast_approximator_error")
         test = new TestFastApproximatorError(1e-3);
 #endif
 #endif
-#ifdef COSMO_LAPACKPP
+#ifdef COSMO_LAPACK
 #ifdef COSMO_ANN
 #ifdef COSMO_CLASS
 #ifdef COSMO_PLANCK
@@ -241,7 +241,7 @@ int main(int argc, char *argv[])
 #endif
 #ifdef COSMO_ANN
         fastTests.insert("k_nearest_neighbors");
-#ifdef COSMO_LAPACKPP
+#ifdef COSMO_LAPACK
         fastTests.insert("fast_approximator");
         fastTests.insert("fast_approximator_error");
 #endif
@@ -269,7 +269,7 @@ int main(int argc, char *argv[])
 #endif
 #endif
 #endif
-#ifdef COSMO_LAPACKPP
+#ifdef COSMO_LAPACK
 #ifdef COSMO_ANN
 #ifdef COSMO_CLASS
 #ifdef COSMO_PLANCK

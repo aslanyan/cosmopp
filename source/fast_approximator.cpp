@@ -9,14 +9,6 @@
 #include <matrix_impl.hpp>
 #include <fast_approximator.hpp>
 
-#include <gmd.h>
-#include <lavd.h>
-#include <laslv.h>
-#include <lavli.h>
-#include <blas2pp.h>
-#include <blas3pp.h>
-
-
 FastApproximator::FastApproximator(int nPoints, int nData, unsigned long dataSize, const std::vector<std::vector<double> >& points, const std::vector<std::vector<double> >& data, int k) : knn_(NULL), k_(k), nPoints_(nPoints), nData_(nData), x_(k, nPoints + nPoints * nPoints + 1), xLin_(k, nPoints + 1), xT_(nPoints + nPoints * nPoints + 1, k), xTLin_(nPoints_ + 1, k), inv_(nPoints + nPoints * nPoints + 1, nPoints + nPoints * nPoints + 1), invLin_(nPoints_ + 1, nPoints_ + 1), prod_(nPoints + nPoints * nPoints + 1, k), prodLin_(nPoints_ + 1, k), pointTransformed_(nPoints), sigma_(1), l_(1e-6)
 {
     check(nPoints_ > 0, "");
@@ -246,7 +238,7 @@ FastApproximator::getApproximation(std::vector<double>& val, InterpolationMethod
     case LINEAR_INTERPOLATION:
         Math::Matrix<double>::multiplyMatrices(xTLin_, xLin_, &invLin_);
 
-        for(int i = 0; i < invLin_.size(0); ++i)
+        for(int i = 0; i < invLin_.rows(); ++i)
             invLin_(i, i) += 1e-5;
 
         invLin_.invert();
@@ -255,7 +247,7 @@ FastApproximator::getApproximation(std::vector<double>& val, InterpolationMethod
 
     case QUADRATIC_INTERPOLATION:
         Math::Matrix<double>::multiplyMatrices(xT_, x_, &inv_);
-        for(int i = 0; i < inv_.size(0); ++i)
+        for(int i = 0; i < inv_.rows(); ++i)
             inv_(i, i) += 1e-5;
 
         inv_.invert();

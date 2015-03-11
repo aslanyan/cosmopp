@@ -70,7 +70,7 @@ TestFastApproximatorError::runSubTest(unsigned int i, double& res, double& expec
 
     FastApproximator fa(3, 1, points.size(), points, data, 50);
     BasicFAErrorFunctionAvg func;
-    FastApproximatorError faError(fa, testPoints, testData, 0, testPoints.size(), func, FastApproximatorError::GAUSS_PROCESS);
+    FastApproximatorError faError(fa, testPoints, testData, 0, testPoints.size(), func);
 
     subTestName = "complicated_function";
     res = 0;
