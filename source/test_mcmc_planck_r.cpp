@@ -38,7 +38,7 @@ TestMCMCPlanckR::runSubTest(unsigned int i, double& res, double& expected, std::
     mh.setParam(3, "tau", 0.01, 0.8, 0.1, 0.01, 0.002);
     mh.setParam(4, "ns", 0.9, 1.1, 1.0, 0.01, 0.002);
     mh.setParam(5, "As", 2.7, 4.0, 3.0, 0.1, 0.002);
-    mh.setParam(6, "r", 0.0, 1.0, 0.1, 0.02, 0.002);
+    mh.setParam(6, "r", 0.0, 2.0, 0.1, 0.02, 0.002);
 
     mh.setParam(7, "A_ps_100", 0, 360, 100, 100, 20);
     mh.setParam(8, "A_ps_143", 0, 270, 50, 20, 2);
