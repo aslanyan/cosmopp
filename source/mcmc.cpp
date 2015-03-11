@@ -552,7 +552,8 @@ MetropolisHastings::run(unsigned long maxChainLength, int writeResumeInformation
                 for(int i = 0; i < rotatedVec_.size(); ++i)
                 {
                     rotatedVec_[i] = 0;
-                    for(int j = 0; j < generatedVec_.size(); ++j)
+                    // note the upper bound! cholesky_ is used here as lower diagonal
+                    for(int j = 0; j <= i; ++j)
                         rotatedVec_[i] += cholesky_(i, j) * generatedVec_[j];
                 }
 
