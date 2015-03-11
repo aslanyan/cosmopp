@@ -14,8 +14,6 @@ FastApproximatorError::FastApproximatorError(FastApproximator& fa, const std::ve
 
     switch(method_)
     {
-    case GAUSS_PROCESS:
-        break;
     case MIN_DISTANCE:
     case AVG_DISTANCE:
     case AVG_INV_DISTANCE:
@@ -76,14 +74,7 @@ FastApproximatorError::reset(const std::vector<std::vector<double> >& testPoints
     for(unsigned long i = begin; i < end; ++i)
     {
         fa_.findNearestNeighbors(testPoints[i], distances_, nearestNeighbors_);
-        if(method_ == GAUSS_PROCESS)
-        {
-            fa_.getApproximationGaussianProcess(val_, ge_);
-            check(!ge_.empty(), "");
-            gaussError_ = ge_[0];
-        }
-        else
-            fa_.getApproximation(val_, FastApproximator::QUADRATIC_INTERPOLATION);
+        fa_.getApproximation(val_, FastApproximator::QUADRATIC_INTERPOLATION);
 
         if(method_ == LIN_QUAD_DIFF)
             fa_.getApproximation(linVal_, FastApproximator::LINEAR_INTERPOLATION);
@@ -145,10 +136,6 @@ FastApproximatorError::evaluateError()
 
     switch(method_)
     {
-    case GAUSS_PROCESS:
-        check(gaussError_ >= 0, "");
-        return gaussError_;
-
     case MIN_DISTANCE:
         check(distances_, "");
         check(!distances_->empty(), "");

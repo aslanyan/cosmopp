@@ -39,7 +39,6 @@
 #include <test_k_nearest_neighbors.hpp>
 #include <test_fast_approximator.hpp>
 #include <test_fast_approximator_error.hpp>
-#include <test_gaussian_process.hpp>
 #include <test_mcmc_planck_fast.hpp>
 #include <test_multinest_planck_fast.hpp>
 
@@ -152,12 +151,6 @@ TestFramework* createTest(const std::string& name)
 #endif
 #endif
 #ifdef COSMO_LAPACKPP
-#ifdef COSMO_MINUIT
-    else if(name == "gaussian_process")
-        test = new TestGaussianProcess;
-#endif
-#endif
-#ifdef COSMO_LAPACKPP
 #ifdef COSMO_ANN
 #ifdef COSMO_CLASS
 #ifdef COSMO_PLANCK
@@ -251,11 +244,6 @@ int main(int argc, char *argv[])
 #ifdef COSMO_LAPACKPP
         fastTests.insert("fast_approximator");
         fastTests.insert("fast_approximator_error");
-#endif
-#endif
-#ifdef COSMO_LAPACKPP
-#ifdef COSMO_MINUIT
-        fastTests.insert("gaussian_process");
 #endif
 #endif
 

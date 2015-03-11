@@ -6,7 +6,7 @@
 
 #include <macros.hpp>
 #include <exception_handler.hpp>
-#include <gaussian_process.hpp>
+#include <matrix_impl.hpp>
 #include <fast_approximator.hpp>
 
 #include <gmd.h>
@@ -17,7 +17,7 @@
 #include <blas3pp.h>
 
 
-FastApproximator::FastApproximator(int nPoints, int nData, unsigned long dataSize, const std::vector<std::vector<double> >& points, const std::vector<std::vector<double> >& data, int k) : knn_(NULL), k_(k), nPoints_(nPoints), nData_(nData), x_(k, nPoints + nPoints * nPoints + 1), xLin_(k, nPoints + 1), xT_(nPoints + nPoints * nPoints + 1, k), xTLin_(nPoints_ + 1, k), inv_(nPoints + nPoints * nPoints + 1, nPoints + nPoints * nPoints + 1), invLin_(nPoints_ + 1, nPoints_ + 1), prod_(nPoints + nPoints * nPoints + 1, k), prodLin_(nPoints_ + 1, k), pivot_(nPoints + nPoints * nPoints + 1), pivotLin_(nPoints_ + 1), pivot1_(nPoints), pointTransformed_(nPoints), sigma_(1), l_(1e-6), gaussK_(k, k), pivotK_(k)
+FastApproximator::FastApproximator(int nPoints, int nData, unsigned long dataSize, const std::vector<std::vector<double> >& points, const std::vector<std::vector<double> >& data, int k) : knn_(NULL), k_(k), nPoints_(nPoints), nData_(nData), x_(k, nPoints + nPoints * nPoints + 1), xLin_(k, nPoints + 1), xT_(nPoints + nPoints * nPoints + 1, k), xTLin_(nPoints_ + 1, k), inv_(nPoints + nPoints * nPoints + 1, nPoints + nPoints * nPoints + 1), invLin_(nPoints_ + 1, nPoints_ + 1), prod_(nPoints + nPoints * nPoints + 1, k), prodLin_(nPoints_ + 1, k), pointTransformed_(nPoints), sigma_(1), l_(1e-6)
 {
     check(nPoints_ > 0, "");
     check(nData_ > 0, "");
@@ -31,10 +31,10 @@ FastApproximator::FastApproximator(int nPoints, int nData, unsigned long dataSiz
         xTLin_(0, i) = 1;
     }
 
-    covariance_.resize(nPoints_, 2 * nPoints_ + 1);
+    covariance_.resize(nPoints_);
     choleskyMat_.resize(nPoints_, nPoints_);
-    v_.resize(nPoints_);
-    w_.resize(nPoints_);
+    v_.resize(nPoints_, 1);
+    w_.resize(nPoints_, 1);
 
     indices_.resize(k_);
     dists_.resize(k_);
@@ -79,7 +79,7 @@ FastApproximator::reset(unsigned long dataSize, const std::vector<std::vector<do
 
         for(int i = 0; i < nPoints_; ++i)
         {
-            for(int j = 0; j < nPoints_; ++j)
+            for(int j = i; j < nPoints_; ++j)
             {
                 double t1 = 0;
                 for(unsigned long k = 0; k < dataSize_; ++k)
@@ -89,7 +89,7 @@ FastApproximator::reset(unsigned long dataSize, const std::vector<std::vector<do
             }
         }
 
-        LaSymmBandMatFactorizeIP(covariance_);
+        covariance_.choleskyFactorize();
 
         for(int i = 0; i < nPoints_; ++i)
         {
@@ -97,8 +97,7 @@ FastApproximator::reset(unsigned long dataSize, const std::vector<std::vector<do
                 choleskyMat_(i, j) = (j <= i ? covariance_(i, j) : 0.0);
         }
 
-        LUFactorizeIP(choleskyMat_, pivot1_);
-        LaLUInverseIP(choleskyMat_, pivot1_);
+        choleskyMat_.invert();
     }
 
     pointsTransformed_.resize(dataSize_);
@@ -109,12 +108,12 @@ FastApproximator::reset(unsigned long dataSize, const std::vector<std::vector<do
 
         for(int j = 0; j < nPoints_; ++j)
         {
-            v_(j) = points[i][j];
+            v_(j, 0) = points[i][j];
         }
 
-        Blas_Mat_Vec_Mult(choleskyMat_, v_, w_);
+        Math::Matrix<double>::multiplyMatrices(choleskyMat_, v_, &w_);
         for(int j = 0; j < nPoints_; ++j)
-            pointsTransformed_[i][j] = w_(j);
+            pointsTransformed_[i][j] = w_(j, 0);
     }
 
     if(!knn_)
@@ -132,11 +131,11 @@ FastApproximator::findNearestNeighbors(const std::vector<double>& point, std::ve
 
     for(int i = 0; i < nPoints_; ++i)
     {
-        v_(i) = point[i];
+        v_(i, 0) = point[i];
     }
-    Blas_Mat_Vec_Mult(choleskyMat_, v_, w_);
+    Math::Matrix<double>::multiplyMatrices(choleskyMat_, v_, &w_);
     for(int i = 0; i < nPoints_; ++i)
-        pointTransformed_[i] = w_(i);
+        pointTransformed_[i] = w_(i, 0);
 
     check(knn_, "");
     knn_->search(pointTransformed_, &indices_, &dists_);
@@ -173,99 +172,6 @@ FastApproximator::findNearestNeighbors(const std::vector<double>& point, std::ve
     {
         *indices = indices_;
     }
-}
-
-void
-FastApproximator::getApproximationGaussianProcess(std::vector<double>& val, std::vector<double>& error)
-{
-    val.resize(nData_);
-    error.resize(nData_);
-
-    if(std::sqrt(dists_[0]) < 1e-7)
-    {
-        //output_screen("FOUND distance = " << dists_[0] << std::endl);
-        const unsigned long index = indices_[0];
-        for(int i = 0; i < nData_; ++i)
-        {
-            val[i] = (*data_)[index][i];
-            error[i] = 0;
-        }
-
-        return;
-    }
-
-    std::vector<std::vector<double> > gaussPoints;
-    for(int i = 0; i < k_; ++i)
-        gaussPoints.push_back(pointsTransformed_[indices_[i]]);
-
-    for(int i = 0; i < nData_; ++i)
-    {
-        std::vector<double> gaussData;
-        for(int j = 0; j < k_; ++j)
-            gaussData.push_back((*data_)[indices_[j]][i]);
-
-        Math::GaussianProcess gp(nPoints_);
-        gp.set(gaussPoints, gaussData, true);
-
-        std::vector<double> mean;
-        LaGenMatDouble covariance;
-
-        std::vector<std::vector<double> > gaussInput(1, pointTransformed_);
-
-        gp.calculate(gaussInput, mean, covariance);
-
-        val[i] = mean[0];
-        error[i] = std::sqrt(covariance(0, 0));
-    }
-
-    /*
-    for(int i = 0; i < k_; ++i)
-    {
-        for(int j = i; j < k_; ++j)
-        {
-            const double c = cov(pointsTransformed_[indices_[i]], pointsTransformed_[indices_[j]]);
-            gaussK_(i, j) = c;
-            gaussK_(j, i) = c;
-
-            //output_screen(i << ' ' << j << ' ' << c << std::endl);
-        }
-    }
-
-    // hack
-    for(int i = 0; i < k_; ++i)
-        gaussK_(i, i) *= 1.00001;
-
-    LUFactorizeIP(gaussK_, pivotK_);
-    LaLUInverseIP(gaussK_, pivotK_);
-
-    kStar_.resize(k_);
-    for(int i = 0; i < k_; ++i)
-        kStar_[i] = cov(dists_[i]);
-
-    kKInv_.resize(k_);
-
-    for(int i = 0; i < k_; ++i)
-    {
-        kKInv_[i] = 0;
-        for(int j = 0; j < k_; ++j)
-            kKInv_[i] += kStar_[j] * gaussK_(j, i);
-    }
-
-    double e = cov(0);
-    for(int i = 0; i < k_; ++i)
-        e -= kKInv_[i] * kStar_[i];
-
-    check(e >= 0, "");
-    e = std::sqrt(e);
-
-    for(int i = 0; i < nData_; ++i)
-    {
-        error[i] = e;
-        val[i] = 0;
-        for(int j = 0; j < k_; ++j)
-            val[i] += kKInv_[j] * (*data_)[indices_[j]][i];
-    }
-    */
 }
 
 void
@@ -338,24 +244,22 @@ FastApproximator::getApproximation(std::vector<double>& val, InterpolationMethod
     switch(method)
     {
     case LINEAR_INTERPOLATION:
-        Blas_Mat_Mat_Mult(xTLin_, xLin_, invLin_, false);
+        Math::Matrix<double>::multiplyMatrices(xTLin_, xLin_, &invLin_);
 
         for(int i = 0; i < invLin_.size(0); ++i)
             invLin_(i, i) += 1e-5;
 
-        LUFactorizeIP(invLin_, pivotLin_);
-        LaLUInverseIP(invLin_, pivotLin_);
-        Blas_Mat_Mat_Mult(invLin_, xTLin_, prodLin_, false);
+        invLin_.invert();
+        Math::Matrix<double>::multiplyMatrices(invLin_, xTLin_, &prodLin_);
         break;
 
     case QUADRATIC_INTERPOLATION:
-        Blas_Mat_Mat_Mult(xT_, x_, inv_, false);
+        Math::Matrix<double>::multiplyMatrices(xT_, x_, &inv_);
         for(int i = 0; i < inv_.size(0); ++i)
             inv_(i, i) += 1e-5;
 
-        LUFactorizeIP(inv_, pivot_);
-        LaLUInverseIP(inv_, pivot_);
-        Blas_Mat_Mat_Mult(inv_, xT_, prod_, false);
+        inv_.invert();
+        Math::Matrix<double>::multiplyMatrices(inv_, xT_, &prod_);
         break;
 
     default:

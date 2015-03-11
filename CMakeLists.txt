@@ -208,6 +208,17 @@ if(MINUIT_DIR)
 	endif(NOT MINUITLIB)
 endif(MINUIT_DIR)
 
+#ann
+if(ANN_DIR)
+	include_directories(${ANN_DIR}/include)
+	add_definitions(-DCOSMO_ANN)
+
+	find_library(ANNLIB ANN ${ANN_DIR}/lib)
+	if(NOT ANNLIB)
+		message(FATAL_ERROR "ANN library not found!")
+	endif(NOT ANNLIB)
+endif(ANN_DIR)
+
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/test_files)

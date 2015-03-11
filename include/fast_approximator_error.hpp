@@ -10,7 +10,7 @@
 class FastApproximatorError
 {
 public:
-    enum ErrorMethod { MIN_DISTANCE = 0, GAUSS_PROCESS, AVG_DISTANCE, AVG_INV_DISTANCE, SUM_DISTANCE, LIN_QUAD_DIFF, ERROR_METHOD_MAX };
+    enum ErrorMethod { MIN_DISTANCE = 0, AVG_DISTANCE, AVG_INV_DISTANCE, SUM_DISTANCE, LIN_QUAD_DIFF, ERROR_METHOD_MAX };
     enum DecisionMethod { ONE_SIGMA = 0, TWO_SIGMA, SQRT_VAR, DECISION_METHOD_MAX };
 
 public:
@@ -45,7 +45,6 @@ private:
 
     std::vector<double> distanceSum_;
 
-    double gaussError_;
     std::vector<double> ge_;
 
     double precision_;

@@ -6,13 +6,8 @@
 #include <macros.hpp>
 #include <k_nearest_neighbors.hpp>
 #include <timer.hpp>
+#include <matrix.hpp>
 #include <progress_meter.hpp>
-
-#include <lavd.h>
-#include <gmd.h>
-#include <lavli.h>
-#include <sybmd.h>
-#include <sybfd.h>
 
 #include <ANN/ANN.h>
 
@@ -60,9 +55,6 @@ public:
     /// \param method The interpolation method to be used.
     void getApproximation(std::vector<double>& val, InterpolationMethod method = QUADRATIC_INTERPOLATION);
     
-    /// Experimental function.
-    void getApproximationGaussianProcess(std::vector<double>& val, std::vector<double>& error);
-
     /// Find the approximate output for a given input point. This function is equivalent to calling findNearestNeighbors followed by getApproximation.
     /// \param point The input point.
     /// \param val The output will be returned here.
@@ -114,21 +106,14 @@ private:
 
     double sigma_, l_;
 
-    LaSymmBandMatDouble covariance_;
-    LaGenMatDouble choleskyMat_;
-    LaVectorLongInt pivot1_;
-    LaVectorDouble v_, w_;
+    Math::SymmetricMatrix<double> covariance_;
+    Math::Matrix<double> choleskyMat_;
+    Math::Matrix<double> v_, w_;
 
-    LaGenMatDouble x_, xLin_;
-    LaGenMatDouble xT_, xTLin_;
-    LaGenMatDouble inv_, invLin_;
-    LaGenMatDouble prod_, prodLin_;
-    LaVectorLongInt pivot_, pivotLin_;
-
-    LaGenMatDouble gaussK_;
-    LaVectorLongInt pivotK_;
-    std::vector<double> kStar_;
-    std::vector<double> kKInv_;
+    Math::Matrix<double> x_, xLin_;
+    Math::Matrix<double> xT_, xTLin_;
+    Math::Matrix<double> inv_, invLin_;
+    Math::Matrix<double> prod_, prodLin_;
 };
 
 #endif
