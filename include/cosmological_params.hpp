@@ -180,7 +180,7 @@ public:
 
     virtual void setAllParameters(const std::vector<double>& v)
     {
-        check(v.size() == 6, "");
+        check(v.size() >= 6, "");
         omBH2_ = v[0];
         omCH2_ = v[1];
         h_ = v[2];
@@ -219,10 +219,18 @@ public:
     {
         LambdaCDMParams::getAllParameters(v);
         v.push_back(getR());
-        v.push_back(getNt());
     }
 
-    virtual void setAllParameters(const std::vector<double>& v) { check(false, "not implemented"); }
+    virtual void setAllParameters(const std::vector<double>& v)
+    {
+        check(v.size() >= 7, "");
+
+        LambdaCDMParams::setAllParameters(v);
+        r_ = v[6];
+        nt_ = 0.0;
+        const double piv = psT_->getPivot();
+        psT_->set(powerSpectrum(), r_, nt_, piv);
+    }
 
 private:
     double r_;

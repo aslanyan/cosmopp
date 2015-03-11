@@ -95,11 +95,9 @@ public:
     /// \param nt The tensor tilt.
     /// \param pivot The pivot point in Mpc^(-1).
     /// \param run The tensor running, 0 by default.
-    StandardPowerSpectrumTensor(const Math::RealFunction& scalarPs, double r, double nt, double pivot, double run = 0) : at_(1.0), nt_(nt), pivot_(pivot), run_(run)
+    StandardPowerSpectrumTensor(const Math::RealFunction& scalarPs, double r, double nt, double pivot, double run = 0)
     {
-        const double s = scalarPs.evaluate(pivot);
-        const double t = evaluate(pivot);
-        at_ = r * s / t;
+        set(scalarPs, r, nt, pivot, run);
     }
 
     /// Get the tensor tilt.
@@ -113,6 +111,38 @@ public:
     /// Get the pivot point.
     /// \return The pivot point in Mpc^(-1).
     double getPivot() const { return pivot_; }
+
+    /// Set new parameters.
+    /// \param at The tensor amplitude (equal to r times the scalar amplitude).
+    /// \param nt The tensor tilt.
+    /// \param pivot The pivot point in Mpc^(-1).
+    /// \param run The tensor running, 0 by default.
+    void set(double at, double nt, double pivot, double run = 0)
+    {
+        at_ = at;
+        nt_ = nt;
+        pivot_ = pivot;
+        run_ = run;
+    }
+
+    /// Set new parameters.
+    /// \param scalarPs A constant reference to the scalar power spectrum. This is used to set the amplitude from the tensor-to-scalar ratio.
+    /// \param r The tensor-to-scalar ratio.
+    /// \param nt The tensor tilt.
+    /// \param pivot The pivot point in Mpc^(-1).
+    /// \param run The tensor running, 0 by default.
+    void set(const Math::RealFunction& scalarPs, double r, double nt, double pivot, double run = 0)
+    {
+        at_ = 1.0;
+        nt_ = nt;
+        pivot_ = pivot;
+        run_ = run;
+
+        // fix at
+        const double s = scalarPs.evaluate(pivot);
+        const double t = evaluate(pivot);
+        at_ = r * s / t;
+    }
 
     /// Calculate the tensor power spectrum at a given point.
     /// \param k The k value in Mpc^(-1).

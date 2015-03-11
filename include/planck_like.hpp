@@ -64,6 +64,8 @@ public:
     /// \return -2ln(likelihood).
     double likelihood();
 
+    void setModelCosmoParams(CosmologicalParams *params) { modelParams_ = params; modelParams_->getAllParameters(vModel_); }
+
     /// Calculate the likelihood taking all of the params as an input. This is for the general LikelihoodFunction interface.
     /// \param params A vector of the parameters, should always start with 6 LCDM parameters ombh2, omch2, h, tau, ns, As (assumed pivot is 0.05Mpc^-1), followed by camspec extra parameters (if camspec is included), followed by high-l extra parameters (if high l is included).
     /// \param nPar The number of the parameters, used only for checking.
@@ -88,6 +90,9 @@ private:
     bool haveCommander_, havePol_, haveLens_;
 
     const CosmologicalParams* params_;
+
+    CosmologicalParams* modelParams_;
+    std::vector<double> vModel_;
 };
 
 #endif

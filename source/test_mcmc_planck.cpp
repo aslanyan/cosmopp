@@ -54,6 +54,10 @@ TestMCMCPlanck::runSubTest(unsigned int i, double& res, double& expected, std::s
     mh.setParam(18, "A_ksz", 0, 10, 5, 6, 0.5);
     mh.setParam(19, "Bm_1_1", -20, 20, 0.5, 1.0, 0.1);
 
+    const double pivot = 0.05;
+    LambdaCDMParams par(0.022, 0.12, 0.7, 0.1, 1.0, std::exp(3.0) / 1e10, pivot);
+    planckLike.setModelCosmoParams(&par);
+
     Timer timer("MCMC PLANCK");
 
     const unsigned long burnin = 500;

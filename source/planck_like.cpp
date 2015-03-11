@@ -56,7 +56,7 @@ struct PlanckLikelihoodContainer
     void* actspt;
 };
 
-PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useLensing, bool usePol, bool useActSpt, bool includeTensors, double kPerDecade, bool useOwnCmb) : spectraNames_(6), haveCommander_(false), havePol_(false), haveLens_(false), commander_(NULL), camspec_(NULL), lens_(NULL), pol_(NULL), actspt_(NULL), cmb_(NULL)
+PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useLensing, bool usePol, bool useActSpt, bool includeTensors, double kPerDecade, bool useOwnCmb) : spectraNames_(6), haveCommander_(false), havePol_(false), haveLens_(false), commander_(NULL), camspec_(NULL), lens_(NULL), pol_(NULL), actspt_(NULL), cmb_(NULL), modelParams_(NULL)
 {
     check(useCommander || useCamspec || useLensing || usePol || useActSpt, "at least one likelihood must be specified");
 
@@ -536,21 +536,27 @@ PlanckLikelihood::calculate(double* params, int nPar)
     //Timer timer("Planck likelihood timer");
     //timer.start();
     
-    check(nPar == (6 + (camspec_ ? 14 : 0) + (actspt_ ? 24 : 0)), "");
-    const double pivot = 0.05;
+    check(modelParams_, "model params must be set before calling this function");
+    check(!vModel_.empty(), "");
+    const int nModel = vModel_.size();
+    
+    check(nPar == (nModel + (camspec_ ? 14 : 0) + (actspt_ ? 24 : 0)), "");
 
-    LambdaCDMParams lcdmParams(params[0], params[1], params[2], params[3], params[4], std::exp(params[5]) / 1e10, pivot);
-    setCosmoParams(lcdmParams);
+    for(int i = 0; i < nModel; ++i)
+        vModel_[i] = params[i];
+
+    modelParams_->setAllParameters(vModel_);
+    setCosmoParams(*modelParams_);
 
     if(camspec_)
     {
         camspecExtra_.clear();
-        camspecExtra_.insert(camspecExtra_.end(), params + 6, params + 20);
+        camspecExtra_.insert(camspecExtra_.end(), params + nModel, params + nModel + 14);
     }
 
     if(actspt_)
     {
-        int paramShift = (camspec_ ? 20 : 6);
+        int paramShift = nModel + (camspec_ ? 14 : 0);
         actSptExtra_.clear();
         actSptExtra_.insert(actSptExtra_.end(), params + paramShift, params + paramShift + 24);
     }

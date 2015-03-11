@@ -21,6 +21,7 @@
 #include <test_multinest.hpp>
 #include <test_polychord.hpp>
 #include <test_mcmc_planck.hpp>
+#include <test_mcmc_planck_r.hpp>
 #include <test_multinest_planck.hpp>
 #include <test_polychord_planck.hpp>
 #include <test_cmb.hpp>
@@ -79,6 +80,8 @@ TestFramework* createTest(const std::string& name)
 #ifdef COSMO_LAPACK
     else if(name == "mcmc_planck")
         test = new TestMCMCPlanck;
+    else if(name == "mcmc_planck_r")
+        test = new TestMCMCPlanckR;
 #endif
 #ifdef COSMO_MULTINEST
     else if(name == "multinest_planck")
@@ -251,6 +254,7 @@ int main(int argc, char *argv[])
 #ifdef COSMO_CLASS
 #ifdef COSMO_LAPACK
         slowTests.insert("mcmc_planck");
+        slowTests.insert("mcmc_planck_r");
 #endif
 #ifdef COSMO_MULTINEST
         slowTests.insert("multinest_planck");
