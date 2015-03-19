@@ -41,6 +41,35 @@ FastApproximator::~FastApproximator()
 }
 
 void
+FastApproximator::addPoint(const std::vector<double>& p, const std::vector<double>& val)
+{
+    check(p.size() == nPoints_, "");
+    check(val.size() == nData_, "");
+
+    for(int i = 0; i < nPoints_; ++i)
+        v_(i, 0) = p[i];
+
+    Math::Matrix<double>::multiplyMatrices(choleskyMat_, v_, &w_);
+    pointsTransformed_.resize(pointsTransformed_.size() + 1);
+    pointsTransformed_.back().resize(nPoints_);
+    for(int i = 0; i < nPoints_; ++i)
+        pointsTransformed_.back()[i] = w_(i, 0);
+
+    data_.push_back(val);
+    ++dataSize_;
+
+    knn_->insert(pointsTransformed_.back());
+
+    check(dataSize_ == knn_->nElements(), "");
+    if(knn_->depth() > 5 * std::log(double(dataSize_)) / std::log(2.0))
+    {
+        output_screen("The KD Tree has become unbalanced. Rebalancing..." << std::endl);
+        knn_->reBalance();
+        output_screen("OK" << std::endl);
+    }
+}
+
+void
 FastApproximator::reset(unsigned long dataSize, const std::vector<std::vector<double> >& points, const std::vector<std::vector<double> >& data, bool updateCovariance)
 {
     output_screen("Fast Approximator learn with " << dataSize << " points." << std::endl);
@@ -52,7 +81,7 @@ FastApproximator::reset(unsigned long dataSize, const std::vector<std::vector<do
     check(points.size() >= dataSize_, "");
     check(data.size() >= dataSize_, "");
 
-    data_ = &data;
+    data_ = data;
 
     if(updateCovariance)
     {
@@ -178,7 +207,7 @@ FastApproximator::getApproximation(std::vector<double>& val, InterpolationMethod
         //output_screen("FOUND distance = " << dists_[0] << std::endl);
         const unsigned long index = indices_[0];
         for(int i = 0; i < nData_; ++i)
-            val[i] = (*data_)[index][i];
+            val[i] = data_[index][i];
 
         return;
     }
@@ -271,7 +300,7 @@ FastApproximator::getApproximation(std::vector<double>& val, InterpolationMethod
         for(int j = 0; j < k_; ++j)
         {
             const unsigned long index = indices_[j];
-            const double y = (*data_)[index][i] * weights[j];
+            const double y = data_[index][i] * weights[j];
 
             switch(method)
             {

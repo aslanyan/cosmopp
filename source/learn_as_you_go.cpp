@@ -365,30 +365,36 @@ LearnAsYouGo::addDataPoint(const std::vector<double>& p, const std::vector<doubl
     data_.push_back(d);
     pointMap_[p] = points_.size() - 1;
 
-    if(!fast_ && points_.size() >= minCount_)
+    if(fast_)
+    {
+        check(fa_, "");
+        fa_->addPoint(p, d);
+    }
+    else if(points_.size() >= minCount_)
     {
         constructFast();
         return;
     }
 
+    if(points_.size() >= updateErrorThreshold_)
+    {
+        randomizeErrorSet();
+        fa_->reset(points_.size() - testSize_, points_, data_, true);
+        fast_->reset(points_, data_, points_.size() - testSize_, points_.size());
+        if(processId_ == 0)
+            fast_->getPosterior()->writeIntoFile("fast_approximator_error_ratio.txt");
+        updateErrorThreshold_ = points_.size() + points_.size() / 4;
+        testSize_ = std::min(updateErrorThreshold_ / 20, (unsigned long) 1000);
+
+        for(unsigned long i = points_.size() - testSize_; i < points_.size(); ++i)
+            fa_->addPoint(points_[i], data_[i]);
+    }
+
     if(fast_ && newPointsCount_ >= updateCount_)
     {
-        output_screen1("Updating the fast approximator with " << newPointsCount_ << " points. Total count of points is " << points_.size() << "." << std::endl);
         check(fa_, "");
         check(fast_, "");
 
-        if(points_.size() >= updateErrorThreshold_)
-        {
-            randomizeErrorSet();
-            fa_->reset(points_.size() - testSize_, points_, data_, true);
-            fast_->reset(points_, data_, points_.size() - testSize_, points_.size());
-            if(processId_ == 0)
-                fast_->getPosterior()->writeIntoFile("fast_approximator_error_ratio.txt");
-            updateErrorThreshold_ = points_.size() + points_.size() / 4;
-            testSize_ = std::min(updateErrorThreshold_ / 20, (unsigned long) 1000);
-        }
-
-        fa_->reset(points_.size(), points_, data_, false);
         newPointsCount_ = 0;
 
         updateCount_ = (points_.size() > 10000 ? points_.size() / 1000 : 10);
@@ -400,8 +406,6 @@ LearnAsYouGo::addDataPoint(const std::vector<double>& p, const std::vector<doubl
             output_screen1("Updating the file " << fileName_ << "." << std::endl);
             writeIntoFile(fileName_.c_str());
         }
-
-        return;
     }
 }
 

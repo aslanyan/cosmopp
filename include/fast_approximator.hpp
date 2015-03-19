@@ -42,6 +42,11 @@ public:
     /// \param updateCovariance If this is set to true (by default) then the covariance matrix of the input parameters is recalculated for the new training set, and the linear transformation matrix is updated. It is important to keep in mind that if this step is performed then the distances to previously existing points will change. For example, if the training set is updated by just adding some new points and we want to keep the distances to the old points unchanged then this parameter should be set to false.
     void reset(unsigned long dataSize, const std::vector<std::vector<double> >& points, const std::vector<std::vector<double> >& data, bool updateCovariance = true);
 
+    /// Add a new point. This procedure simply adds the new point to the kd tree without recalculating the covariance matrix. Only if the kd tree has become very unbalanced (the depth is more than 4 times log of the number of elements), the kd tree is rebalanced.
+    /// \param p The input value.
+    /// \param val The output value.
+    void addPoint(const std::vector<double>& p, const std::vector<double>& val);
+
     /// Find the nearest neighbors to a given point. This step needs to be always performed before calling getApproximation.
     /// \param point The input point.
     /// \param distances The distances to the nearest neighbors squared will be returned in this vector. This can be set to NULL if the distances are not needed (by default). Keep in mind that the distances are the Euclidean distances in a linearly transformed space where the input training parameters are decorrelated.
@@ -90,7 +95,7 @@ private:
     const int k_;
     KDTree* knn_;
 
-    const std::vector<std::vector<double > >* data_;
+    std::vector<std::vector<double > > data_;
 
     std::vector<std::vector<double> > pointsTransformed_;
 
