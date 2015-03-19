@@ -109,7 +109,7 @@ FastApproximator::reset(unsigned long dataSize, const std::vector<std::vector<do
     }
 
     if(!knn_)
-        knn_ = new Math::KNearestNeighbors(nPoints_, pointsTransformed_, k_);
+        knn_ = new KDTree(nPoints_, pointsTransformed_);
     else
         knn_->reset(pointsTransformed_);
 
@@ -130,7 +130,7 @@ FastApproximator::findNearestNeighbors(const std::vector<double>& point, std::ve
         pointTransformed_[i] = w_(i, 0);
 
     check(knn_, "");
-    knn_->search(pointTransformed_, &indices_, &dists_);
+    knn_->findNearestNeighbors(pointTransformed_, k_, &indices_, &dists_);
 
     if(dists_[0] == 0)
     {

@@ -1,15 +1,14 @@
 #ifndef COSMO_PP_FAST_APPROXIMATOR_HPP
 #define COSMO_PP_FAST_APPROXIMATOR_HPP
 
+#include <cmath>
 #include <vector>
 
 #include <macros.hpp>
-#include <k_nearest_neighbors.hpp>
+#include <kd_tree.hpp>
 #include <timer.hpp>
 #include <matrix.hpp>
 #include <progress_meter.hpp>
-
-#include <ANN/ANN.h>
 
 /// A class that can be used to find approximate values of a function at a given point by using a training set with exact input and output values of the function.
 /// There are training input and output points of certain dimensions. We call the inputs of the function "points" and the outputs "data".
@@ -89,7 +88,7 @@ private:
 
 private:
     const int k_;
-    Math::KNearestNeighbors* knn_;
+    KDTree* knn_;
 
     const std::vector<std::vector<double > >* data_;
 

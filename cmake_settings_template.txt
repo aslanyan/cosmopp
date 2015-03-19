@@ -44,9 +44,6 @@ set(WMAP9_COMPILER "gfortran")
 #minuit
 set(MINUIT_DIR "/usr/local")
 
-#ann
-set(ANN_DIR "/Users/aslanyan/programs/ann_1.1.2")
-
 # cosmo++ specific compiler flags
 # include -DCREATE_LOG to create log file. CREATE_LOG1 will create a log file with more output and CREATE_LOG2 will have even more detailed output.
 # include -DVERBOSE to compile in verbose mode. VERBOSE1 will have more output on the screen and VERBOSE2 will have even more output.

@@ -37,7 +37,7 @@
 #include <test_three_rotation.hpp>
 #include <test_mask_apodizer.hpp>
 #include <test_matter_likelihood.hpp>
-#include <test_k_nearest_neighbors.hpp>
+#include <test_kd_tree.hpp>
 #include <test_fast_approximator.hpp>
 #include <test_fast_approximator_error.hpp>
 #include <test_mcmc_planck_fast.hpp>
@@ -144,18 +144,15 @@ TestFramework* createTest(const std::string& name)
         test = new TestMatterLikelihood(1e-3);
 #endif
 #endif
-#ifdef COSMO_ANN
-    else if(name == "k_nearest_neighbors")
-        test = new TestKNearestNeighbors;
+    else if(name == "kd_tree")
+        test = new TestKDTree;
 #ifdef COSMO_LAPACK
     else if(name == "fast_approximator")
         test = new TestFastApproximator(1e-3);
     else if(name == "fast_approximator_error")
         test = new TestFastApproximatorError(1e-3);
 #endif
-#endif
 #ifdef COSMO_LAPACK
-#ifdef COSMO_ANN
 #ifdef COSMO_CLASS
 #ifdef COSMO_PLANCK
     else if(name == "mcmc_planck_fast")
@@ -165,7 +162,6 @@ TestFramework* createTest(const std::string& name)
 #ifdef COSMO_MULTINEST
     else if(name == "multinest_planck_fast")
         test = new TestMultinestPlanckFast;
-#endif
 #endif
 #endif
 #endif
@@ -245,12 +241,10 @@ int main(int argc, char *argv[])
         fastTests.insert("matter_likelihood");
 #endif
 #endif
-#ifdef COSMO_ANN
-        fastTests.insert("k_nearest_neighbors");
+        fastTests.insert("kd_tree");
 #ifdef COSMO_LAPACK
         fastTests.insert("fast_approximator");
         fastTests.insert("fast_approximator_error");
-#endif
 #endif
 
 #ifdef COSMO_PLANCK
@@ -277,14 +271,12 @@ int main(int argc, char *argv[])
 #endif
 #endif
 #ifdef COSMO_LAPACK
-#ifdef COSMO_ANN
 #ifdef COSMO_CLASS
 #ifdef COSMO_PLANCK
         slowTests.insert("mcmc_planck_fast");
         slowTests.insert("mcmc_planck_r_fast");
 #ifdef COSMO_MULTINEST
         slowTests.insert("multinest_planck_fast");
-#endif
 #endif
 #endif
 #endif

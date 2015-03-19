@@ -1,8 +1,8 @@
 cmake_minimum_required (VERSION 2.8.10)
 
-set(LIB_FILES macros.cpp test_framework.cpp whole_matrix.cpp scale_factor.cpp markov_chain.cpp matrix_impl.cpp)
+set(LIB_FILES macros.cpp test_framework.cpp whole_matrix.cpp scale_factor.cpp markov_chain.cpp matrix_impl.cpp kd_tree.cpp)
 
-set(TEST_FILES test_unit_conversions.cpp test_int_operations.cpp test_integral.cpp test_conjugate_gradient.cpp test_polynomial.cpp test_legendre.cpp test_spherical_harmonics.cpp test_matrix.cpp test_wigner_3j.cpp test_table_function.cpp test_cubic_spline.cpp test_three_rotation.cpp)
+set(TEST_FILES test_unit_conversions.cpp test_int_operations.cpp test_integral.cpp test_conjugate_gradient.cpp test_polynomial.cpp test_legendre.cpp test_spherical_harmonics.cpp test_matrix.cpp test_wigner_3j.cpp test_table_function.cpp test_cubic_spline.cpp test_three_rotation.cpp test_kd_tree.cpp)
 
 if(LAPACK_LIB_FLAGS)
 	set(LIB_FILES ${LIB_FILES} mcmc.cpp)
@@ -32,11 +32,6 @@ if(POLYCHORD_DIR)
 	set(LIB_FILES ${LIB_FILES} polychord_wrapper.f90 polychord.cpp)
 	set(TEST_FILES ${TEST_FILES} test_polychord.cpp)
 endif(POLYCHORD_DIR)
-
-if(ANN_DIR)
-	set(LIB_FILES ${LIB_FILES} k_nearest_neighbors.cpp)
-	set(TEST_FILES ${TEST_FILES} test_k_nearest_neighbors.cpp)
-endif(ANN_DIR)
 
 if(LAPACK_LIB_FLAGS AND HEALPIX_DIR)
 	set(LIB_FILES ${LIB_FILES} simulate.cpp likelihood.cpp master.cpp)
@@ -73,19 +68,19 @@ if(CLASS_DIR AND POLYCHORD_DIR AND PLANCK_DIR)
 	set(TEST_FILES ${TEST_FILES} test_polychord_planck.cpp)
 endif(CLASS_DIR AND POLYCHORD_DIR AND PLANCK_DIR)
 
-if(LAPACK_LIB_FLAGS AND ANN_DIR)
+if(LAPACK_LIB_FLAGS)
 	set(LIB_FILES ${LIB_FILES} fast_approximator.cpp fast_approximator_error.cpp learn_as_you_go.cpp)
 	set(TEST_FILES ${TEST_FILES} test_fast_approximator.cpp test_fast_approximator_error.cpp)
-endif(LAPACK_LIB_FLAGS AND ANN_DIR)
+endif(LAPACK_LIB_FLAGS)
 
-if(LAPACK_LIB_FLAGS AND ANN_DIR AND CLASS_DIR AND PLANCK_DIR)
+if(LAPACK_LIB_FLAGS AND CLASS_DIR AND PLANCK_DIR)
 	set(LIB_FILES ${LIB_FILES} planck_like_fast.cpp)
 	set(TEST_FILES ${TEST_FILES} test_mcmc_planck_fast.cpp test_mcmc_planck_r_fast.cpp)
-endif(LAPACK_LIB_FLAGS AND ANN_DIR AND CLASS_DIR AND PLANCK_DIR)
+endif(LAPACK_LIB_FLAGS AND CLASS_DIR AND PLANCK_DIR)
 
-if(LAPACK_LIB_FLAGS AND ANN_DIR AND CLASS_DIR AND PLANCK_DIR AND MULTINEST_DIR)
+if(LAPACK_LIB_FLAGS AND CLASS_DIR AND PLANCK_DIR AND MULTINEST_DIR)
 	set(TEST_FILES ${TEST_FILES} test_multinest_planck_fast.cpp)
-endif(LAPACK_LIB_FLAGS AND ANN_DIR AND CLASS_DIR AND PLANCK_DIR AND MULTINEST_DIR)
+endif(LAPACK_LIB_FLAGS AND CLASS_DIR AND PLANCK_DIR AND MULTINEST_DIR)
 
 
 add_library(cosmopp STATIC ${LIB_FILES})
@@ -126,9 +121,6 @@ endif(PLANCK_DIR)
 if(WMAP9_DIR)
 	target_link_libraries(cosmo_test ${WMAP9LIB})
 endif(WMAP9_DIR)
-if(ANN_DIR)
-	target_link_libraries(cosmo_test ${ANNLIB})
-endif(ANN_DIR)
 install(TARGETS cosmo_test DESTINATION bin)
 
 
