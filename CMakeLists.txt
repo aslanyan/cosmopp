@@ -67,11 +67,6 @@ if(HEALPIX_DIR)
 	include_directories(${HEALPIX_DIR}/include ${HEALPIXPP_DIR}/include)
 	add_definitions(-DCOSMO_HEALPIX -DHEALPIX_DATA_DIR=${HEALPIX_DIR}/data)
 
-	find_library(CHEALPIXLIB chealpix ${HEALPIX_DIR}/lib)
-	if(NOT CHEALPIXLIB)
-		message(FATAL_ERROR "chealpix library not found!")
-	endif(NOT CHEALPIXLIB)
-
 	find_library(HEALPIXCXXLIB healpix_cxx ${HEALPIXPP_DIR}/lib)
 	if(NOT HEALPIXCXXLIB)
 		message(FATAL_ERROR "healpix_cxx library not found!")
@@ -91,6 +86,11 @@ if(HEALPIX_DIR)
 	if(NOT FFTPACKLIB)
 		message(FATAL_ERROR "fftpack library not found!")
 	endif(NOT FFTPACKLIB)
+
+	find_library(CHEALPIXLIB chealpix ${HEALPIX_DIR}/lib)
+	if(NOT CHEALPIXLIB)
+		message(FATAL_ERROR "chealpix library not found!")
+	endif(NOT CHEALPIXLIB)
 
 	find_library(CUTILSLIB c_utils ${HEALPIXPP_DIR}/lib)
 	if(NOT CUTILSLIB)
