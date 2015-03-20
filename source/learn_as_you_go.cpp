@@ -386,8 +386,7 @@ LearnAsYouGo::addDataPoint(const std::vector<double>& p, const std::vector<doubl
         updateErrorThreshold_ = points_.size() + points_.size() / 4;
         testSize_ = std::min(updateErrorThreshold_ / 20, (unsigned long) 1000);
 
-        for(unsigned long i = points_.size() - testSize_; i < points_.size(); ++i)
-            fa_->addPoint(points_[i], data_[i]);
+        fa_->reset(points_.size(), points_, data_, false);
     }
 
     if(fast_ && newPointsCount_ >= updateCount_)
