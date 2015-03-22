@@ -135,7 +135,10 @@ KDTree::findNearestNeighbors(const std::vector<double>& point, int k, std::vecto
 
     check(nElements() >= k, k << " nearest neighbors requested but there are only " << nElements() << " elements in the kd tree");
 
-    std::priority_queue<std::pair<double, unsigned long> > bpq;
+    ComparePair cp;
+    std::vector<std::pair<double, unsigned long> > container;
+    container.reserve(k + 1);
+    std::priority_queue<std::pair<double, unsigned long>, std::vector<std::pair<double, unsigned long> >, ComparePair> bpq(cp, container);
     search(root_, bpq, k, point);
 
     check(bpq.size() == k, "");
@@ -153,7 +156,7 @@ KDTree::findNearestNeighbors(const std::vector<double>& point, int k, std::vecto
 }
 
 void
-KDTree::search(const Node *current, std::priority_queue<std::pair<double, unsigned long> >& bpq, int k, const std::vector<double>& point) const
+KDTree::search(const Node *current, std::priority_queue<std::pair<double, unsigned long>, std::vector<std::pair<double, unsigned long> >, ComparePair>& bpq, int k, const std::vector<double>& point) const
 {
     check(k > 0, "");
     check(point.size() == dim_, "");
@@ -175,7 +178,7 @@ KDTree::search(const Node *current, std::priority_queue<std::pair<double, unsign
 
     check(bpq.size() <= k, "");
 
-    bpq.push(std::pair<double, unsigned long>(distance, current->index));
+    bpq.emplace(distance, current->index);
     if(bpq.size() > k)
         bpq.pop();
 

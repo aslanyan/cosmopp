@@ -33,11 +33,19 @@ private:
         Node *right;
     };
 
+    struct ComparePair
+    {
+        inline bool operator() (const std::pair<double, unsigned long>& a, const std::pair<double, unsigned long>& b) const
+        {
+            return a.first < b.first;
+        }
+    };
+
 private:
     Node* construct(std::vector<unsigned long> &elementsIndices, unsigned long begin, unsigned long end, int depth, Node *parent);
     void destruct(Node *root);
 
-    void search(const Node *current, std::priority_queue<std::pair<double, unsigned long> >& bpq, int k, const std::vector<double>& point) const;
+    void search(const Node *current, std::priority_queue<std::pair<double, unsigned long>, std::vector<std::pair<double, unsigned long> >, ComparePair>& bpq, int k, const std::vector<double>& point) const;
 
 private:
     int dim_;
