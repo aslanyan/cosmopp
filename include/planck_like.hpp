@@ -18,6 +18,8 @@ public:
     /// \param usePolarization Defines if polarization likelihood should be included (false by default).
     /// \param useActSpt Defines if high-l likelihood (ACT and SPT) should be included (false by default).
     /// \param includeTensors Defines if tensor modes should be taken into account during calculations (false by default).
+    /// \param kPerDecade The number of points per decade in the k space for the primordial power spectrum calculation.
+    /// \param useOwnCmb If set to true then an instance of the CMB class will be created. In this case the new cosmological parameters can be passed using setCosmoParams. If useOwnCmb is false then the Cl values must be passed through setCls before the likelihoods can be calculated.
     PlanckLikelihood(bool useCommander = true, bool useCamspec = true, bool useLensing = true, bool usePolarization = false, bool useActSpt = false, bool includeTensors = false, double kPerDecade = 100, bool useOwnCmb = true);
 
     /// Destructor.
@@ -64,10 +66,12 @@ public:
     /// \return -2ln(likelihood).
     double likelihood();
 
+    /// Use this parameters to set the model for the calculate function. The number of cosmological parameters will be determined from here, and when calculate is called the cosmological parameters will be assigned to this model.
+    /// \param params A pointer to the model parameters. Note that when calculate is called params will be changed to set the new parameters.
     void setModelCosmoParams(CosmologicalParams *params) { modelParams_ = params; modelParams_->getAllParameters(vModel_); }
 
-    /// Calculate the likelihood taking all of the params as an input. This is for the general LikelihoodFunction interface.
-    /// \param params A vector of the parameters, should always start with 6 LCDM parameters ombh2, omch2, h, tau, ns, As (assumed pivot is 0.05Mpc^-1), followed by camspec extra parameters (if camspec is included), followed by high-l extra parameters (if high l is included).
+    /// Calculate the likelihood taking all of the params as an input. This is for the general LikelihoodFunction interface. Can only be called if the model parameters are set by setModelCosmoParams.
+    /// \param params A vector of the parameters, should always start with the cosmological parameters, followed by camspec extra parameters (if camspec is included), followed by high-l extra parameters (if high l is included).
     /// \param nPar The number of the parameters, used only for checking.
     /// \return -2ln(likelihood).
     double calculate(double* params, int nPar);

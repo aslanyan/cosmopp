@@ -24,13 +24,13 @@ public:
 
 public:
     /// Constructor.
-    /// \param nPoints The dimensionality of the points space, i.e. the number of the input parameters.
-    /// \param nData The dimensionality of the data space, i.e. the number of the output parameters.
+    /// \param nIn The dimensionality of the input space, i.e. the number of the input parameters.
+    /// \param nOut The dimensionality of the output space, i.e. the number of the output parameters.
     /// \param dataSize The number of data points to use.
-    /// \param points A vector containing all of the input points. Each point should be a vector of dimension nPoints. There needs to be at least dataSize points here. If the size of this vector is larger than dataSize then only the first dataSize points will be used.
-    /// \param data A vector containing all of the output points. Each point should be a vector of dimension nData. There needs to be at least dataSize points here. If the size of this vector is larger than dataSize then only the first dataSize points will be used. The indices of data should exactly match the indices of points.
+    /// \param points A vector containing all of the input points. Each point should be a vector of dimension nIn. There needs to be at least dataSize points here. If the size of this vector is larger than dataSize then only the first dataSize points will be used.
+    /// \param values A vector containing all of the output points. Each point should be a vector of dimension nOut. There needs to be at least dataSize points here. If the size of this vector is larger than dataSize then only the first dataSize points will be used. The indices of values should exactly match the indices of points.
     /// \param k The number of nearest neighbors to use in the approximation.
-    FastApproximator(int nPoints, int nData, unsigned long dataSize, const std::vector<std::vector<double> >& points, const std::vector<std::vector<double> >& data, int k);
+    FastApproximator(int nIn, int nOut, unsigned long dataSize, const std::vector<std::vector<double> >& points, const std::vector<std::vector<double> >& values, int k);
 
     /// Destructor.
     ~FastApproximator();
@@ -38,9 +38,9 @@ public:
     /// Reset the training set.
     /// \param dataSize The number of data points to use.
     /// \param points A vector containing all of the input points. Each point should be a vector of dimension nPoints. There needs to be at least dataSize points here. If the size of this vector is larger than dataSize then only the first dataSize points will be used.
-    /// \param data A vector containing all of the output points. Each point should be a vector of dimension nData. There needs to be at least dataSize points here. If the size of this vector is larger than dataSize then only the first dataSize points will be used. The indices of data should exactly match the indices of points.
+    /// \param values A vector containing all of the output points. Each point should be a vector of dimension nOut. There needs to be at least dataSize points here. If the size of this vector is larger than dataSize then only the first dataSize points will be used. The indices of values should exactly match the indices of points.
     /// \param updateCovariance If this is set to true (by default) then the covariance matrix of the input parameters is recalculated for the new training set, and the linear transformation matrix is updated. It is important to keep in mind that if this step is performed then the distances to previously existing points will change. For example, if the training set is updated by just adding some new points and we want to keep the distances to the old points unchanged then this parameter should be set to false.
-    void reset(unsigned long dataSize, const std::vector<std::vector<double> >& points, const std::vector<std::vector<double> >& data, bool updateCovariance = true);
+    void reset(unsigned long dataSize, const std::vector<std::vector<double> >& points, const std::vector<std::vector<double> >& values, bool updateCovariance = true);
 
     /// Add a new point. This procedure simply adds the new point to the kd tree without recalculating the covariance matrix. Only if the kd tree has become very unbalanced (the depth is more than 4 times log of the number of elements), the kd tree is rebalanced.
     /// \param p The input value.
@@ -69,10 +69,10 @@ public:
     void approximate(const std::vector<double>& point, std::vector<double>& val, InterpolationMethod = QUADRATIC_INTERPOLATION, std::vector<double>* distances = NULL, std::vector<std::vector<double> >* nearestNeighbors = NULL, std::vector<unsigned long>* indices = NULL);
 
     /// Get the dimensionality of the input space.
-    int nPoints() const { return nPoints_; }
+    int nIn() const { return nPoints_; }
 
     /// Get the dimensionality of the output space.
-    int nData() const { return nData_; }
+    int nOut() const { return nData_; }
 
 private:
     inline double cov(double d) const { return sigma_ * std::exp(-d / (2 * l_)); }

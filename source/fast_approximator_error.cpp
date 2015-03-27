@@ -5,7 +5,7 @@
 #include <exception_handler.hpp>
 #include <fast_approximator_error.hpp>
 
-FastApproximatorError::FastApproximatorError(FastApproximator& fa, const std::vector<std::vector<double> >& testPoints, const std::vector<std::vector<double> >& testData, unsigned long begin, unsigned long end, const Math::RealFunctionMultiDim& f, ErrorMethod method, double precision, DecisionMethod dm) : fa_(fa), method_(method), posterior_(NULL), distances_(NULL), nearestNeighbors_(NULL), val_(fa.nData()), linVal_(fa.nData()), f_(f), precision_(precision), decMethod_(dm), posteriorGood_(false), mean_(0), var_(0)
+FastApproximatorError::FastApproximatorError(FastApproximator& fa, const std::vector<std::vector<double> >& testPoints, const std::vector<std::vector<double> >& testData, unsigned long begin, unsigned long end, const Math::RealFunctionMultiDim& f, ErrorMethod method, double precision, DecisionMethod dm) : fa_(fa), method_(method), posterior_(NULL), distances_(NULL), nearestNeighbors_(NULL), val_(fa.nOut()), linVal_(fa.nOut()), f_(f), precision_(precision), decMethod_(dm), posteriorGood_(false), mean_(0), var_(0)
 {
     check(precision_ > 0, "invalid precision " << precision_);
     check(decMethod_ >= 0 && decMethod_ < DECISION_METHOD_MAX, "");

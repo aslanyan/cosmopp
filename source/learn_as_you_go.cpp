@@ -382,7 +382,7 @@ LearnAsYouGo::addDataPoint(const std::vector<double>& p, const std::vector<doubl
         fa_->reset(points_.size() - testSize_, points_, data_, true);
         fast_->reset(points_, data_, points_.size() - testSize_, points_.size());
         if(processId_ == 0)
-            fast_->getPosterior()->writeIntoFile("fast_approximator_error_ratio.txt");
+            fast_->getDistrib()->writeIntoFile("fast_approximator_error_ratio.txt");
         updateErrorThreshold_ = points_.size() + points_.size() / 4;
         testSize_ = std::min(updateErrorThreshold_ / 20, (unsigned long) 1000);
 
@@ -432,7 +432,7 @@ LearnAsYouGo::constructFast()
         fast_ = new FastApproximatorError(*fa_, points_, data_, points_.size() - testSize_, points_.size(), errorFunc_, FastApproximatorError::AVG_INV_DISTANCE, precision_);
 
         if(processId_ == 0)
-            fast_->getPosterior()->writeIntoFile("fast_approximator_error_ratio.txt");
+            fast_->getDistrib()->writeIntoFile("fast_approximator_error_ratio.txt");
 
         fa_->reset(points_.size(), points_, data_, false);
         updateErrorThreshold_ = points_.size() + points_.size() / 4;

@@ -1,3 +1,6 @@
+#include <utility>
+#include <algorithm>
+
 #include <macros.hpp>
 #include <random.hpp>
 #include <timer.hpp>
@@ -14,7 +17,7 @@ TestKDTree::name() const
 unsigned int
 TestKDTree::numberOfSubtests() const
 {
-    return 5;
+    return 9;
 }
 
 void
@@ -22,27 +25,64 @@ TestKDTree::runSubTest(unsigned int i, double& res, double& expected, std::strin
 {
     check(i >= 0 && i < numberOfSubtests(), "invalid index " << i);
 
+    int dim, k, seed;
+    unsigned long nPoints;
+
+    bool testRes;
+
     switch(i)
     {
     case 0:
         runSubTest0(res, expected, subTestName);
-        break;
+        return;
     case 1:
         runSubTest1(res, expected, subTestName);
-        break;
+        return;
     case 2:
         runSubTest2(res, expected, subTestName);
-        break;
+        return;
     case 3:
         runSubTest3(res, expected, subTestName);
-        break;
+        return;
     case 4:
         runSubTest4(res, expected, subTestName);
+        return;
+    case 5:
+        dim = 1;
+        k = 2;
+        nPoints = 1000;
+        seed = 100;
+        subTestName = "1_2_1000";
+        break;
+    case 6:
+        dim = 3;
+        k = 2;
+        nPoints = 10000;
+        seed = 200;
+        subTestName = "3_2_10000";
+        break;
+    case 7:
+        dim = 5;
+        k = 10;
+        nPoints = 1000000;
+        seed = 300;
+        subTestName = "5_10_1000000";
+        break;
+    case 8:
+        dim = 10;
+        k = 20;
+        nPoints = 1000000;
+        seed = 400;
+        subTestName = "10_20_1000000";
         break;
     default:
         check(false, "");
         break;
     }
+
+    testRes = test(dim, nPoints, k, seed);
+    expected = 1;
+    res = (testRes ? 1 : 0);
 }
 
 void
@@ -275,3 +315,67 @@ TestKDTree::runSubTest4(double& res, double& expected, std::string& subTestName)
         res = 0;
     }
 }
+
+bool
+TestKDTree::test(int dim, unsigned long nPoints, int k, int seed)
+{
+    check(dim > 0, "");
+    check(k > 0, "");
+    check(nPoints > 0, "");
+    check(k <= nPoints, "");
+
+    if(!seed)
+        seed = std::time(0);
+
+    Math::UniformRealGenerator gen(seed, -1, 1);
+
+    std::vector<std::vector<double> > points(nPoints);
+    for(unsigned long i = 0; i < nPoints; ++i)
+    {
+        points[i].resize(dim);
+        for(int j = 0; j < dim; ++j)
+            points[i][j] = gen.generate();
+    }
+
+    Timer t0("KD TREE CONSTRUCTION");
+    t0.start();
+    KDTree kdTree(dim, points);
+    t0.end();
+
+    std::vector<double> p(dim);
+    for(int i = 0; i < dim; ++i)
+        p[i] = gen.generate();
+
+    Timer t1("KD TREE FIND NEAREST NEIGHBORS");
+    t1.start();
+    std::vector<unsigned long> indices;
+    kdTree.findNearestNeighbors(p, k, &indices);
+    t1.end();
+
+    std::vector<std::pair<double, unsigned long> > v(nPoints);
+    for(unsigned long i = 0; i < nPoints; ++i)
+    {
+        double d = 0;
+        for(int j = 0; j < dim; ++j)
+        {
+            const double x = p[j] - points[i][j];
+            d += x * x;
+            v[i].first = d;
+            v[i].second = i;
+        }
+    }
+
+    Timer t2("NEAREST NEIGHBORS BY SORT");
+    t2.start();
+    std::sort(v.begin(), v.end());
+    t2.end();
+
+    check(indices.size() == k, "");
+    for(int i = 0; i < k; ++i)
+    {
+        if(indices[i] != v[i].second)
+            return false;
+    }
+    return true;
+}
+

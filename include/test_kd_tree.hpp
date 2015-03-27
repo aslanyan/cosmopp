@@ -17,6 +17,8 @@ protected:
     void runSubTest2(double& res, double& expected, std::string& subTestName);
     void runSubTest3(double& res, double& expected, std::string& subTestName);
     void runSubTest4(double& res, double& expected, std::string& subTestName);
+
+    bool test(int dim, unsigned long nPoints, int k, int seed = 0);
 };
 
 #endif
