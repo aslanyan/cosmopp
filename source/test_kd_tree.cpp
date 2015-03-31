@@ -51,28 +51,28 @@ TestKDTree::runSubTest(unsigned int i, double& res, double& expected, std::strin
         dim = 1;
         k = 2;
         nPoints = 1000;
-        seed = 100;
+        seed = 0;
         subTestName = "1_2_1000";
         break;
     case 6:
         dim = 3;
         k = 2;
         nPoints = 10000;
-        seed = 200;
+        seed = 0;
         subTestName = "3_2_10000";
         break;
     case 7:
         dim = 5;
         k = 10;
         nPoints = 1000000;
-        seed = 300;
+        seed = 0;
         subTestName = "5_10_1000000";
         break;
     case 8:
         dim = 10;
         k = 20;
         nPoints = 1000000;
-        seed = 400;
+        seed = 0;
         subTestName = "10_20_1000000";
         break;
     default:
@@ -352,6 +352,7 @@ TestKDTree::test(int dim, unsigned long nPoints, int k, int seed)
     kdTree.findNearestNeighbors(p, k, &indices);
     t1.end();
 
+    Timer t2("NEAREST NEIGHBORS BY SORT");
     std::vector<std::pair<double, unsigned long> > v(nPoints);
     for(unsigned long i = 0; i < nPoints; ++i)
     {
@@ -365,7 +366,6 @@ TestKDTree::test(int dim, unsigned long nPoints, int k, int seed)
         }
     }
 
-    Timer t2("NEAREST NEIGHBORS BY SORT");
     t2.start();
     std::sort(v.begin(), v.end());
     t2.end();
