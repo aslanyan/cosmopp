@@ -3,37 +3,29 @@
           type(c_funptr) :: theloglike
 
           contains
-              function loglike_f(theta, phi, context)
+              function loglike_f(theta, phi)
                   use iso_c_binding, only: c_double, c_f_procpointer
                   
                   implicit none
                   double precision, intent(in), dimension(:) :: theta
                   double precision, intent(out), dimension(:) :: phi
-                  integer, intent(in) :: context
                   double precision :: loglike_f
 
                   interface
-                      real(c_double) function loglike_proto(theta, phi, context)
+                      real(c_double) function loglike_proto(theta, phi)
                           use  iso_c_binding, only: c_int, c_double, c_ptr
 
                           implicit none
 
                           double precision theta, phi
-                          !real(c_double), intent(in), dimension(:) :: theta
-                          !real(c_double), intent(out), dimension(:) :: phi
-                          integer(c_int), intent(in) :: context
                       end function loglike_proto
                   end interface
 
                   procedure(loglike_proto), pointer :: loglike_c
 
-                  !print*,'fortran likelihood call'
-                  !print*,'first arg = ',theta(1)
-                  !print*,'second arg = ',theta(2)
-
                   call c_f_procpointer(theloglike,loglike_c)
 
-                  loglike_f = loglike_c(theta(1), phi(1), context)
+                  loglike_f = loglike_c(theta(1), phi(1))
               end function loglike_f
 
               subroutine polycwraprun(ndims, nderived, nlive, num_repeats, &
@@ -41,10 +33,13 @@
                 sigma_post, thin_post, prior_types, prior_mins, &
                 prior_maxs, base_dir, file_root, &
                 read_resume, write_resume, update_resume, write_live, &
-                loglike, context, logz, errorz, ndead, nlike, &
+                loglike, logz, errorz, ndead, nlike, &
                 logzpluslogp) bind(c)
                       use iso_c_binding, only: c_int, c_bool, c_double, c_char, c_funptr, c_ptr, C_NULL_CHAR
+                      use ini_module, only:initialise_program
+                      use params_module, only:add_parameter,param_type
                       use priors_module
+                      use random_module, only:initialise_random
                       use settings_module, only: program_settings, initialise_settings
                       use nested_sampling_module, only: NestedSampling
 
@@ -74,7 +69,6 @@
                       integer(c_int), intent(in), value :: update_resume
                       logical(c_bool), intent(in), value :: write_live
                       type(c_funptr), intent(in), value :: loglike
-                      type(c_ptr), intent(in) :: context
                       double precision logz, errorz, ndead, nlike, logzpluslogp
 
                       character(len=100) :: froot, fdir
@@ -83,17 +77,15 @@
                       double precision, dimension(5) :: output_info
                       type(program_settings) :: settings
                       type(prior), allocatable, dimension(:) :: priors
+                      type(param_type),dimension(:),allocatable ::params
+                      type(param_type),dimension(:),allocatable ::derived_params
 
                       double precision, dimension(1) :: minimums 
                       double precision, dimension(1) :: maximums
                       integer, dimension(1) :: hypercube_indices
                       integer, dimension(1) :: physical_indices
 
-                      ! Temporary variables for initialising loglikelihoods
-                      !double precision :: loglike1
-                      !double precision, allocatable, dimension(:) :: theta
-                      !double precision, allocatable, dimension(:) :: phi
-
+                      call initialise_random()
 
                       froot = ' '
                       do i = 1, 100
@@ -115,74 +107,48 @@
 
                       theloglike = loglike
 
-                      !print*,'PolyChord fortran run starting!'
-                      !print*,'ndims = ',ndims
-                      !print*,'nlinve = ',nlive
-                      !print*,'num_repeats = ',num_repeats
-                      !print*,'do_clustering = ',do_clustering
-                      !print*,'ncluster = ',ncluster
-                      !print*,'feedback = ',feedback
-                      !print*,'calculate_post = ',calculate_post
-                      !print*,'sigma_post = ',sigma_post
-                      !print*,'thin_post = ',thin_post
-                      !print*,'file_root = ',froot
-                      !print*,'file_dir = ',fdir
-                      !print*,'read_resume = ',read_resume
-                      !print*,'write_resume = ',write_resume
-                      !print*,'update_resume = ',update_resume
-                      !print*,'write_live = ',write_live
+                      allocate(params(0),derived_params(0))
 
-                      !do i = 1, ndims
-                      !print*,'parameter ',i,' has prior type ',prior_types(i)
-                      !print*,'   min = ',prior_mins(i)
-                      !print*,'   max = ',prior_maxs(i)
-                      !end do
-
-                      allocate(priors(ndims))
                       do i = 1, ndims
                                 minimums(1) = prior_mins(i)
                                 maximums(1) = prior_maxs(i)
                                 hypercube_indices(1) = i
                                 physical_indices(1) = i
                                 if (prior_types(i) == 1) then
-                                        call initialise_uniform(priors(i), &
-                        hypercube_indices, physical_indices, minimums, maximums)
+                                        call add_parameter(params,'p',&
+                        'p',1,uniform_type,1,[prior_mins(i),prior_maxs(i)])
                                 else if (prior_types(i) == 2) then
-                                        call initialise_gaussian(priors(i), &
-                        hypercube_indices, physical_indices, minimums, maximums)
+                                        call add_parameter(params,'p',&
+                        'p',1,log_uniform_type,1,[prior_mins(i),prior_maxs(i)])
                                 else if (prior_types(i) == 3) then
-                                        call initialise_log_uniform(priors(i), &
-                        hypercube_indices, physical_indices, minimums, maximums)
+                                        call add_parameter(params,'p',&
+                        'p',1,gaussian_type,1,[prior_mins(i),prior_maxs(i)])
                                 else
                                         print*,'INVALID PRIOR TYPE ',i
                                         stop 1
                                 end if
                       end do
 
-                      settings%nDims = ndims
-                      settings%nDerived = nderived
                       settings%nlive = nlive
                       settings%num_repeats = num_repeats
                       settings%do_clustering = logical(do_clustering)
-                      settings%ncluster = ncluster
-                      settings%feedback = feedback
-                      settings%calculate_posterior = logical(calculate_post)
-                      settings%sigma_posterior = sigma_post
-                      settings%thin_posterior = thin_post
-                      settings%file_root = froot
                       settings%base_dir = fdir
-                      settings%read_resume = logical(read_resume)
+                      settings%file_root = froot
                       settings%write_resume = logical(write_resume)
-                      settings%update_resume = update_resume
+                      settings%read_resume = logical(read_resume)
                       settings%write_live = logical(write_live)
+                      settings%write_stats = .false.
+                      settings%equals = .false.
+                      settings%posteriors = logical(calculate_post)
+                      settings%cluster_posteriors = .false.
+                      settings%feedback = feedback
+                      settings%update_resume = update_resume
+                      settings%update_posterior = -1
+                      settings%boost_posterior = sigma_post
+                      allocate(settings%grade_frac(1))
+                      settings%grade_frac=[1d0]
 
-                      call initialise_settings(settings)   
-
-                      ! ------- (1e) Initialise loglikelihood -----------------
-                      ! This is only needed for a few things (e.g. generating a random correlated gaussian)
-                      !allocate(theta(settings%nDims),phi(settings%nDerived))
-                      !theta   = 0d0
-                      !loglike1 = loglike_f(theta,phi,0)
+                      call initialise_program(settings,priors,params,derived_params)
 
 #ifdef COSMO_MPI
                       output_info = NestedSampling(loglike_f, priors, &

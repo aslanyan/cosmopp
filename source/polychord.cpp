@@ -70,7 +70,7 @@ namespace
 
 PolyChord *myPolyChordScanner;
 
-double myLogLike(double *theta, double *phi, int context)
+double myLogLike(double *theta, double *phi)
 {
     return myPolyChordScanner->logLike(theta);
 }
@@ -157,8 +157,6 @@ PolyChord::run(bool res)
     const int updateResume = nLive_;
     const bool writeLive = true;
 
-    void *context = NULL;
-
     std::vector<int> priorTypes;
     std::vector<double> priorMins, priorMaxs;
     
@@ -177,7 +175,7 @@ PolyChord::run(bool res)
     double logZ, errorZ, nDead, nLike, logZPlusLogP;
 
 	// calling PolyChord
-    poly::run(nDims, nDerived, nLive_, numRepeats, doClustering, nCluster, feedback, calculatePost, sigmaPost, thinPost, &(priorTypes[0]), &(priorMins[0]), &(priorMaxs[0]), baseDir.c_str(), root.c_str(), res, res, updateResume, writeLive, myLogLike, context, &logZ, &errorZ, &nDead, &nLike, &logZPlusLogP);
+    poly::run(nDims, nDerived, nLive_, numRepeats, doClustering, nCluster, feedback, calculatePost, sigmaPost, thinPost, &(priorTypes[0]), &(priorMins[0]), &(priorMaxs[0]), baseDir.c_str(), root.c_str(), res, res, updateResume, writeLive, myLogLike, &logZ, &errorZ, &nDead, &nLike, &logZPlusLogP);
 
     running_ = false;
 

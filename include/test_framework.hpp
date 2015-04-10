@@ -11,7 +11,7 @@ public:
     TestFramework(double precision = 1e-5);
 
     /// Destructor.
-    ~TestFramework() {}
+    virtual ~TestFramework() {}
 
     /// Run all of the subtests.
     /// \param pass The number of passed subtests upon return.

@@ -13,7 +13,9 @@
 #include <healpix_map.h>
 #include <chealpix.h>
 
+#ifdef COSMO_OMP
 #include <omp.h>
+#endif
 
 double
 MaskApodizer::correctTheta(double theta) const
@@ -99,16 +101,22 @@ MaskApodizer::apodize(ApodizationType type, double angle, Healpix_Map<double>& r
 
     output_screen("Apodizing mask..." << std::endl);
     ProgressMeter meter1(nPix);
+#ifdef COSMO_OMP
     omp_lock_t lock;
     omp_init_lock(&lock);
+#endif
 #pragma omp parallel for default(shared)
     for(long i = 0; i < nPix; ++i)
     {
         if(result[i] == 0)
         {
+#ifdef COSMO_OMP
             omp_set_lock(&lock);
+#endif
             meter1.advance();
+#ifdef COSMO_OMP
             omp_unset_lock(&lock);
+#endif
             continue;
         }
 
@@ -123,8 +131,12 @@ MaskApodizer::apodize(ApodizationType type, double angle, Healpix_Map<double>& r
                 minDistance = distance;
         }
         result[i] = (type == COSINE_APODIZATION ? cosApodization(angle, minDistance) : gaussApodization(angle, minDistance));
+#ifdef COSMO_OMP
         omp_set_lock(&lock);
+#endif
         meter1.advance();
+#ifdef COSMO_OMP
         omp_unset_lock(&lock);
+#endif
     }
 }

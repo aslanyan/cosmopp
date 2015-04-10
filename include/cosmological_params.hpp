@@ -125,7 +125,7 @@ public:
     double getTemperature() const { return temp_; }
 
     /// Set the temperature of photons in K.
-    double setTemperature(double temp) { check(temp > 0, "invalid temperature " << temp); temp_ = temp; }
+    void setTemperature(double temp) { check(temp > 0, "invalid temperature " << temp); temp_ = temp; }
 
 private:
     double temp_;

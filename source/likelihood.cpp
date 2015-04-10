@@ -26,7 +26,9 @@
 #include <healpix_map.h>
 #include <healpix_map_fitsio.h>
 
+#ifdef COSMO_OMP
 #include <omp.h>
+#endif
 
 Likelihood::Likelihood(const CMatrix& cMatrix, const CMatrix& fiducialMatrix, const CMatrix& noiseMatrix, const char* maskFileName, const char* foregroundFileName)
 {
@@ -283,7 +285,10 @@ void
 Likelihood::calculateAll(const std::vector<std::vector<double> >& t, const std::vector<std::string>& mapNames, std::vector<LikelihoodResult>& results) const
 {
     StandardException exc;
+#ifdef COSMO_OMP
     omp_lock_t lock;
+    omp_init_lock(&lock);
+#endif
     //output_screen("Calculating likelihood for all the maps..." << std::endl);
     const int numOfMaps = t.size();
     check(mapNames.size() == numOfMaps, "");
@@ -291,7 +296,6 @@ Likelihood::calculateAll(const std::vector<std::vector<double> >& t, const std::
     
     //ProgressMeter meter(numOfMaps);
     
-    omp_init_lock(&lock);
     
 //#pragma omp parallel for default(shared)
     for(int i = 0; i < numOfMaps; ++i)
@@ -299,11 +303,15 @@ Likelihood::calculateAll(const std::vector<std::vector<double> >& t, const std::
         double chi2, logDet;
         calculate(t[i], chi2, logDet);
         
+#ifdef COSMO_OMP
         omp_set_lock(&lock);
+#endif
         logDetResults[i] = logDet;
         chi2Results[i] = chi2;
         //meter.advance();
+#ifdef COSMO_OMP
         omp_unset_lock(&lock);
+#endif
     }
     //output_screen("OK" << std::endl);
     

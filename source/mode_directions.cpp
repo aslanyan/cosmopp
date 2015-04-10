@@ -16,7 +16,9 @@
 #include <alm_powspec_tools.h>
 #include <chealpix.h>
 
+#ifdef COSMO_OMP
 #include <omp.h>
+#endif
 
 ModeDirections::ModeDirections(const Alm<xcomplex<double> >& alm) : alm_(alm.Lmax(), alm.Mmax())
 {
@@ -70,8 +72,10 @@ ModeDirections::maximizeAngularMomentumDispersion(int l, long nSide, double& the
     
     ProgressMeter meter(nPix);
     
+#ifdef COSMO_OMP
     omp_lock_t lock;
     omp_init_lock(&lock);
+#endif
 
 #pragma omp parallel for default(shared)
     for(long i = 0; i < nPix; ++i)
@@ -80,7 +84,9 @@ ModeDirections::maximizeAngularMomentumDispersion(int l, long nSide, double& the
         pix2ang_nest(nSide, i, &t, &p);
         double disp = calculateAngularMomentumDispersion(l, t, p);
         
+#ifdef COSMO_OMP
         omp_set_lock(&lock);
+#endif
         if(map)
             (*map)[i] = disp;
         
@@ -91,7 +97,9 @@ ModeDirections::maximizeAngularMomentumDispersion(int l, long nSide, double& the
             phi = p;
         }
         meter.advance();
+#ifdef COSMO_OMP
         omp_unset_lock(&lock);
+#endif
     }
     
     if(theta < Math::pi / 2)

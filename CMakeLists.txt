@@ -20,9 +20,12 @@ else(${CMAKE_CXX_COMPILER_ID} MATCHES GNU)
 	set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 endif(${CMAKE_CXX_COMPILER_ID} MATCHES GNU)
 
-#add openmp
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
-add_definitions(-DCOSMO_OMP)
+#check for openmp
+find_package(OpenMP)
+if(OPENMP_FOUND)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+	add_definitions(-DCOSMO_OMP)
+endif(OPENMP_FOUND)
 
 #enable fortran if polychord is specified
 if(POLYCHORD_DIR)
