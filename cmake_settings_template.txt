@@ -39,7 +39,6 @@ set(PLANCK_COMPILE_FLAGS "-D LAPACK_CLIK")
 
 #wmap9
 set(WMAP9_DIR "/Users/aslanyan/programs/wmap_likelihood_v5")
-set(WMAP9_COMPILER "gfortran")
 
 #minuit
 set(MINUIT_DIR "/usr/local")
