@@ -23,22 +23,37 @@ namespace Math
 template<typename T>
 Matrix<T>::Matrix(int rows, int cols)
 {
-    resize(rows, cols);
+    check(rows >= 0, "");
+    check(cols >= 0, "");
+
+    rows_ = rows;
+    cols_ = cols;
+    v_.resize(rows_ * cols_);
 }
 
 template<typename T>
 Matrix<T>::Matrix(int rows, int cols, DataType val)
 {
-    resize(rows, cols, val);
+    check(rows >= 0, "");
+    check(cols >= 0, "");
+
+    rows_ = rows;
+    cols_ = cols;
+    v_.resize(rows_ * cols_, val);
 }
 
 template<typename T>
-Matrix<T>::Matrix(const char* fileName, bool textFile)
+Matrix<T>::Matrix(const Matrix<DataType>& other)
 {
-    if(textFile)
-        readFromTextFile(fileName);
-    else
-        readFromFile(fileName);
+    rows_ = other.rows_;
+    cols_ = other.cols_;
+    v_.resize(rows_ * cols_);
+#pragma omp parallel for default(shared)
+    for(int i = 0; i < rows_; ++i)
+    {
+        for(int j = 0; j < cols_; ++j)
+            v_[i * cols_ + j] = other(i, j);
+    }
 }
 
 template<typename T>
@@ -55,17 +70,6 @@ Matrix<T>::Matrix(const std::vector<DataType>& vec, bool columnVector)
         rows_ = 1;
         cols_ = vec.size();
     }
-}
-
-template<typename T>
-Matrix<T>::Matrix(const SymmetricMatrix<DataType>& other)
-{
-    resize(other.size(), other.size());
-
-#pragma omp parallel for default(shared)
-    for(int i = 0; i < rows_; ++i)
-        for(int j = 0; j < cols_; ++j)
-            (*this)(i, j) = other(i, j);
 }
 
 template<typename T>
@@ -249,6 +253,7 @@ Matrix<T>::getRow(int i) const
 {
     check(i >= 0 && i < rows_, "");
     Matrix<DataType> res(1, cols_);
+#pragma omp parallel for default(shared)
     for(int j = 0; j < cols_; ++j)
         res(0, j) = (*this)(i, j);
     return res;
@@ -260,6 +265,7 @@ Matrix<T>::getCol(int i) const
 {
     check(i >= 0 && i < cols_, "");
     Matrix<DataType> res(rows_, 1);
+#pragma omp parallel for default(shared)
     for(int j = 0; j < rows_; ++j)
         res(j, 0) = (*this)(j, i);
     return res;
@@ -269,9 +275,13 @@ template<typename T>
 void
 Matrix<T>::copy(const Matrix<DataType>& other)
 {
-    rows_ = other.rows_;
-    cols_ = other.cols_;
-    v_ = other.v_;
+    resize(other.rows(), other.cols());
+#pragma omp parallel for default(shared)
+    for(int i = 0; i < rows_; ++i)
+    {
+        for(int j = 0; j < cols_; ++j)
+            (*this)(i, j) = other(i, j);
+    }
 }
 
 template<typename T>
@@ -282,20 +292,26 @@ Matrix<T>::add(const Matrix<DataType>& other)
     check(cols_ == other.cols_, "cannot add matrices of different sizes");
 
 #pragma omp parallel for default(shared)
-    for(int i = 0; i < v_.size(); ++i)
-        v_[i] += other.v_[i];
+    for(int i = 0; i < rows_; ++i)
+    {
+        for(int j = 0; j < cols_; ++j)
+            (*this)(i, j) += other(i, j);
+    }
 }
 
 template<typename T>
 void
 Matrix<T>::subtract(const Matrix<DataType>& other)
 {
-    check(rows_ == other.rows_, "cannot add matrices of different sizes");
-    check(cols_ == other.cols_, "cannot add matrices of different sizes");
+    check(rows_ == other.rows_, "cannot subtract matrices of different sizes");
+    check(cols_ == other.cols_, "cannot subtract matrices of different sizes");
 
 #pragma omp parallel for default(shared)
-    for(int i = 0; i < v_.size(); ++i)
-        v_[i] -= other.v_[i];
+    for(int i = 0; i < rows_; ++i)
+    {
+        for(int j = 0; j < cols_; ++j)
+            (*this)(i, j) -= other(i, j);
+    }
 }
 
 template<typename T>
@@ -313,6 +329,8 @@ void
 Matrix<T>::multiplyMatrices(const Matrix<DataType>& a, const Matrix<DataType>& b, Matrix<DataType>* res)
 {
     check(a.cols_ == b.rows_, "invalid multiplication, a must have the same number of columns as b rows");
+
+    check(!res->isSymmetric(), "the product of two matrices is not necessarily symmetric, even if both are");
 
     res->resize(a.rows_, b.cols_);
 
@@ -370,12 +388,35 @@ Matrix<double>::logDet(int* sign) const;
 #endif
 
 template<typename T>
-SymmetricMatrix<T>::SymmetricMatrix(const char* fileName, bool textFile)
+SymmetricMatrix<T>::SymmetricMatrix(int rows, int cols) : BaseType()
 {
-    if(textFile)
-        readFromTextFile(fileName);
-    else
-        readFromFile(fileName);
+    check(rows >= 0, "");
+    check(rows == cols, "symmetric matrix must have rows = cols");
+
+    rows_ = rows;
+    cols_ = cols;
+    v_.resize(rows_ * (rows_ + 1) / 2);
+}
+
+template<typename T>
+SymmetricMatrix<T>::SymmetricMatrix(int rows, int cols, DataType val) : BaseType()
+{
+    check(rows >= 0, "");
+    check(rows == cols, "symmetric matrix must have rows = cols");
+
+    rows_ = rows;
+    cols_ = cols;
+    v_.resize(rows_ * (rows_ + 1) / 2, val);
+}
+
+template<typename T>
+SymmetricMatrix<T>::SymmetricMatrix(const SymmetricMatrix<DataType>& other) : BaseType()
+{
+    rows_ = other.rows_;
+    cols_ = other.cols_;
+    check(rows_ == cols_, "");
+
+    v_ = other.v_;
 }
 
 template<typename T>
@@ -393,41 +434,33 @@ template<typename T>
 T&
 SymmetricMatrix<T>::operator()(int i, int j)
 {
-    checkIndices(i, j);
-    if(i < j)
-        std::swap(i, j);
-
-    return v_[i * (i + 1) / 2 + j];
+    return const_cast<T&>(static_cast<const SymmetricMatrix<T>& >(*this)(i, j));
 }
 
 template<typename T>
 void
-SymmetricMatrix<T>::checkIndices(int i, int j) const
+SymmetricMatrix<T>::resize(int rows, int cols) 
 {
-    check(i >= 0 && i < size(), "invalid index i = " << i << ", should be non-negative and less than " << size());
-    check(j >= 0 && j < size(), "invalid index j = " << j << ", should be non-negative and less than " << size());
-}
+    check(rows >= 0, "");
+    check(rows == cols, "symmetric matrix must have rows = cols");
 
-template<typename T>
-void
-SymmetricMatrix<T>::resize(int size) 
-{
-    check(size >= 0, "");
-
-    n_ = size;
+    rows_ = rows;
+    cols_ = cols;
     v_.clear();
-    v_.resize(n_ * (n_ + 1) / 2);
+    v_.resize(rows_ * (rows_ + 1) / 2);
 }
 
 template<typename T>
 void
-SymmetricMatrix<T>::resize(int size, DataType val) 
+SymmetricMatrix<T>::resize(int rows, int cols, DataType val) 
 {
-    check(size >= 0, "");
+    check(rows >= 0, "");
+    check(rows == cols, "symmetric matrix must have rows = cols");
 
-    n_ = size;
+    rows_ = rows;
+    cols_ = cols;
     v_.clear();
-    v_.resize(n_ * (n_ + 1) / 2, val);
+    v_.resize(rows_ * (rows_ + 1) / 2, val);
 }
 
 template<typename T>
@@ -444,7 +477,9 @@ SymmetricMatrix<T>::writeIntoFile(const char* fileName) const
         throw exc;
     }
 
-    out.write((char*)(&n_), sizeof(n_));
+    check(rows_ == cols_, "");
+
+    out.write((char*)(&rows_), sizeof(rows_));
     out.write((char*)(&(v_[0])), v_.size() * sizeof(DataType));
     out.close();
 }
@@ -463,17 +498,19 @@ SymmetricMatrix<T>::readFromFile(const char* fileName)
         throw exc;
     }
 
-    in.read((char*)(&n_), sizeof(n_));
-    if(n_ < 0)
+    in.read((char*)(&rows_), sizeof(rows_));
+    if(rows_ < 0)
     {
         std::stringstream exceptionStr;
-        exceptionStr << "Invalid matrix size " << n_ << " in the file " << fileName << ". Must be non-negative.";
+        exceptionStr << "Invalid matrix size " << rows_ << " in the file " << fileName << ". Must be non-negative.";
         exc.set(exceptionStr.str());
         throw exc;
     }
 
+    cols_ = rows_;
+
     v_.clear();
-    v_.resize(n_ * (n_ + 1) / 2);
+    v_.resize(rows_ * (rows_ + 1) / 2);
 
     in.read((char*)(&(v_[0])), v_.size() * sizeof(DataType));
     in.close();
@@ -493,8 +530,9 @@ SymmetricMatrix<T>::writeIntoTextFile(const char* fileName, int precision) const
         throw exc;
     }
 
-    out << n_ << '\t' << n_ << std::endl;
-    if(n_ == 0)
+    check(rows_ == cols_, "");
+    out << rows_ << '\t' << cols_ << std::endl;
+    if(rows_ == 0)
     {
         out.close();
         return;
@@ -503,11 +541,11 @@ SymmetricMatrix<T>::writeIntoTextFile(const char* fileName, int precision) const
     check(precision >= 0, "");
     out << std::setprecision(precision);
 
-    for(int i = 0; i < n_; ++i)
+    for(int i = 0; i < rows_; ++i)
     {
-        for(int j = 0; j < n_ - 1; ++j)
+        for(int j = 0; j < rows_ - 1; ++j)
             out << (*this)(i, j) << '\t';
-        out << (*this)(i, n_ - 1) << std::endl;
+        out << (*this)(i, rows_ - 1) << std::endl;
     }
     out.close();
 }
@@ -526,17 +564,16 @@ SymmetricMatrix<T>::readFromTextFile(const char* fileName)
         throw exc;
     }
 
-    int nDummy_;
-    in >> n_ >> nDummy_;
-    if(n_ < 0)
+    in >> rows_ >> cols_;
+    if(rows_ < 0)
     {
         std::stringstream exceptionStr;
-        exceptionStr << "The matrix size must be non-negative! Read " << n_ << " from " << fileName;
+        exceptionStr << "The matrix size must be non-negative! Read " << rows_ << " from " << fileName;
         exc.set(exceptionStr.str());
         throw exc;
     }
 
-    if(nDummy_ != n_)
+    if(rows_ != cols_)
     {
         std::stringstream exceptionStr;
         exceptionStr << "The matrix in the file " << fileName << " is not symmetric.";
@@ -545,8 +582,8 @@ SymmetricMatrix<T>::readFromTextFile(const char* fileName)
     }
 
     v_.clear();
-    v_.resize(n_ * (n_ + 1) / 2);
-    for(int i = 0; i < n_; ++i)
+    v_.resize(rows_ * (rows_ + 1) / 2);
+    for(int i = 0; i < rows_; ++i)
     {
         DataType x;
         for(int j = 0; j < i; ++j)
@@ -558,7 +595,7 @@ SymmetricMatrix<T>::readFromTextFile(const char* fileName)
                 exceptionStr << "The matrix in the file is not symmetric! The element (" << i << "," << j << ") is " << x << " while the element (" << j << "," << i << ") is " << (*this)(j, i);
             }
         }
-        for(int j = i; j < n_; ++j)
+        for(int j = i; j < rows_; ++j)
             in >> (*this)(i, j);
     }
     in.close();
@@ -566,52 +603,49 @@ SymmetricMatrix<T>::readFromTextFile(const char* fileName)
 
 template<typename T>
 void
-SymmetricMatrix<T>::copy(const SymmetricMatrix<DataType>& other)
+SymmetricMatrix<T>::copy(const Matrix<DataType>& other)
 {
-    n_ = other.n_;
-    v_ = other.v_;
-}
+    check(other.isSymmetric(), "cannot copy from non-symmetric matrix to symmetric");
 
-template<typename T>
-void
-SymmetricMatrix<T>::add(const SymmetricMatrix<DataType>& other)
-{
-    check(n_ == other.n_, "cannot add matrices of different sizes");
-
+    resize(other.rows(), other.cols());
 #pragma omp parallel for default(shared)
-    for(int i = 0; i < v_.size(); ++i)
-        v_[i] += other.v_[i];
-}
-
-template<typename T>
-void
-SymmetricMatrix<T>::subtract(const SymmetricMatrix<DataType>& other)
-{
-    check(n_ == other.n_, "cannot add matrices of different sizes");
-
-#pragma omp parallel for default(shared)
-    for(int i = 0; i < v_.size(); ++i)
-        v_[i] -= other.v_[i];
-}
-
-template<typename T>
-void
-SymmetricMatrix<T>::multiplyMatrices(const SymmetricMatrix<DataType>& a, const SymmetricMatrix<DataType>& b, SymmetricMatrix<DataType>* res)
-{
-    check(a.n_ == b.n_, "invalid multiplication, symmetric matrices must have the same size");
-
-    res->resize(a.n_);
-
-#pragma omp parallel for default(shared)
-    for(int i = 0; i < a.n_; ++i)
+    for(int i = 0; i < rows_; ++i)
     {
-        for(int j = i; j < b.n_; ++j)
-        {
-            DataType x = 0;
-            for(int k = 0; k < a.n_; ++k)
-                x += a(i, k) * b(k, j);
-            (*res)(i, j) = x;
-        }
+        for(int j = i; j < cols_; ++j)
+            (*this)(i, j) = other(i, j);
+    }
+}
+
+template<typename T>
+void
+SymmetricMatrix<T>::add(const Matrix<DataType>& other)
+{
+    check(rows_ == other.rows(), "cannot add matrices of different sizes");
+    check(cols_ == other.cols(), "cannot add matrices of different sizes");
+    check(other.isSymmetric(), "cannot add non-symmetric matrix to symmetric");
+
+#pragma omp parallel for default(shared)
+    for(int i = 0; i < rows_; ++i)
+    {
+        for(int j = i; j < cols_; ++j)
+            (*this)(i, j) += other(i, j);
+    }
+}
+
+
+template<typename T>
+void
+SymmetricMatrix<T>::subtract(const Matrix<DataType>& other)
+{
+    check(rows_ == other.rows(), "cannot subtract matrices of different sizes");
+    check(cols_ == other.cols(), "cannot subtract matrices of different sizes");
+    check(other.isSymmetric(), "cannot subtract non-symmetric matrix from symmetric");
+
+#pragma omp parallel for default(shared)
+    for(int i = 0; i < rows_; ++i)
+    {
+        for(int j = i; j < cols_; ++j)
+            (*this)(i, j) -= other(i, j);
     }
 }
 

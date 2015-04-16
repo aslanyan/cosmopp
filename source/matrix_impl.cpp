@@ -80,15 +80,6 @@ Matrix<double>::getInverse(Matrix<double>* res) const
 }
 
 template<>
-Matrix<double>
-Matrix<double>::getInverse() const
-{
-    Matrix<double> res;
-    getInverse(&res);
-    return res;
-}
-
-template<>
 double
 Matrix<double>::determinantFromLUFactorization(std::vector<int>* pivot) const
 {
@@ -239,23 +230,6 @@ SymmetricMatrix<double>::invert()
     }
 
     return invertFromCholeskyFactorization();
-}
-
-template<>
-int
-SymmetricMatrix<double>::getInverse(SymmetricMatrix<double>* res) const
-{
-    res->copy(*this);
-    return res->invert();
-}
-
-template<>
-SymmetricMatrix<double>
-SymmetricMatrix<double>::getInverse() const
-{
-    SymmetricMatrix<double> res;
-    getInverse(&res);
-    return res;
 }
 
 template<>

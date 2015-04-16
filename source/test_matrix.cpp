@@ -113,7 +113,8 @@ TestMatrix::runSubTest1(double& res, double& expected, std::string& subTestName)
 
     mat.writeIntoFile(fileName.c_str());
 
-    Math::Matrix<int> mat2(fileName.c_str());
+    Math::Matrix<int> mat2;
+    mat2.readFromFile(fileName.c_str());
 
     res = mat2(0, 1);
     expected = mat(0, 1);
@@ -163,6 +164,8 @@ TestMatrix::runSubTest4(double& res, double& expected, std::string& subTestName)
     mat1(0, 1) = 5;
 
     Math::Matrix<int> mat2 = mat + mat1;
+    //Math::Matrix<int> mat2;
+    //Math::Matrix<int>::addMatrices(mat, mat1, &mat2);
 
     res = mat2(0, 1);
     expected = mat(0, 1) + mat1(0, 1);
@@ -288,7 +291,7 @@ TestMatrix::runSubTest9(double& res, double& expected, std::string& subTestName)
 void
 TestMatrix::runSubTest10(double& res, double& expected, std::string& subTestName)
 {
-    Math::SymmetricMatrix<int> mat(3, -1);
+    Math::SymmetricMatrix<int> mat(3, 3, -1);
 
     mat(2, 1) = 7;
     res = mat(1, 2);
@@ -299,7 +302,7 @@ TestMatrix::runSubTest10(double& res, double& expected, std::string& subTestName
 void
 TestMatrix::runSubTest11(double& res, double& expected, std::string& subTestName)
 {
-    Math::SymmetricMatrix<int> mat(3);
+    Math::SymmetricMatrix<int> mat(3, 3);
 
     mat(0, 1) = -7;
 
@@ -307,7 +310,8 @@ TestMatrix::runSubTest11(double& res, double& expected, std::string& subTestName
 
     mat.writeIntoFile(fileName.c_str());
 
-    Math::SymmetricMatrix<int> mat2(fileName.c_str());
+    Math::SymmetricMatrix<int> mat2;
+    mat2.readFromFile(fileName.c_str());
 
     res = mat2(1, 0);
     expected = mat(0, 1);
@@ -317,7 +321,7 @@ TestMatrix::runSubTest11(double& res, double& expected, std::string& subTestName
 void
 TestMatrix::runSubTest12(double& res, double& expected, std::string& subTestName)
 {
-    Math::SymmetricMatrix<int> mat(3);
+    Math::SymmetricMatrix<int> mat(3, 3);
 
     mat(0, 1) = -7;
 
@@ -336,7 +340,7 @@ TestMatrix::runSubTest12(double& res, double& expected, std::string& subTestName
 void
 TestMatrix::runSubTest13(double& res, double& expected, std::string& subTestName)
 {
-    Math::SymmetricMatrix<int> mat(4);
+    Math::SymmetricMatrix<int> mat(4, 4);
 
     mat(0, 1) = -7;
 
@@ -351,7 +355,7 @@ TestMatrix::runSubTest13(double& res, double& expected, std::string& subTestName
 void
 TestMatrix::runSubTest14(double& res, double& expected, std::string& subTestName)
 {
-    Math::SymmetricMatrix<int> mat(2, 5), mat1(2, 3);
+    Math::SymmetricMatrix<int> mat(2, 2, 5), mat1(2, 2, 3);
 
     mat(0, 1) = -7;
     mat1(1, 0) = 5;
@@ -366,7 +370,7 @@ TestMatrix::runSubTest14(double& res, double& expected, std::string& subTestName
 void
 TestMatrix::runSubTest15(double& res, double& expected, std::string& subTestName)
 {
-    Math::SymmetricMatrix<int> mat(2, 10), mat1(2, -20);
+    Math::SymmetricMatrix<int> mat(2, 2, 10), mat1(2, 2, -20);
 
     mat(0, 1) = -7;
     mat1(0, 1) = 5;
@@ -382,7 +386,7 @@ TestMatrix::runSubTest15(double& res, double& expected, std::string& subTestName
 void
 TestMatrix::runSubTest16(double& res, double& expected, std::string& subTestName)
 {
-    Math::SymmetricMatrix<int> mat(3);
+    Math::SymmetricMatrix<int> mat(3, 3);
 
     mat(1, 0) = -7;
 
@@ -397,12 +401,12 @@ TestMatrix::runSubTest16(double& res, double& expected, std::string& subTestName
 void
 TestMatrix::runSubTest17(double& res, double& expected, std::string& subTestName)
 {
-    Math::SymmetricMatrix<double> mat(3, 5), mat1(3, 7);
+    Math::SymmetricMatrix<double> mat(3, 3, 5), mat1(3, 3, 7);
 
-    Math::SymmetricMatrix<double> mat2 = mat * mat1;
+    Math::Matrix<double> mat2 = mat * mat1;
 
     res = mat2(1, 2);
-    expected = mat(0, 1) * mat1(2, 0) * mat.size();
+    expected = mat(0, 1) * mat1(2, 0) * mat.rows();
     subTestName = "simple_symmetric_multiply";
 }
 
