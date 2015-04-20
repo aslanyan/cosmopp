@@ -27,7 +27,7 @@ MatterLikelihood::calculateLin(const Math::RealFunction& matterPk, const Cosmolo
     const int n = data_.size();
 
     check(kh_.size() == n, "");
-    check(cInv_.size() == n, "need to initialize the covariance matrix first");
+    check(cInv_.rows() == n, "need to initialize the covariance matrix first");
 
     const double h = params.getH();
 
@@ -153,7 +153,7 @@ MatterLikelihood::calculate(const Math::RealFunction& matterPk, const Cosmologic
     const int n = data_.size();
 
     check(kh_.size() == n, "");
-    check(cInv_.size(), "need to initialize the covariance matrix first");
+    check(cInv_.rows(), "need to initialize the covariance matrix first");
 
     const double h = params.getH();
 
@@ -319,7 +319,7 @@ MatterLikelihood::readCov(const char* fileName)
         throw exc;
     }
 
-    cInv_.resize(n);
+    cInv_.resize(n, n);
 
     std::string s;
     for(int i = 0; i < nIgnored_; ++i)
@@ -370,7 +370,7 @@ MatterLikelihood::readLogCov(const char* fileName)
         throw exc;
     }
 
-    cInv_.resize(n);
+    cInv_.resize(n, n);
 
     for(int i = 0; i < n; ++i)
         for(int j = 0; j < n; ++j)
