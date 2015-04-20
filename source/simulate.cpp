@@ -39,7 +39,7 @@ Simulate::simulateAlm(const WholeMatrix& wholeMatrix, Alm<xcomplex<double> >& al
     
     //output_screen("Preparing the real and imaginary covariance matrices..." << std::endl);
     const int matrixSize = index(lMax, lMax, lMin) + 1;
-    Math::SymmetricMatrix<double> reMatrix(matrixSize), imMatrix(matrixSize);
+    Math::SymmetricMatrix<double> reMatrix(matrixSize, matrixSize), imMatrix(matrixSize, matrixSize);
     
     for(int l1 = lMin; l1 <= lMax; ++l1)
     {

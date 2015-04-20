@@ -190,11 +190,12 @@ template<>
 int
 SymmetricMatrix<double>::choleskyFactorize()
 {
-    check(n_ > 0, "cannot factorize an empty matrix");
+    check(rows_ == cols_, "");
+    check(rows_ > 0, "cannot factorize an empty matrix");
 
     char c = 'U';
     int info;
-    int n = n_;
+    int n = rows_;
 
     dpptrf_(&c, &n, &(v_[0]), &info);
     return info;
@@ -204,10 +205,11 @@ template<>
 int
 SymmetricMatrix<double>::invertFromCholeskyFactorization()
 {
-    check(n_ > 0, "matrix is empty");
+    check(rows_ == cols_, "");
+    check(rows_ > 0, "matrix is empty");
 
     char c = 'U';
-    int n = n_;
+    int n = rows_;
     int info;
 
     dpptri_(&c, &n, &(v_[0]), &info);
@@ -218,7 +220,8 @@ template<>
 int
 SymmetricMatrix<double>::invert()
 {
-    check(n_ > 0, "matrix is empty");
+    check(rows_ == cols_, "");
+    check(rows_ > 0, "matrix is empty");
     const int info1 = choleskyFactorize();
     if(info1)
     {
@@ -236,8 +239,9 @@ template<>
 double
 SymmetricMatrix<double>::determinantFromCholeskyFactorization() const
 {
+    check(rows_ == cols_, "");
     double det = 1;
-    for(int i = 0; i < n_; ++i)
+    for(int i = 0; i < rows_; ++i)
         det *= (*this)(i, i);
 
     det = det * det;
@@ -249,7 +253,8 @@ template<>
 double
 SymmetricMatrix<double>::determinant() const
 {
-    check(n_ > 0, "matrix is empty");
+    check(rows_ == cols_, "");
+    check(rows_ > 0, "matrix is empty");
 
     SymmetricMatrix<double> newMat = *this;
 
@@ -270,9 +275,10 @@ template<>
 double
 SymmetricMatrix<double>::logDetFromCholeskyFactorization(int* sign) const
 {
+    check(rows_ == cols_, "");
     double logDet = 0;
     *sign = 1;
-    for(int i = 0; i < n_; ++i)
+    for(int i = 0; i < rows_; ++i)
     {
         logDet += std::log(std::abs((*this)(i, i)));
 
@@ -287,7 +293,8 @@ template<>
 double
 SymmetricMatrix<double>::logDet(int* sign) const
 {
-    check(n_ > 0, "matrix is empty");
+    check(rows_ == cols_, "");
+    check(rows_ > 0, "matrix is empty");
 
     SymmetricMatrix<double> newMat = *this;
 
@@ -308,12 +315,13 @@ template<>
 int
 SymmetricMatrix<double>::getEigen(std::vector<double>* eigenvals, Matrix<double>* eigenvecs, bool positiveDefinite) const
 {
-    check(n_ > 0, "matrix is empty");
+    check(rows_ == cols_, "");
+    check(rows_ > 0, "matrix is empty");
 
     std::vector<double> a = v_;
     char uplo = 'U';
     char compz = 'V';
-    int n = n_;
+    int n = rows_;
     eigenvals->resize(n);
     std::vector<double> e(n - 1);
     std::vector<double> tau(n - 1);
@@ -335,7 +343,7 @@ SymmetricMatrix<double>::getEigen(std::vector<double>* eigenvals, Matrix<double>
 
     std::vector<double> work(n - 1);
 
-    dopgtr_(&uplo, &n, &(a[0]), &(tau[0]), &(eigenvecs->v_[0]), &ldz, &(work[0]), &info);
+    dopgtr_(&uplo, &n, &(a[0]), &(tau[0]), &((*eigenvecs)(0, 0)), &ldz, &(work[0]), &info);
     if(info)
     {
         std::stringstream exceptionStr;
@@ -346,9 +354,9 @@ SymmetricMatrix<double>::getEigen(std::vector<double>* eigenvals, Matrix<double>
 
     std::vector<double> work1((positiveDefinite ? 4 : 2) * n);
     if(positiveDefinite)
-        dpteqr_(&compz, &n, &(eigenvals->at(0)), &(e[0]), &(eigenvecs->v_[0]), &ldz, &(work1[0]), &info);
+        dpteqr_(&compz, &n, &(eigenvals->at(0)), &(e[0]), &((*eigenvecs)(0, 0)), &ldz, &(work1[0]), &info);
     else
-        dsteqr_(&compz, &n, &(eigenvals->at(0)), &(e[0]), &(eigenvecs->v_[0]), &ldz, &(work1[0]), &info);
+        dsteqr_(&compz, &n, &(eigenvals->at(0)), &(e[0]), &((*eigenvecs)(0, 0)), &ldz, &(work1[0]), &info);
 
     // if positive definite then eigenvals are in descending order, reversing them to still be in ascending order
     if(positiveDefinite)

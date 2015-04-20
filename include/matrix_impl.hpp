@@ -349,6 +349,70 @@ Matrix<T>::multiplyMatrices(const Matrix<DataType>& a, const Matrix<DataType>& b
 
 #ifdef COSMO_LAPACK
 
+template<typename T>
+int
+Matrix<T>::luFactorize(std::vector<int>* pivot)
+{
+    check(false, "");
+    return -1;
+}
+
+template<typename T>
+int
+Matrix<T>::invertFromLUFactorization(std::vector<int>* pivot)
+{
+    check(false, "");
+    return -1;
+}
+
+template<typename T>
+int
+Matrix<T>::invert()
+{
+    check(false, "");
+    return -1;
+}
+
+template<typename T>
+int
+Matrix<T>::getInverse(Matrix<T>* res) const
+{
+    check(false, "");
+    return -1;
+}
+
+template<typename T>
+double
+Matrix<T>::determinantFromLUFactorization(std::vector<int>* pivot) const
+{
+    check(false, "");
+    return 0;
+}
+
+template<typename T>
+double
+Matrix<T>::determinant() const
+{
+    check(false, "");
+    return 0;
+}
+
+template<typename T>
+double
+Matrix<T>::logDetFromLUFactorization(std::vector<int>* pivot, int* sign) const
+{
+    check(false, "");
+    return 0;
+}
+
+template<typename T>
+double
+Matrix<T>::logDet(int* sign) const
+{
+    check(false, "");
+    return 0;
+}
+
 template<>
 int
 Matrix<double>::luFactorize(std::vector<int>* pivot);
@@ -364,10 +428,6 @@ Matrix<double>::invert();
 template<>
 int
 Matrix<double>::getInverse(Matrix<double>* res) const;
-
-template<>
-Matrix<double>
-Matrix<double>::getInverse() const;
 
 template<>
 double
@@ -651,6 +711,70 @@ SymmetricMatrix<T>::subtract(const Matrix<DataType>& other)
 
 #ifdef COSMO_LAPACK
 
+template<typename T>
+int
+SymmetricMatrix<T>::choleskyFactorize()
+{
+    check(false, "");
+    return -1;
+}
+
+template<typename T>
+int
+SymmetricMatrix<T>::invertFromCholeskyFactorization()
+{
+    check(false, "");
+    return -1;
+}
+
+template<typename T>
+int
+SymmetricMatrix<T>::invert()
+{
+    check(false, "");
+    return -1;
+}
+
+template<typename T>
+double
+SymmetricMatrix<T>::determinantFromCholeskyFactorization() const
+{
+    check(false, "");
+    return 0;
+}
+
+template<typename T>
+double
+SymmetricMatrix<T>::determinant() const
+{
+    check(false, "");
+    return 0;
+}
+
+template<typename T>
+double
+SymmetricMatrix<T>::logDetFromCholeskyFactorization(int* sign) const
+{
+    check(false, "");
+    return 0;
+}
+
+template<typename T>
+double
+SymmetricMatrix<T>::logDet(int* sign) const
+{
+    check(false, "");
+    return 0;
+}
+
+template<typename T>
+int
+SymmetricMatrix<T>::getEigen(std::vector<double>* eigenvals, Matrix<double>* eigenvecs, bool positiveDefinite) const
+{
+    check(false, "");
+    return -1;
+}
+
 template<>
 int
 SymmetricMatrix<double>::choleskyFactorize();
@@ -662,14 +786,6 @@ SymmetricMatrix<double>::invertFromCholeskyFactorization();
 template<>
 int
 SymmetricMatrix<double>::invert();
-
-template<>
-int
-SymmetricMatrix<double>::getInverse(SymmetricMatrix<double>* res) const;
-
-template<>
-SymmetricMatrix<double>
-SymmetricMatrix<double>::getInverse() const;
 
 template<>
 double

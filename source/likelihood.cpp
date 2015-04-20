@@ -97,7 +97,7 @@ Likelihood::construct(const CMatrix& cMatrix, const CMatrix& fiducialMatrix, con
         throw exc;
     }
     
-    cInv_.resize(goodPixels_.size());
+    cInv_.resize(goodPixels_.size(), goodPixels_.size());
     
 #pragma omp parallel for default(shared)
     for(int i = 0; i < goodPixels_.size(); ++i)
@@ -369,8 +369,8 @@ LikelihoodPolarization::LikelihoodPolarization(const CMatrix& cMatrix, long nSid
     in.close();
     
     nInv_.resize(2 * goodSize, 2 * goodSize);
-    Math::SymmetricMatrix<double> cMat(2 * goodSize);
-    cInv_.resize(2 * goodSize);
+    Math::SymmetricMatrix<double> cMat(2 * goodSize, 2 * goodSize);
+    cInv_.resize(2 * goodSize, 2 * goodSize);
     
     for(int i = 0; i < goodSize; ++i)
     {
@@ -647,7 +647,7 @@ LikelihoodPolarization::combineWholeMatrices(const WholeMatrix& tt, const WholeM
     check(etttInverse.getLMax() == lMax, "");
     
     int size = myIndex(lMax, lMax, lMin) + 1;
-    Math::SymmetricMatrix<double> ttMat(size);
+    Math::SymmetricMatrix<double> ttMat(size, size);
     for(int l1 = lMin; l1 <= lMax; ++l1)
         for(int m1 = -l1; m1 <= l1; ++m1)
             for(int l = lMin; l <= lMax; ++l)

@@ -23,7 +23,7 @@ FastApproximator::FastApproximator(int nPoints, int nData, unsigned long dataSiz
         xTLin_(0, i) = 1;
     }
 
-    covariance_.resize(nPoints_);
+    covariance_.resize(nPoints_, nPoints_);
     choleskyMat_.resize(nPoints_, nPoints_);
     v_.resize(nPoints_, 1);
     w_.resize(nPoints_, 1);

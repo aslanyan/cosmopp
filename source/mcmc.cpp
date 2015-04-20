@@ -118,7 +118,7 @@ MetropolisHastings::useAdaptiveProposal()
 {
     adapt_ = true;
     covarianceElementsNum_ = 0;
-    covariance_.resize(n_);
+    covariance_.resize(n_, n_);
 
     paramMean_.resize(n_, 0);
     paramMeanNew_.resize(n_);
@@ -127,7 +127,7 @@ MetropolisHastings::useAdaptiveProposal()
 
 
 
-    cholesky_.resize(n_);
+    cholesky_.resize(n_, n_);
 
     for(int i = 0; i < n_; ++i)
         for(int j = i; j < n_; ++j)
@@ -408,7 +408,7 @@ MetropolisHastings::communicate()
         if(covUpdateFlag)
         {
             output_screen1("Received an updated covariance matrix from the master." << std::endl);
-            check(cholesky_.size() == n_, "");
+            check(cholesky_.rows() == n_, "");
             for(int i = 0; i < n_; ++i)
             {
                 for(int j = 0; j < n_; ++j)

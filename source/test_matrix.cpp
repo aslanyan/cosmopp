@@ -230,7 +230,8 @@ TestMatrix::runSubTest8(double& res, double& expected, std::string& subTestName)
 
     mat.writeIntoTextFile("test_files/matrix_test_8_original.txt");
 
-    Math::Matrix<double> invMat = mat.getInverse();
+    Math::Matrix<double> invMat;
+    mat.getInverse(&invMat);
 
     invMat.writeIntoTextFile("test_files/matrix_test_8_inverse.txt");
 
@@ -417,7 +418,7 @@ TestMatrix::runSubTest18(double& res, double& expected, std::string& subTestName
     subTestName = "simple_symmetric_invert";
 
 #ifdef COSMO_LAPACK
-    Math::SymmetricMatrix<double> mat(2);
+    Math::SymmetricMatrix<double> mat(2, 2);
     mat(0, 0) = 2;
     mat(1, 1) = 3;
     mat(1, 0) = 1;
@@ -429,14 +430,14 @@ TestMatrix::runSubTest18(double& res, double& expected, std::string& subTestName
 
     invMat.writeIntoTextFile("test_files/matrix_test_18_inverse.txt");
 
-    Math::SymmetricMatrix<double> prod = mat;
+    Math::Matrix<double> prod = mat;
     prod *= invMat;
     prod.writeIntoTextFile("test_files/matrix_test_18_product.txt");
 
     res = 1;
-    for(int i = 0; i < prod.size(); ++i)
+    for(int i = 0; i < prod.rows(); ++i)
     {
-        for(int j = 0; j < prod.size(); ++j)
+        for(int j = 0; j < prod.rows(); ++j)
         {
             if(i == j)
             {
@@ -468,7 +469,7 @@ TestMatrix::runSubTest19(double& res, double& expected, std::string& subTestName
     subTestName = "simple_symmetric_determinant";
 
 #ifdef COSMO_LAPACK
-    Math::SymmetricMatrix<double> mat(2);
+    Math::SymmetricMatrix<double> mat(2, 2);
     mat(0, 0) = 3;
     mat(1, 1) = 4;
     mat(0, 1) = 2;
@@ -491,7 +492,7 @@ TestMatrix::runSubTestEigen(double& res, double& expected, std::string& subTestN
         subTestName = "simple_symmetric_positive_eigen";
 
 #ifdef COSMO_LAPACK
-    Math::SymmetricMatrix<double> mat(3);
+    Math::SymmetricMatrix<double> mat(3, 3);
     mat(0, 0) = 3;
     mat(1, 1) = 10;
     mat(2, 2) = 4;

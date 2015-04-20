@@ -776,8 +776,8 @@ MetropolisHastings::writeResumeInfo() const
 
         out.write((char*)(&covarianceReady_), sizeof(covarianceReady_));
 
-        check(covariance_.size() == n_, "");
-        check(cholesky_.size() == n_, "");
+        check(covariance_.rows() == n_, "");
+        check(cholesky_.rows() == n_, "");
 
         out.write((char*)(&covarianceElementsNum_), sizeof(covarianceElementsNum_));
         for(int i = 0; i < n_; ++i)
@@ -826,8 +826,8 @@ MetropolisHastings::readResumeInfo()
 
         in.read((char*)(&covarianceReady_), sizeof(covarianceReady_));
 
-        check(covariance_.size() == n_, "");
-        check(cholesky_.size() == n_, "");
+        check(covariance_.rows() == n_, "");
+        check(cholesky_.rows() == n_, "");
 
         in.read((char*)(&covarianceElementsNum_), sizeof(covarianceElementsNum_));
         for(int i = 0; i < n_; ++i)
