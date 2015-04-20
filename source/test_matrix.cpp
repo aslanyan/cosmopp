@@ -163,9 +163,9 @@ TestMatrix::runSubTest4(double& res, double& expected, std::string& subTestName)
     mat(0, 1) = -7;
     mat1(0, 1) = 5;
 
-    Math::Matrix<int> mat2 = mat + mat1;
-    //Math::Matrix<int> mat2;
-    //Math::Matrix<int>::addMatrices(mat, mat1, &mat2);
+    //Math::Matrix<int> mat2 = mat + mat1;
+    Math::Matrix<int> mat2;
+    Math::Matrix<int>::addMatrices(mat, mat1, &mat2);
 
     res = mat2(0, 1);
     expected = mat(0, 1) + mat1(0, 1);
@@ -361,7 +361,9 @@ TestMatrix::runSubTest14(double& res, double& expected, std::string& subTestName
     mat(0, 1) = -7;
     mat1(1, 0) = 5;
 
-    Math::SymmetricMatrix<int> mat2 = mat + mat1;
+    //Math::SymmetricMatrix<int> mat2 = mat + mat1;
+    Math::SymmetricMatrix<int> mat2;
+    Math::SymmetricMatrix<int>::addMatrices(mat, mat1, &mat2);
 
     res = mat2(1, 0);
     expected = mat(1, 0) + mat1(0, 1);
