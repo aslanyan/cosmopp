@@ -275,6 +275,9 @@ template<typename T>
 void
 Matrix<T>::copy(const Matrix<DataType>& other)
 {
+    if(&other == this)
+        return;
+
     resize(other.rows(), other.cols());
 #pragma omp parallel for default(shared)
     for(int i = 0; i < rows_; ++i)
@@ -665,6 +668,9 @@ template<typename T>
 void
 SymmetricMatrix<T>::copy(const Matrix<DataType>& other)
 {
+    if(&other == this)
+        return;
+    
     check(other.isSymmetric(), "cannot copy from non-symmetric matrix to symmetric");
 
     resize(other.rows(), other.cols());
