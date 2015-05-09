@@ -9,7 +9,7 @@
 #include <matrix_impl.hpp>
 #include <fast_approximator.hpp>
 
-FastApproximator::FastApproximator(int nPoints, int nData, unsigned long dataSize, const std::vector<std::vector<double> >& points, const std::vector<std::vector<double> >& data, int k) : knn_(NULL), k_(k), nPoints_(nPoints), nData_(nData), x_(k, nPoints + nPoints * nPoints + 1), xLin_(k, nPoints + 1), xT_(nPoints + nPoints * nPoints + 1, k), xTLin_(nPoints_ + 1, k), inv_(nPoints + nPoints * nPoints + 1, nPoints + nPoints * nPoints + 1), invLin_(nPoints_ + 1, nPoints_ + 1), prod_(nPoints + nPoints * nPoints + 1, k), prodLin_(nPoints_ + 1, k), pointTransformed_(nPoints), sigma_(1), l_(1e-6)
+FastApproximator::FastApproximator(int nPoints, int nData, unsigned long dataSize, const std::vector<std::vector<double> >& points, const std::vector<std::vector<double> >& data, int k) : knn_(NULL), k_(k), nPoints_(nPoints), nData_(nData), x_(k, nPoints + nPoints * (nPoints + 1) / 2 + 1), xLin_(k, nPoints + 1), xT_(nPoints + nPoints * (nPoints + 1) / 2 + 1, k), xTLin_(nPoints_ + 1, k), inv_(nPoints + nPoints * (nPoints + 1) / 2 + 1, nPoints + nPoints * (nPoints + 1) / 2 + 1), invLin_(nPoints_ + 1, nPoints_ + 1), prod_(nPoints + nPoints * (nPoints + 1) / 2 + 1, k), prodLin_(nPoints_ + 1, k), pointTransformed_(nPoints), sigma_(1), l_(1e-6)
 {
     check(nPoints_ > 0, "");
     check(nData_ > 0, "");
@@ -234,11 +234,11 @@ FastApproximator::getApproximation(std::vector<double>& val, InterpolationMethod
             case QUADRATIC_INTERPOLATION:
                 x_(i, j + 1) = x * weights[i];
                 xT_(j + 1, i) = x;
-                for(int l = 0; l < nPoints_; ++l)
+                for(int l = 0; l <= j; ++l)
                 {
                     const double y = pointsTransformed_[index][l] - pointTransformed_[l];
-                    x_(i, nPoints_ + 1 + j * nPoints_ + l) = x * y * weights[i];
-                    xT_(nPoints_ + 1 + j * nPoints_ + l, i) = x * y;
+                    x_(i, nPoints_ + 1 + j * (j + 1) / 2 + l) = x * y * weights[i];
+                    xT_(nPoints_ + 1 + j * (j + 1) / 2 + l, i) = x * y;
                 }
                 break;
             default:
