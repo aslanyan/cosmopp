@@ -109,7 +109,8 @@ public:
 
         if(useCamspec_)
         {
-            like_->setCamspecExtraParams(100, 50, 100, 10, 30, 5, 0.9, 0.4, 0.5, 1, 1, 0.5, 5, 0.5);
+            //like_->setCamspecExtraParams(100, 50, 100, 10, 30, 5, 0.9, 0.4, 0.5, 1, 1, 0.5, 5, 0.5);
+            like_->setCamspecExtraParams(168, 66, 98, 3.5, 34.5, 4.9, 0.971, 0.37, 0.65, 1.0005, 0.996, 0.47, 1.5, 0.6);
             res += like_->camspecLike();
         }
 
