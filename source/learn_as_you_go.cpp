@@ -426,8 +426,8 @@ LearnAsYouGo::constructFast()
     check(data_.size() == points_.size(), "");
     check(pointMap_.size() == points_.size(), "");
 
-    //const int k = nPoints_ + nPoints_ * (nPoints_ + 1) / 2 + 1;
-    const int k = nPoints_ + nPoints_ * nPoints_ + 1;
+    const int k = (nPoints_ + nPoints_ * (nPoints_ + 1) / 2 + 1) * 2;
+    //const int k = nPoints_ + nPoints_ * nPoints_ + 1;
 
     check(testSize_ > 0, "");
     if(points_.size() > 2 * testSize_)

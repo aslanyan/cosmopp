@@ -32,8 +32,7 @@ TestMCMCPlanckFast::runSubTest(unsigned int i, double& res, double& expected, st
     const double pivot = 0.05;
     LambdaCDMParams par(0.022, 0.12, 0.7, 0.1, 1.0, std::exp(3.0) / 1e10, pivot);
 
-    // change the precision to 0.4!!!
-    PlanckLikeFast planckLike(&par, true, true, false, true, false, false, 5, 2.0, 10000);
+    PlanckLikeFast planckLike(&par, true, true, false, true, false, false, 5, 0.4, 10000);
     std::string errorLogRoot = "slow_test_files/mcmc_planck_fast_error_log";
     planckLike.logError(errorLogRoot.c_str());
     std::string root = "slow_test_files/mcmc_planck_fast_test";
