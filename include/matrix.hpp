@@ -194,6 +194,7 @@ public:
     virtual int invertFromLUFactorization(std::vector<int> *pivot);
 
     /// Invert the matrix (in place).
+    /// \return 0 if successful, otherwise an error code (see Lapack documentation).
     virtual int invert();
 
     /// Get the inverse of the matrix.
@@ -209,7 +210,15 @@ public:
     /// \return The determinant of the matrix.
     virtual double determinant() const;
 
+    /// Calculate the logarithm of the absolute value of the determinant. This function should be called after luFactorize.
+    /// \param pivot The pivot vector returned by luFactorize.
+    /// \param sign A pointer to an integer where the sign of the determinant will be written (+1 or -1).
+    /// \return The logarithm of the absolute value of the determinant of the matrix.
     virtual double logDetFromLUFactorization(std::vector<int> *pivot, int *sign) const;
+
+    /// Calculate the logarithm of the absolute value of the determinant.
+    /// \param sign A pointer to an integer where the sign of the determinant will be written (+1 or -1).
+    /// \return The logarithm of the absolute value of the determinant of the matrix.
     virtual double logDet(int *sign) const;
 #endif
 
@@ -226,7 +235,10 @@ template<typename T>
 class SymmetricMatrix : public Matrix<T>
 {
 public:
+    /// The type of the elements of the matrix.
     typedef T DataType;
+
+    /// The base type.
     typedef Matrix<T> BaseType;
     
 private:
@@ -236,58 +248,156 @@ private:
     using BaseType::checkIndices;
 
 public:
+    /// Default constructor. Constructs an empty matrix.
     SymmetricMatrix() : BaseType() {}
+
+    /// Constructor. The elements will be initialized to their default values.
+    /// \param rows The number of rows.
+    /// \param cols The number of columns.
     SymmetricMatrix(int rows, int cols);
+
+    /// Constructor.
+    /// \param rows The number of rows.
+    /// \param cols The number of columns.
+    /// \param val All of the matrix elements will have this value.
     SymmetricMatrix(int rows, int cols, DataType val);
+
+    /// Copy constructor.
+    /// \param other Another matrix to copy from.
     SymmetricMatrix(const SymmetricMatrix<DataType>& other);
 
+    /// Destructor.
     virtual ~SymmetricMatrix() {}
 
+    /// Element access operator.
+    /// \param i The row index.
+    /// \param j The column index.
+    /// \return Constant reference to the (i, j) element of the matrix. Note that this is the same as (j, i), i.e. changing one affects the other.
     virtual const DataType& operator()(int i, int j) const;
+
+    /// Element access operator.
+    /// \param i The row index.
+    /// \param j The column index.
+    /// \return Reference to the (i, j) element of the matrix. Note that this is the same as (j, i), i.e. changing one affects the other.
     virtual DataType& operator()(int i, int j);
 
+    /// Resize the matrix. All of the elements will be assigned the default value (any previous values will be erased).
+    /// \param rows The new number of rows.
+    /// \param cols The new number of columns.
     virtual void resize(int rows, int cols);
+
+    /// Resize the matrix. All of the elements will be assigned the new value val (any previous values will be erased).
+    /// \param rows The new number of rows.
+    /// \param cols The new number of columns.
+    /// \param val All of the elements of the matrix will have this value.
     virtual void resize(int rows, int cols, DataType val);
 
+    /// Write (save) into a binary file.
+    /// \param fileName The name of the file.
     virtual void writeIntoFile(const char* fileName) const;
+
+    /// Read (retrieve) from a binary file.
+    /// \param fileName The name of the file.
     virtual void readFromFile(const char* fileName);
 
+    /// Write (save) into a text file.
+    /// \param fileName The name of the file.
+    /// \param precision The precision of the output values.
     virtual void writeIntoTextFile(const char* fileName, int precision = 3) const;
+
+    /// Read (retrieve) from a text file.
+    /// \param fileName The name of the file.
     virtual void readFromTextFile(const char* fileName);
 
+    /// Copy from another matrix (any existing values will be erased).
+    /// \param other The matrix to copy from.
     virtual void copy(const Matrix<DataType>& other);
+
+    /// Add another matrix to this matrix (element by element). The other matrix must be a SymmetricMatrix.
+    /// \param other The matrix to add.
     virtual void add(const Matrix<DataType>& other);
+
+    /// Subtract another matrix from the given matrix (element by element). The other matrix must be a SymmetricMatrix.
+    /// \param other The other matrix to subtract.
     virtual void subtract(const Matrix<DataType>& other);
 
+    /// Addition operator. It is recommended to use the addMatrices static function instead since the addition operator returns the result by value which is not efficient.
+    /// \param other The right hand side of the operator + (the matrix to add to this).
+    /// \return A matrix that's the sum of this and other.
     SymmetricMatrix<DataType> operator+(const SymmetricMatrix<DataType>& other) const { SymmetricMatrix<DataType> res; BaseType::addMatrices(*this, other, &res); return res; }
+
+    /// Subtraction operator. It is recommended to use the subtractMatrices static function instead since the subtraction operator returns the result by value which is not efficient.
+    /// \param other The other matrix to subtract.
+    /// \return A matrix that is the difference of this and other.
     SymmetricMatrix<DataType> operator-(const SymmetricMatrix<DataType>& other) const { SymmetricMatrix<DataType> res; subtractMatrices(*this, other, &res); return res; }
 
+    /// This function should NOT be called for SymmetricMatrix, because multiplying a symmetric matrix with another matrix might not yield a symmetric matrix. Calling this function will throw an exception (if checks are on). This is written so that it does not inherit the functionality of the base type.
     void multiply(const Matrix<DataType>& other) { check(false, "cannot multiply into a symmetric matrix"); }
+
+    /// This operator should NOT be called for SymmetricMatrix, because multiplying a symmetric matrix with another matrix might not yield a symmetric matrix. Calling this function will throw an exception (if checks are on). This is written so that it does not inherit the functionality of the base type.
     Matrix<DataType>& operator*=(const Matrix<DataType>& other) { check(false, "cannot multiply into a symmetric matrix"); return *this; }
 
+    /// Get the transpose of the matrix.
+    /// \param res A pointer to a matrix where the transpose matrix will be returned.
     virtual void getTranspose(Matrix<DataType>* res) const { res->copy(*this); }
+
+    /// Get the transpose of the matrix.
+    /// \return The transpose matrix.
     virtual Matrix<DataType> getTranspose() const { Matrix<DataType> res; getTranspose(&res); return res; }
+
+    /// Transpose the matrix (in place). Since this is a symmetric matrix this function does nothing. The function exists because the base type has it.
     virtual void transpose() { }
 
+    /// Is this a symmetric matrix. Note that this function does not explicitly check all the elements, it just checks the type (because SymmetricMatrix is a subclass of Matrix). For the SymmetricMatrix class the result is always true.
     virtual bool isSymmetric() const { return true; }
 
 #ifdef COSMO_LAPACK
+    /// This function should NOT be called for SymmetricMatrix. Calling this function will throw an excpetion (if checks are on).
     virtual int luFactorize(std::vector<int>* pivot) { check(false, "cannot LU factorize a symmetric matrix"); return -1; }
+
+    /// This function should NOT be called for SymmetricMatrix. Calling this function will throw an excpetion (if checks are on).
     virtual int invertFromLUFactorization(std::vector<int> *pivot) { check(false, "cannot LU factorize a symmetric matrix"); return -1; }
+
+    /// This function should NOT be called for SymmetricMatrix. Calling this function will throw an excpetion (if checks are on).
     virtual double determinantFromLUFactorization(std::vector<int> *pivot) const { check(false, "cannot LU factorize a symmetric matrix"); return 0; }
+
+    /// This function should NOT be called for SymmetricMatrix. Calling this function will throw an excpetion (if checks are on).
     virtual double logDetFromLUFactorization(std::vector<int> *pivot, int *sign) const { check(false, "cannot LU factorize a symmetric matrix"); return 0; }
 
+    /// Cholesky factorize the matrix (in place)
     int choleskyFactorize();
 
+    /// Invert the matrix. This function should be called after choleskyFactorize.
+    /// \return 0 if successful, otherwise an error code (see Lapack documentation).
     int invertFromCholeskyFactorization();
+
+    /// Invert the matrix (in place).
+    /// \return 0 if successful, otherwise an error code (see Lapack documentation).
     virtual int invert();
 
+    /// Calculate the determinant. This function should be called after choleskyFactorize.
+    /// \return The determinant of the matrix.
     double determinantFromCholeskyFactorization() const;
+
+    /// Calculate the determinant.
+    /// \return The determinant of the matrix.
     virtual double determinant() const;
 
+    /// Calculate the logarithm of the absolute value of the determinant. This function should be called after choleskyFactorize.
+    /// \param sign A pointer to an integer where the sign of the determinant will be written (+1 or -1).
+    /// \return The logarithm of the absolute value of the determinant of the matrix.
     double logDetFromCholeskyFactorization(int *sign) const;
+
+    /// Calculate the logarithm of the absolute value of the determinant.
+    /// \param sign A pointer to an integer where the sign of the determinant will be written (+1 or -1).
+    /// \return The logarithm of the absolute value of the determinant of the matrix.
     virtual double logDet(int *sign) const;
 
+    /// Get the eigenvalues and the eigenvectors of the matrix.
+    /// \param eigenvals A pointer to a vector where the eigenvalues will be written. The eigenvalues will be in ascending order.
+    /// \param eigenvecs A pointer to a matrix where the eigenvectors will be written, as columns. They will be in the same order as the eigenvalues.
+    /// \param positiveDefinite If the matrix is positive definite or not. A different method will be used for positive definite matrices, which may give more accurate results.
+    /// \return 0 if successful, otherwise an error code (see Lapack documentation).
     int getEigen(std::vector<double>* eigenvals, Matrix<double>* eigenvecs, bool positiveDefinite = false) const;
 #endif
 };
