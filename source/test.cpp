@@ -33,6 +33,7 @@
 #include <test_cubic_spline.hpp>
 #include <test_three_rotation.hpp>
 #include <test_mask_apodizer.hpp>
+#include <test_matter_likelihood.hpp>
 #include <test_kd_tree.hpp>
 #include <test_fast_approximator.hpp>
 #include <test_fast_approximator_error.hpp>
@@ -123,6 +124,12 @@ TestFramework* createTest(const std::string& name)
     else if(name == "mask_apodizer")
         test = new TestMaskApodizer(1e-3);
 #endif
+#ifdef COSMO_CLASS
+#ifdef COSMO_LAPACK
+    else if(name == "matter_likelihood")
+        test = new TestMatterLikelihood(1e-3);
+#endif
+#endif
     else if(name == "kd_tree")
         test = new TestKDTree;
 #ifdef COSMO_LAPACK
@@ -210,6 +217,11 @@ int main(int argc, char *argv[])
         fastTests.insert("table_function");
         fastTests.insert("cubic_spline");
         fastTests.insert("three_rotation");
+#ifdef COSMO_CLASS
+#ifdef COSMO_LAPACK
+        fastTests.insert("matter_likelihood");
+#endif
+#endif
         fastTests.insert("kd_tree");
 #ifdef COSMO_LAPACK
         fastTests.insert("fast_approximator");

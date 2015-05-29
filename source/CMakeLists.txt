@@ -32,6 +32,11 @@ if(LAPACK_LIB_FLAGS AND HEALPIX_DIR)
 	set(LIB_FILES ${LIB_FILES} simulate.cpp likelihood.cpp master.cpp)
 endif(LAPACK_LIB_FLAGS AND HEALPIX_DIR)
 
+if(LAPACK_LIB_FLAGS AND CLASS_DIR)
+	set(LIB_FILES ${LIB_FILES} matter_likelihood.cpp)
+	set(TEST_FILES ${TEST_FILES} test_matter_likelihood.cpp)
+endif(LAPACK_LIB_FLAGS AND CLASS_DIR)
+
 if(LAPACK_LIB_FLAGS AND HEALPIX_DIR AND CLASS_DIR)
 	set(TEST_FILES ${TEST_FILES} test_cmb_gibbs.cpp test_like_high.cpp test_like_low.cpp)
 endif(LAPACK_LIB_FLAGS AND HEALPIX_DIR AND CLASS_DIR)
@@ -137,6 +142,9 @@ if(CLASS_DIR)
 	if(WMAP9_DIR)
 		add_test(NAME wmap9_like COMMAND cosmo_test wmap9_like WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
 	endif(WMAP9_DIR)
+	if(LAPACK_LIB_FLAGS)
+		add_test(NAME matter_likelihood COMMAND cosmo_test matter_likelihood WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+	endif(LAPACK_LIB_FLAGS)
 endif(CLASS_DIR)
 
 
