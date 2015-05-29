@@ -29,9 +29,6 @@ set(CLASS_DIR "/Users/aslanyan/programs/class_public-2.4.2")
 #multinest
 set(MULTINEST_DIR "/Users/aslanyan/programs/MultiNest_v3.9_CMake/multinest")
 
-#polychord
-set(POLYCHORD_DIR "/Users/aslanyan/programs/PolyChord_v1.0")
-
 #planck
 set(PLANCK_DIR "/Users/aslanyan/programs/planck/COM_Code_Likelihood-v1.0_R1.10.ext/plc-1.0")
 set(PLANCK_DATA_DIR "/Users/aslanyan/programs/planck")

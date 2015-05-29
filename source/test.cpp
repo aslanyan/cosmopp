@@ -19,11 +19,8 @@
 #include <test_matrix.hpp>
 #include <test_mcmc.hpp>
 #include <test_multinest.hpp>
-#include <test_polychord.hpp>
 #include <test_mcmc_planck.hpp>
-#include <test_mcmc_planck_r.hpp>
 #include <test_multinest_planck.hpp>
-#include <test_polychord_planck.hpp>
 #include <test_cmb.hpp>
 #include <test_cmb_gibbs.hpp>
 #include <test_fit.hpp>
@@ -36,12 +33,10 @@
 #include <test_cubic_spline.hpp>
 #include <test_three_rotation.hpp>
 #include <test_mask_apodizer.hpp>
-#include <test_matter_likelihood.hpp>
 #include <test_kd_tree.hpp>
 #include <test_fast_approximator.hpp>
 #include <test_fast_approximator_error.hpp>
 #include <test_mcmc_planck_fast.hpp>
-#include <test_mcmc_planck_r_fast.hpp>
 #include <test_multinest_planck_fast.hpp>
 
 TestFramework* createTest(const std::string& name)
@@ -72,25 +67,15 @@ TestFramework* createTest(const std::string& name)
     else if(name == "multinest_fast")
         test = new TestMultinestFast;
 #endif
-#ifdef COSMO_POLYCHORD
-    else if(name == "polychord_fast")
-        test = new TestPolyChordFast;
-#endif
 #ifdef COSMO_PLANCK
 #ifdef COSMO_CLASS
 #ifdef COSMO_LAPACK
     else if(name == "mcmc_planck")
         test = new TestMCMCPlanck;
-    else if(name == "mcmc_planck_r")
-        test = new TestMCMCPlanckR;
 #endif
 #ifdef COSMO_MULTINEST
     else if(name == "multinest_planck")
         test = new TestMultinestPlanck;
-#endif
-#ifdef COSMO_POLYCHORD
-    else if(name == "polychord_planck")
-        test = new TestPolyChordPlanck;
 #endif
 #endif
 #endif
@@ -138,12 +123,6 @@ TestFramework* createTest(const std::string& name)
     else if(name == "mask_apodizer")
         test = new TestMaskApodizer(1e-3);
 #endif
-#ifdef COSMO_CLASS
-#ifdef COSMO_LAPACK
-    else if(name == "matter_likelihood")
-        test = new TestMatterLikelihood(1e-3);
-#endif
-#endif
     else if(name == "kd_tree")
         test = new TestKDTree;
 #ifdef COSMO_LAPACK
@@ -157,8 +136,6 @@ TestFramework* createTest(const std::string& name)
 #ifdef COSMO_PLANCK
     else if(name == "mcmc_planck_fast")
         test = new TestMCMCPlanckFast;
-    else if(name == "mcmc_planck_r_fast")
-        test = new TestMCMCPlanckRFast;
 #ifdef COSMO_MULTINEST
     else if(name == "multinest_planck_fast")
         test = new TestMultinestPlanckFast;
@@ -213,9 +190,6 @@ int main(int argc, char *argv[])
 #ifdef COSMO_MULTINEST
         fastTests.insert("multinest_fast");
 #endif
-#ifdef COSMO_POLYCHORD
-        fastTests.insert("polychord_fast");
-#endif
 #ifdef COSMO_CLASS
         fastTests.insert("cmb");
 #endif
@@ -236,11 +210,6 @@ int main(int argc, char *argv[])
         fastTests.insert("table_function");
         fastTests.insert("cubic_spline");
         fastTests.insert("three_rotation");
-#ifdef COSMO_CLASS
-#ifdef COSMO_LAPACK
-        fastTests.insert("matter_likelihood");
-#endif
-#endif
         fastTests.insert("kd_tree");
 #ifdef COSMO_LAPACK
         fastTests.insert("fast_approximator");
@@ -251,13 +220,9 @@ int main(int argc, char *argv[])
 #ifdef COSMO_CLASS
 #ifdef COSMO_LAPACK
         slowTests.insert("mcmc_planck");
-        slowTests.insert("mcmc_planck_r");
 #endif
 #ifdef COSMO_MULTINEST
         slowTests.insert("multinest_planck");
-#endif
-#ifdef COSMO_POLYCHORD
-        slowTests.insert("polychord_planck");
 #endif
 #endif
 #endif
@@ -274,7 +239,6 @@ int main(int argc, char *argv[])
 #ifdef COSMO_CLASS
 #ifdef COSMO_PLANCK
         slowTests.insert("mcmc_planck_fast");
-        slowTests.insert("mcmc_planck_r_fast");
 #ifdef COSMO_MULTINEST
         slowTests.insert("multinest_planck_fast");
 #endif
