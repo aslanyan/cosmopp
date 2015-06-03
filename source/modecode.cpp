@@ -49,13 +49,14 @@ extern "C" double modpkparams_mp_modpk_w_primordial_upper_;
 extern "C" double modpkparams_mp_modpk_rho_reheat_;
 #endif
 
+int ModeCode::nVPar_ = 0;
 double* ModeCode::vParams_ = NULL;
 Math::TableFunction<double, double> ModeCode::scalarPs_;
 Math::TableFunction<double, double> ModeCode::tensorPs_;
 
 
 void
-ModeCode::initialize(int potentialChoice, double kPivot, double NPivot, bool instantReheating, bool slowRollEnd, double kMin, double kMax, int nPoints)
+ModeCode::initialize(int potentialChoice, double kPivot, double NPivot, bool instantReheating, bool physicalPriors, bool slowRollEnd, double kMin, double kMax, int nPoints)
 {
     check(potentialChoice >= 1, "invalid potential choice " << potentialChoice);
     check(kPivot > 0, "invalid k_pivot = " << kPivot);
@@ -71,7 +72,7 @@ ModeCode::initialize(int potentialChoice, double kPivot, double NPivot, bool ins
 
 #ifdef MODECODE_GFORT
     __camb_interface_MOD_modpkoutput = outputFlag;
-    __modpkparams_MOD_modpk_physical_priors = false;
+    __modpkparams_MOD_modpk_physical_priors = physicalPriors;
     __modpkparams_MOD_modpk_rho_reheat = 1e44;
     __modpkparams_MOD_modpk_w_primordial_lower = -1.0 / 3.0;
     __modpkparams_MOD_modpk_w_primordial_upper = 1.0;
@@ -88,7 +89,7 @@ ModeCode::initialize(int potentialChoice, double kPivot, double NPivot, bool ins
     vParams_ = &__modpkparams_MOD_vparams;
 #else
     camb_interface_mp_modpkoutput_ = outputFlag;
-    modpkparams_mp_modpk_physical_priors_ = false;
+    modpkparams_mp_modpk_physical_priors_ = physicalPriors;
     modpkparams_mp_modpk_rho_reheat_ = 1e44;
     modpkparams_mp_modpk_w_primordial_lower_ = -1.0 / 3.0;
     modpkparams_mp_modpk_w_primordial_upper_ = 1.0;
@@ -116,6 +117,19 @@ ModeCode::initialize(int potentialChoice, double kPivot, double NPivot, bool ins
         scalarPs_[k] = 0;
         tensorPs_[k] = 0;
     }
+
+    switch(potentialChoice)
+    {
+    case 1:
+        nVPar_ = 1;
+        break;
+    case 12:
+        nVPar_ = 5;
+        break;
+    default:
+        check(false, "not implemented, TBD better");
+        break;
+    }
 }
 
 void
@@ -127,6 +141,18 @@ ModeCode::setNPivot(double NPivot)
 #else
     modpkparams_mp_n_pivot_ = NPivot;
 #endif
+}
+
+double
+ModeCode::getNPivot()
+{
+    double nPiv;
+#ifdef MODECODE_GFORT
+    nPiv = __modpkparams_MOD_n_pivot;
+#else
+    nPiv = modpkparams_mp_n_pivot_;
+#endif
+    return nPiv;
 }
 
 bool

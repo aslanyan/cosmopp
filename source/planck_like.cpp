@@ -545,8 +545,9 @@ PlanckLikelihood::calculate(double* params, int nPar)
     for(int i = 0; i < nModel; ++i)
         vModel_[i] = params[i];
 
-    modelParams_->setAllParameters(vModel_);
-    setCosmoParams(*modelParams_);
+    const bool success = modelParams_->setAllParameters(vModel_);
+    if(success)
+        setCosmoParams(*modelParams_);
 
     if(camspec_)
     {
@@ -562,7 +563,10 @@ PlanckLikelihood::calculate(double* params, int nPar)
     }
 
     //timer.end();
-    return likelihood();
+    if(success)
+        return likelihood();
+    else
+        return 1e20;
 }
 
 double
