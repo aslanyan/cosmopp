@@ -174,6 +174,8 @@ if(WMAP9_DIR)
 	endif(NOT WMAP9LIB)
 endif(WMAP9_DIR)
 
+#modecode
+
 #minuit
 if(MINUIT_DIR)
 	include_directories(${MINUIT_DIR}/include)
