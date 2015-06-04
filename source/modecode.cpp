@@ -60,7 +60,7 @@ std::map<double, double> ModeCode::tensorUpper_;
 
 
 void
-ModeCode::initialize(int potentialChoice, double kPivot, double NPivot, bool instantReheating, bool physicalPriors, bool slowRollEnd, double kMin, double kMax, int nPoints)
+ModeCode::initialize(int potentialChoice, double kPivot, double NPivot, bool instantReheating, bool physicalPriors, bool slowRollEnd, bool eternalInflOK, double kMin, double kMax, int nPoints)
 {
     check(potentialChoice >= 1, "invalid potential choice " << potentialChoice);
     check(kPivot > 0, "invalid k_pivot = " << kPivot);
@@ -88,7 +88,7 @@ ModeCode::initialize(int potentialChoice, double kPivot, double NPivot, bool ins
     __modpkparams_MOD_n_pivot = NPivot;
     __modpkparams_MOD_slowroll_infl_end = slowRollEnd;
     __modpkparams_MOD_findiffdphi = 1.0e-16;
-    __modpkparams_MOD_eternal_infl_ok = true;
+    __modpkparams_MOD_eternal_infl_ok = eternalInflOK;
 
     vParams_ = &__modpkparams_MOD_vparams;
 #else
@@ -105,7 +105,7 @@ ModeCode::initialize(int potentialChoice, double kPivot, double NPivot, bool ins
     modpkparams_mp_n_pivot_ = NPivot;
     modpkparams_mp_slowroll_infl_end_ = slowRollEnd;
     modpkparams_mp_findiffdphi_ = 1.0e-16;
-    modpkparams_mp_eternal_infl_ok_ = true;
+    modpkparams_mp_eternal_infl_ok_ = eternalInflOK;
 
     vParams_ = &modpkparams_mp_vparams_;
 #endif

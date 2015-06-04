@@ -14,7 +14,7 @@ private:
     ~ModeCode() { check(false, "should not be called"); }
 
 public:
-    static void initialize(int potentialChoice = 1, double kPivot = 0.05, double NPivot = 55, bool instantReheating = true, bool physicalPriors = true, bool slowRollEnd = true, double kMin = 1e-6, double kMax = 1.0, int nPoints = 100);
+    static void initialize(int potentialChoice = 1, double kPivot = 0.05, double NPivot = 55, bool instantReheating = true, bool physicalPriors = true, bool slowRollEnd = true, bool eternalInflOK = true, double kMin = 1e-6, double kMax = 1.0, int nPoints = 100);
 
     static void setNPivot(double NPivot);
     static double getNPivot();
@@ -41,9 +41,9 @@ private:
 class ModeCodeCosmologicalParams : public LambdaCDMParams
 {
 public:
-    ModeCodeCosmologicalParams(double omBH2, double omCH2, double h, double tau, double kPivot, double NPivot, int potentialChoice, bool instReheat = true, bool physicalPriors = true, bool slowRollEnd = true, double kMin = 8e-7, double kMax = 1.2, int nPoints = 500) : LambdaCDMParams(omBH2, omCH2, h, tau, 1.0, 1.0, kPivot)
+    ModeCodeCosmologicalParams(double omBH2, double omCH2, double h, double tau, double kPivot, double NPivot, int potentialChoice, bool instReheat = true, bool physicalPriors = true, bool slowRollEnd = true, bool eternalInflOK = true, double kMin = 8e-7, double kMax = 1.2, int nPoints = 500) : LambdaCDMParams(omBH2, omCH2, h, tau, 1.0, 1.0, kPivot)
     {
-        ModeCode::initialize(potentialChoice, kPivot, NPivot, instReheat, physicalPriors, slowRollEnd, kMin, kMax, nPoints);
+        ModeCode::initialize(potentialChoice, kPivot, NPivot, instReheat, physicalPriors, slowRollEnd, eternalInflOK, kMin, kMax, nPoints);
         vParams_.resize(ModeCode::getNumVParams());
     }
 
@@ -81,6 +81,12 @@ public:
     virtual bool setAllParameters(const std::vector<double>& v)
     {
         check(v.size() == 5 + ModeCode::getNumVParams(), "");
+
+        output_screen_clean("Param values:");
+        for(int i = 0; i < v.size(); ++i)
+            output_screen_clean("\t" << v[i]);
+        output_screen_clean(std::endl);
+
         setBaseParams(v[0], v[1], v[2], v[3]);
         setNPivot(v[4]);
 

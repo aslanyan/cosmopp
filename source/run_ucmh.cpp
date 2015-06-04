@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
 {
     try {
         PlanckLikelihood like(true, true, false, true, false, true, 500);
-        ModeCodeCosmologicalParams modelParams(0.02, 0.1, 0.7, 0.1, 0.002, 55, 12, false, true, false, 8e-7, 1.2, 500);
+        ModeCodeCosmologicalParams modelParams(0.02, 0.1, 0.7, 0.1, 0.002, 55, 12, false, true, false, false, 8e-7, 1.2, 500);
 
         ModeCode::addKValue(10, 0, 1e-6, 0, 1e10);
         ModeCode::addKValue(10^3, 0, 1e-7, 0, 1e10);
@@ -32,7 +32,8 @@ int main(int argc, char *argv[])
         mn.setParam(1, "omch2", 0.1, 0.2);
         mn.setParam(2, "h", 0.55, 0.85);
         mn.setParam(3, "tau", 0.02, 0.20);
-        mn.setParam(4, "NPivot", 20, 90);
+        mn.setParam(4, "NPivot", 35, 90);
+        //mn.setParam(4, "NPivot", 20, 90);
         mn.setParam(5, "v_1", -10, -1);
         mn.setParam(6, "v_2", -0.1, 0.1);
         mn.setParam(7, "v_3", -0.1, 0.1);
