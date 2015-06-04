@@ -1,3 +1,5 @@
+#include <cosmo_mpi.hpp>
+
 #include <fstream>
 #include <sstream>
 #include <memory>
@@ -9,7 +11,6 @@
 #include <numerics.hpp>
 #include <modecode.hpp>
 #include <progress_meter.hpp>
-#include <cosmo_mpi.hpp>
 
 int main(int argc, char *argv[])
 {
