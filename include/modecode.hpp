@@ -82,10 +82,10 @@ public:
     {
         check(v.size() == 5 + ModeCode::getNumVParams(), "");
 
-        output_screen_clean("Param values:");
-        for(int i = 0; i < v.size(); ++i)
-            output_screen_clean("\t" << v[i]);
-        output_screen_clean(std::endl);
+        //output_screen_clean("Param values:");
+        //for(int i = 0; i < v.size(); ++i)
+            //output_screen_clean("\t" << v[i]);
+        //output_screen_clean(std::endl);
 
         setBaseParams(v[0], v[1], v[2], v[3]);
         setNPivot(v[4]);
