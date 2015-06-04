@@ -19,6 +19,8 @@ public:
     static void setNPivot(double NPivot);
     static double getNPivot();
 
+    static void addKValue(double k, double sMin = 0, double sMax = 1, double tMin = 0, double tMax = 1);
+
     static bool calculate(const std::vector<double>& vParams);
 
     static int getNumVParams() { return nVPar_; }
@@ -32,6 +34,8 @@ private:
 
     static Math::TableFunction<double, double> scalarPs_;
     static Math::TableFunction<double, double> tensorPs_;
+
+    static std::map<double, double> scalarLower_, scalarUpper_, tensorLower_, tensorUpper_;
 };
 
 class ModeCodeCosmologicalParams : public LambdaCDMParams
