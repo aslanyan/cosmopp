@@ -18,10 +18,12 @@ int main(int argc, char *argv[])
         PlanckLikelihood like(true, true, false, true, false, true, 500);
         ModeCodeCosmologicalParams modelParams(0.02, 0.1, 0.7, 0.1, 0.002, 55, 12, false, true, false, false, 8e-7, 1.2, 500);
 
+        /*
         ModeCode::addKValue(10, 0, 1e-6, 0, 1e10);
         ModeCode::addKValue(10^3, 0, 1e-7, 0, 1e10);
         ModeCode::addKValue(10^6, 0, 1e-7, 0, 1e10);
         ModeCode::addKValue(10^9, 0, 1e-2, 0, 1e10);
+        */
 
         like.setModelCosmoParams(&modelParams);
 
