@@ -2,6 +2,7 @@
 #include <sstream>
 
 #include <macros.hpp>
+#include <exception_handler.hpp>
 #include <modecode.hpp>
 
 int main(int argc, char *argv[])
