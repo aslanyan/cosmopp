@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <sstream>
+#include <string>
 #include <memory>
 
 #include <macros.hpp>
@@ -15,13 +16,25 @@
 int main(int argc, char *argv[])
 {
     try {
+        bool ucmhLim = false;
+        if(argc > 1 && std::string(argv[1]) == std::string("ucmh"))
+            ucmhLim = true;
+
         PlanckLikelihood like(true, true, false, true, false, true, 500);
         ModeCodeCosmologicalParams modelParams(0.02, 0.1, 0.7, 0.1, 0.002, 55, 12, false, true, false, false, 8e-7, 1.2, 500);
 
-        ModeCode::addKValue(10, 0, 1e-6, 0, 1e10);
-        ModeCode::addKValue(1e3, 0, 1e-7, 0, 1e10);
-        ModeCode::addKValue(1e6, 0, 1e-7, 0, 1e10);
-        ModeCode::addKValue(1e9, 0, 1e-2, 0, 1e10);
+        if(ucmhLim)
+        {
+            output_screen("Adding UCMH limits!" << std::endl);
+            ModeCode::addKValue(10, 0, 1e-6, 0, 1e10);
+            ModeCode::addKValue(1e3, 0, 1e-7, 0, 1e10);
+            ModeCode::addKValue(1e6, 0, 1e-7, 0, 1e10);
+            ModeCode::addKValue(1e9, 0, 1e-2, 0, 1e10);
+        }
+        else
+        {
+            output_screen("No UCMH limits! To add these limits specify \"ucmh\" as the first argument." << std::endl);
+        }
 
         like.setModelCosmoParams(&modelParams);
 
@@ -37,8 +50,8 @@ int main(int argc, char *argv[])
         mn.setParam(5, "v_1", -10, -1);
         mn.setParam(6, "v_2", -0.1, 0.1);
         mn.setParam(7, "v_3", -0.1, 0.1);
-        mn.setParam(8, "v_4", 0.0, 0.0);
-        //mn.setParam(8, "v_4", -0.1, 0.1);
+        //mn.setParam(8, "v_4", 0.0, 0.0);
+        mn.setParam(8, "v_4", -0.1, 0.1);
         mn.setParam(9, "v_5", -12, -9);
 
         mn.setParam(10, "A_ps_100", 0, 360);
