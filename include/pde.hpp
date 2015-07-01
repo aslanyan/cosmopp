@@ -17,8 +17,8 @@ public:
     virtual int spaceDim() const = 0;
     virtual int funcDim() const = 0;
 
-    virtual void f(double t, const double *x, const double *u, double *res);
-    virtual void s(double t, const double *x, const double *u, double *res);
+    virtual void f(double t, const double *x, const double *u, double *res) const = 0;
+    virtual void s(double t, const double *x, const double *u, double *res) const = 0;
 };
 
 class InitialValPDEOutputHandlerInterface
@@ -27,8 +27,7 @@ public:
     InitialValPDEOutputHandlerInterface() {}
     virtual ~InitialValPDEOutputHandlerInterface() {}
 
-    virtual void setGrid(const std::vector<double>& xMin, const std::vector<double>& xMax, const std::vector<int>& nx);
-    virtual void setTimeSlice(double t, double *res);
+    virtual void setTimeSlice(int i, double t, const double *res) = 0;
 };
 
 class InitalValPDESolver
@@ -37,11 +36,46 @@ public:
     InitialValPDESolver(InitialValPDEInterface *pde);
     ~InitialValPDESolver();
 
-    void set(const std::vector<FunctionMultiDim*>& w0, const std::vector<double>& xMin, const std::vector<double>& xMax, const std::vector<int>& nx, InitialValPDEOutputHandlerInterface* output);
+    void set(const std::vector<FunctionMultiDim*>& w0, const std::vector<double>& xMin, const std::vector<double>& xMax, const std::vector<int>& nx, InitialValPDEOutputHandlerInterface *output);
 
     void propagate(double t);
 
     double getCurrentT() const;
+
+private:
+    void setupGrid();
+    void setInitial(const std::vector<FunctionMultiDim*>& w0);
+    void setOwnBoundary();
+    void sendBoundary();
+    void receiveBoundary();
+
+    unsigned long index(const std::vector<int>& i);
+    unsigned long halfIndex(const std::vector<int>& i);
+    void physicalCoords(const std::vector<int>& i, std::vector<double> *coords);
+
+private:
+    const InitialValPDEInterface *pde_;
+    InitialValPDEOutputHandlerInterface *output_;
+
+    const int d_;
+    const int m_;
+
+    int nProcesses_;
+    int processId_;
+
+    std::vector<double> xMin_;
+    std::vector<double> xMax_;
+    std::vector<double> deltaX_;
+    std::vector<int> nx_;
+
+    int nx0Starting_;
+    int nx0_;
+
+    std::vector<unsigned long> dimProd_;
+    std::vector<unsigned long> halfDimProd_;
+
+    std::vector<std::vector<double> > grid_;
+    std::vector<std::vector<double> > halfGrid_;
 };
 
 } // namespace Math
