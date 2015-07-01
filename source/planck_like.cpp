@@ -2,6 +2,7 @@
 #include <sstream>
 #include <cstring>
 #include <fstream>
+#include <ctime>
 
 #include <macros.hpp>
 #include <exception_handler.hpp>
@@ -56,7 +57,7 @@ struct PlanckLikelihoodContainer
     void* actspt;
 };
 
-PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useLensing, bool usePol, bool useActSpt, bool includeTensors, double kPerDecade, bool useOwnCmb) : spectraNames_(6), haveCommander_(false), havePol_(false), haveLens_(false), commander_(NULL), camspec_(NULL), lens_(NULL), pol_(NULL), actspt_(NULL), cmb_(NULL), modelParams_(NULL)
+PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useLensing, bool usePol, bool useActSpt, bool includeTensors, double kPerDecade, bool useOwnCmb) : spectraNames_(6), haveCommander_(false), havePol_(false), haveLens_(false), commander_(NULL), camspec_(NULL), lens_(NULL), pol_(NULL), actspt_(NULL), cmb_(NULL), modelParams_(NULL), rand_(std::time(0), 0, 1)
 {
     check(useCommander || useCamspec || useLensing || usePol || useActSpt, "at least one likelihood must be specified");
 
@@ -566,7 +567,7 @@ PlanckLikelihood::calculate(double* params, int nPar)
     if(success)
         return likelihood();
     else
-        return 1e20;
+        return 1e20 * (1.0 + rand_.generate());
 }
 
 double

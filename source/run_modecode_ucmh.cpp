@@ -24,8 +24,13 @@ int main(int argc, char *argv[])
         ModeCode::initialize(12, 0.002, NPivot, false, true, false, false, 8e-7, 1.2, 100);
 
         ModeCode::addKValue(10, 0, 1e10, 0, 1e10);
+        ModeCode::addKValue(1e2, 0, 1e10, 0, 1e10);
         ModeCode::addKValue(1e3, 0, 1e10, 0, 1e10);
+        ModeCode::addKValue(1e4, 0, 1e10, 0, 1e10);
+        ModeCode::addKValue(1e5, 0, 1e10, 0, 1e10);
         ModeCode::addKValue(1e6, 0, 1e10, 0, 1e10);
+        ModeCode::addKValue(1e7, 0, 1e10, 0, 1e10);
+        ModeCode::addKValue(1e8, 0, 1e10, 0, 1e10);
         ModeCode::addKValue(1e9, 0, 1e10, 0, 1e10);
 
         const bool res = ModeCode::calculate(v);
