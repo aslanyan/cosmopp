@@ -46,12 +46,17 @@ private:
     void setupGrid();
     void setInitial(const std::vector<FunctionMultiDim*>& w0);
     void setOwnBoundary();
-    void sendBoundary();
-    void receiveBoundary();
 
-    unsigned long index(const std::vector<int>& i);
-    unsigned long halfIndex(const std::vector<int>& i);
-    void physicalCoords(const std::vector<int>& i, std::vector<double> *coords);
+    void communicateBoundary();
+    void sendLeft();
+    void sendRight();
+    void receiveLeft();
+    void receiveRight();
+
+    unsigned long index(const std::vector<int>& i) const;
+    unsigned long halfIndex(const std::vector<int>& i) const;
+    void increaseIndex(std::vector<int>& i, const std::vector<int>& rangeBegin, const std::vector<int>& rangeEnd) const;
+    void physicalCoords(const std::vector<int>& i, std::vector<double> *coords) const;
 
 private:
     const InitialValPDEInterface *pde_;
@@ -76,6 +81,10 @@ private:
 
     std::vector<std::vector<double> > grid_;
     std::vector<std::vector<double> > halfGrid_;
+
+    double t_;
+
+    int commTag_;
 };
 
 } // namespace Math
