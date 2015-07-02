@@ -1,6 +1,5 @@
 #include <cosmo_mpi.hpp>
 
-
 #include <macros.hpp>
 #include <pde.hpp>
 
@@ -11,6 +10,10 @@ InitialValPDESolver::InitialValPDESolver(InitialValPDEInterface *pde) : pde_(pde
 { 
     check(d_ >= 1, "invalid number of spatial dimensions " << d_ << ", must be positive");
     check(m_ >= 1, "invalid number of fields " << m_ << ", must be positive");
+
+    twoD_ = 1;
+    for(int i = 0; i < d_; ++i)
+        twoD_ *= 2;
 
     nProcesses_ = CosmoMPI::create().numProcesses();
     processId_ = CosmoMPI::create().processId();
@@ -51,10 +54,15 @@ InitialValPDESolver::set(const std::vector<FunctionMultiDim*>& w0, const std::ve
             minDeltaX = deltaX_[i];
     }
 
+    deltaT_ = 0.5 * minDeltaX;
+
     setupGrid();
     setInitial(w0);
     setOwnBoundary();
     communicateBoundary();
+
+    output_->set(xMin_, xMax_, deltaX_, nx_, nx0Starting_);
+    sendOutput();
 }
 
 void
@@ -75,7 +83,7 @@ InitialValPDESolver::setupGrid()
     check(totalNX0Before == nx_[0], "");
     
     nx0Starting_ = nx0Before[processId_];
-    nx0_ = nx0PerProcess[processId_];
+    nx_[0] = nx0PerProcess[processId_];
 
     dimProd_.resize(d_ + 1)
     dimProd_[d_] = 1;
@@ -83,7 +91,7 @@ InitialValPDESolver::setupGrid()
     halfDimProd_[d] = 1;
     for(int i = d_ - 1; i >= 0; --i)
     {
-        unsigned long currentDim = (unsigned long)(i == 0 ? nx0_ : nx_[d_ - 1]) + 2;
+        unsigned long currentDim = (unsigned long)(nx_[i]) + 2;
         dimProd_[i] = dimProd_[i + 1] * currentDim;
         check(dimProd_[i] >= dimProd_[i + 1], "overflow!");
         check(dimProd_[i] / dimProd_[i + 1] == currentDim, "overflow!");
@@ -103,7 +111,7 @@ InitialValPDESolver::setupGrid()
     for(int i = 0; i < m_; ++i)
     {
         grid_[i].resize(dimProd_[0]);
-        halfGrid_[i].resize((nx0_ + 1) * dimProd_[1]);
+        halfGrid_[i].resize(halfDimProd_[0]);
     }
 }
 
@@ -118,7 +126,7 @@ InitialValPDESolver::index(const std::vector<int>& i) const
     for(int j = 0; j < d_; ++j)
     {
         const int k = i[j];
-        check(k >= -1 && k <= (j == 0 ? nx0_ : nx_[j]), "");
+        check(k >= -1 && k <= nx_[j], "");
 
         res += (unsigned long)(k + 1) * dimProd_[j + 1];
     }
@@ -137,7 +145,7 @@ InitialValPDESolver::halfIndex(const std::vector<int>& i) const
     for(int j = 0; j < d_; ++j)
     {
         const int k = i[j];
-        check(k >= 0 && k <= (j == 0 ? nx0_ : nx_[j]), "");
+        check(k >= 0 && k <= nx_[j], "");
 
         res += (unsigned long)(k) * halfDimProd_[j + 1];
     }
@@ -151,13 +159,29 @@ InitialValPDESolver::physicalCoords(const std::vector<int>& i, std::vector<doubl
     check(i.size() == d_);
     check(coords->size() == d_);
 
-    check(i[0] >= 0 && i[0] < nx0_, "");
+    check(i[0] >= -1 && i[0] <= nx_[0], "");
     (*coords)[0] = xMin_[0] + deltaX_[0] * (i[0] + nx0Starting_);
 
     for(int j = 1; j < d_; ++j)
     {
-        check(i[j] >= 0 && i[j] < nx_[j], "");
+        check(i[j] >= -1 && i[j] <= nx_[j], "");
         (*coords)[j] = xMin_[j] + deltaX_[j] * i[j];
+    }
+}
+
+void
+InitialValPDESolver::physicalCoordsHalf(const std::vector<int>& i, std::vector<double> *coords) const
+{
+    check(i.size() == d_);
+    check(coords->size() == d_);
+
+    check(i[0] >= 0 && i[0] <= nx_[0], "");
+    (*coords)[0] = xMin_[0] + deltaX_[0] * (i[0] + nx0Starting_) - deltaX_[0] / 2;
+
+    for(int j = 1; j < d_; ++j)
+    {
+        check(i[j] >= 0 && i[j] <= nx_[j], "");
+        (*coords)[j] = xMin_[j] + deltaX_[j] * i[j] - deltaX_[j]/ 2;
     }
 }
 
@@ -188,7 +212,7 @@ InitialValPDESolver::setInitial(const std::vector<FunctionMultiDim*>& w0)
     for(int i = 0; i < m_; ++i)
     {
 #pragma omp parallel for default(shared)
-        for(int i0 = 0; i0 < nx0_; ++i0)
+        for(int i0 = 0; i0 < nx_[0]; ++i0)
         {
             std::vector<int> rangeBegin(d_, 0);
             std::vector<int> rangeEnd = nx_;
@@ -215,7 +239,7 @@ InitialValPDESolver::setOwnBoundary()
     for(int i = 1; i < d_; ++i)
     {
 #pragma omp parallel for default(shared)
-        for(int i0 = 0; i0 < nx0_; ++i0)
+        for(int i0 = 0; i0 < nx_[0]; ++i0)
         {
             std::vector<int> rangeBegin(d_, 0);
             std::vector<int> rangeEnd = nx_;
@@ -271,7 +295,7 @@ void
 InitialValPDESolver::sendRight()
 {
     const unsigned long size = dimProd_[1];
-    const unsigned long rightStart = nx0_ * size;
+    const unsigned long rightStart = nx_[0] * size;
     const int rightNeighbor = (processId_ + 1) % nProcesses_;
     for(int j = 0; j < m_; ++j)
     {
@@ -297,7 +321,7 @@ void
 InitialPDESolver::receiveRight()
 {
     const unsigned long size = dimProd_[1];
-    const unsigned long rightReceiveStart = (nx0_ + 1) * size;
+    const unsigned long rightReceiveStart = (nx_[0] + 1) * size;
     const int rightNeighbor = (processId_ + 1) % nProcesses_;
     for(int j = 0; j < m_; ++j)
     {
@@ -312,7 +336,7 @@ InitialValPDESolver::communicateBoundary()
     const unsigned long size = dimProd_[1];
     const unsigned long leftStart = size;
     const unsigned long leftReceiveStart = 0;
-    const unsigned long rightReceiveStart = (nx0_ + 1) * size;
+    const unsigned long rightReceiveStart = (nx_[0] + 1) * size;
     if(nProcesses_ == 1)
     {
 #pragma omp parallel for default(shared)
@@ -337,7 +361,7 @@ InitialValPDESolver::communicateBoundary()
             sendRight();
             receiveRight();
         }
-        if(processId_ > 0 || nProcesses_ % 2)
+        if(processId_ > 0 || nProcesses_ % 2 == 0)
         {
             sendLeft();
             receiveLeft();
@@ -350,7 +374,7 @@ InitialValPDESolver::communicateBoundary()
         receiveRight();
         sendRight();
     }
-    if(nProcesses_ % 2 == 0)
+    if(nProcesses_ % 2)
     {
         if(processId_ == 0)
         {
@@ -368,6 +392,134 @@ InitialValPDESolver::communicateBoundary()
 #endif
 
     CosmoMPI::create().barrier();
+}
+
+void
+InitialValPDESolver::sendOutput()
+{
+    check(output_, "");
+    for(int i = 0; i < m_; ++i)
+        output_->setTimeSlice(i, t_, &(grid_[i][dimProd_[1]]));
+}
+
+void
+InitialValPDESolver::propagate(double t)
+{
+    check(t >= t_, "cannot propagate back in time");
+    while(t < t_)
+        takeStep();
+}
+
+void
+InitialValPDESolver::setU(double *u, std::vector<int>& ind) const
+{
+    check(ind.size() == d_, "");
+    const unsigned long index = index(ind);
+    for(int i = 0; i < m_; ++i)
+        u[i] = grid_[i][index];
+}
+
+void
+InitialValPDESolver::setUHalf(double *u, std::vector<int>& ind) const
+{
+    check(ind.size() == d_, "");
+    const unsigned long index = halfIndex(ind);
+    for(int i = 0; i < m_; ++i)
+        u[i] = halfGrid_[i][index];
+}
+
+void
+InitialValPDESolver::takeStep()
+{
+    // evaluate half grid
+#pragma omp parallel for default(shared)
+    for(int i0 = 0; i0 <= nx_[0]; ++i0)
+    {
+        std::vector<int> rangeBegin(d_, 0);
+        std::vector<int> rangeEnd = nx_;
+        rangeBegin[0] = i0;
+        rangeEnd[0] = i0 + 1;
+
+        for(int i = 1; i < d_; ++i)
+            ++rangeEnd[i];
+
+        for(std::vector<int> ind = rangeBegin; ind[0] != rangeEnd[0]; increaseIndex(ind, rangeBegin, rangeEnd))
+        {
+            for(int i = 0; i < m_; ++i)
+            {
+                std::vector<int> rBeg = ind, rEnd = ind;
+                for(int j = 0; j < d_; --j)
+                {
+                    --rBeg[j];
+                    ++rEnd[j];
+                }
+
+                std::vector<double> u(m_);
+                std::vector<double> x(m_);
+                double term1 = 0, term2 = 0, term3 = 0;
+                for(std::vector<int> ind1 = rBeg, ind1[0] != rEnd[0], increaseIndex(ind, rBeg, rEnd))
+                {
+                    term1 += grid_[i][index(ind1)];
+                    physicalCoords(ind1, &x);
+                    setU(&(u[0]), ind1);
+                    term3 += pde_->s(i, t_, &(x[0]), &(u[0]));
+
+                    for(int j = 0; j < d_; ++j)
+                    {
+                        const double lambda = deltaT_ / deltaX_[j];
+                        const double factor = (ind1[j] == ind[j] ? 1.0 : -1.0);
+                        term2 += lambda * factor * pde_->f(i, j, t_ + deltaT_ / 2, &(x[0]), &(u[0]));
+                    }
+
+                    halfGrid_[i][halfIndex(ind)] = (term1 + term2 + deltaT_ * term3 / 2) / twoD_;
+                }
+
+            }
+        }
+    }
+
+    // evaluate grid
+#pragma omp parallel for default(shared)
+    for(int i0 = 0; i0 < nx_[0]; ++i0)
+    {
+        std::vector<int> rangeBegin(d_, 0);
+        std::vector<int> rangeEnd = nx_;
+        rangeBegin[0] = i0;
+        rangeEnd[0] = i0 + 1;
+        for(std::vector<int> ind = rangeBegin; ind[0] != rangeEnd[0]; increaseIndex(ind, rangeBegin, rangeEnd))
+        {
+            for(int i = 0; i < m_; ++i)
+            {
+                std::vector<int> rBeg = ind, rEnd = ind;
+                for(int j = 0; j < d_; --j)
+                    rEnd[j] += 2;
+
+                std::vector<double> u(m_);
+                std::vector<double> x(m_);
+                double term1 = 0, term2 = 0;
+                for(std::vector<int> ind1 = rBeg, ind1[0] != rEnd[0], increaseIndex(ind, rBeg, rEnd))
+                {
+                    physicalCoordsHalf(ind1, &x);
+                    setUHalf(&(u[0]), ind1);
+                    term2 += pde_->s(i, t_ + deltaT_ / 2, &(x[0]), &(u[0]));
+
+                    for(int j = 0; j < d_; ++j)
+                    {
+                        const double lambda = deltaT_ / deltaX_[j];
+                        const double factor = (ind1[j] == ind[j] ? -1.0 : 1.0);
+                        term3 += lambda * factor * pde_->f(i, j, t_ + deltaT_ / 2, &(x[0]), &(u[0]));
+                    }
+                }
+                grid_[i][index(ind)] += (2 * term2 + deltaT_ * term3) / twoD_;
+            }
+        }
+    }
+
+    t_ += deltaT_;
+
+    setOwnBoundary();
+    communicateBoundary();
+    sendOutput();
 }
 
 } // namespace Math

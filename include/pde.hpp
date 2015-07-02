@@ -17,8 +17,8 @@ public:
     virtual int spaceDim() const = 0;
     virtual int funcDim() const = 0;
 
-    virtual void f(double t, const double *x, const double *u, double *res) const = 0;
-    virtual void s(double t, const double *x, const double *u, double *res) const = 0;
+    virtual double f(int i, int j, double t, const double *x, const double *u) const = 0;
+    virtual double s(int i, double t, const double *x, const double *u) const = 0;
 };
 
 class InitialValPDEOutputHandlerInterface
@@ -26,6 +26,8 @@ class InitialValPDEOutputHandlerInterface
 public:
     InitialValPDEOutputHandlerInterface() {}
     virtual ~InitialValPDEOutputHandlerInterface() {}
+
+    virtual void set(const std::vector<double>& xMin, const std::vector<double>& xMax, const std::vector<double>& deltaX, const std::vector<int>& nx, int nx0Starting);
 
     virtual void setTimeSlice(int i, double t, const double *res) = 0;
 };
@@ -40,7 +42,7 @@ public:
 
     void propagate(double t);
 
-    double getCurrentT() const;
+    double getCurrentT() const { return t_; }
 
 private:
     void setupGrid();
@@ -53,10 +55,18 @@ private:
     void receiveLeft();
     void receiveRight();
 
+    void sendOutput();
+
+    void takeStep();
+
+    void setU(double *u, std::vector<int>& ind) const;
+    void setUHalf(double *u, std::vector<int>& ind) const;
+
     unsigned long index(const std::vector<int>& i) const;
     unsigned long halfIndex(const std::vector<int>& i) const;
     void increaseIndex(std::vector<int>& i, const std::vector<int>& rangeBegin, const std::vector<int>& rangeEnd) const;
     void physicalCoords(const std::vector<int>& i, std::vector<double> *coords) const;
+    void physicalCoordsHalf(const std::vector<int>& i, std::vector<double> *coords) const;
 
 private:
     const InitialValPDEInterface *pde_;
@@ -64,6 +74,8 @@ private:
 
     const int d_;
     const int m_;
+
+    double twoD_;
 
     int nProcesses_;
     int processId_;
@@ -74,7 +86,6 @@ private:
     std::vector<int> nx_;
 
     int nx0Starting_;
-    int nx0_;
 
     std::vector<unsigned long> dimProd_;
     std::vector<unsigned long> halfDimProd_;
@@ -83,6 +94,7 @@ private:
     std::vector<std::vector<double> > halfGrid_;
 
     double t_;
+    double deltaT_;
 
     int commTag_;
 };
