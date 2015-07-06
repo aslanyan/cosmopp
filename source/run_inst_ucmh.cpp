@@ -58,10 +58,10 @@ public:
     {
         check(v.size() == 4 + ModeCode::getNumVParams(), "");
 
-        //output_screen_clean("Param values:");
-        //for(int i = 0; i < v.size(); ++i)
-            //output_screen_clean("\t" << v[i]);
-        //output_screen_clean(std::endl);
+        output_screen1("Param values:");
+        for(int i = 0; i < v.size(); ++i)
+            output_screen_clean1("\t" << v[i]);
+        output_screen_clean1(std::endl);
 
         setBaseParams(v[0], v[1], v[2], v[3]);
 
@@ -69,7 +69,10 @@ public:
         for(int i = 0; i < vParams_.size(); ++i)
             vParams_[i] = v[4 + i];
 
-        return setVParams(vParams_);
+        const bool res = setVParams(vParams_);
+        output_screen1("N_piv = " << ModeCode::getNPivot() << std::endl);
+        output_screen1("Result = " << res << std::endl);
+        return res;
     }
 
 private:
@@ -81,15 +84,25 @@ private:
 int main(int argc, char *argv[])
 {
     try {
+        bool ucmhLim = false;
+        if(argc > 1 && std::string(argv[1]) == std::string("ucmh"))
+            ucmhLim = true;
+
         PlanckLikelihood like(true, true, false, true, false, true, 500);
         ModeCodeParamsInst modelParams(0.02, 0.1, 0.7, 0.1, 0.002, 55, 12, true, false, false, 8e-7, 1.2, 500);
 
-        /*
-        ModeCode::addKValue(10, 0, 1e-6, 0, 1e10);
-        ModeCode::addKValue(1e3, 0, 1e-7, 0, 1e10);
-        ModeCode::addKValue(1e6, 0, 1e-7, 0, 1e10);
-        ModeCode::addKValue(1e9, 0, 1e-2, 0, 1e10);
-        */
+        if(ucmhLim)
+        {
+            output_screen("Adding UCMH limits!" << std::endl);
+            ModeCode::addKValue(10, 0, 1e-6, 0, 1e10);
+            ModeCode::addKValue(1e3, 0, 1e-7, 0, 1e10);
+            ModeCode::addKValue(1e6, 0, 1e-7, 0, 1e10);
+            ModeCode::addKValue(1e9, 0, 1e-2, 0, 1e10);
+        }
+        else
+        {
+            output_screen("No UCMH limits! To add these limits specify \"ucmh\" as the first argument." << std::endl);
+        }
 
         like.setModelCosmoParams(&modelParams);
 
@@ -100,11 +113,11 @@ int main(int argc, char *argv[])
         mn.setParam(1, "omch2", 0.1, 0.2);
         mn.setParam(2, "h", 0.55, 0.85);
         mn.setParam(3, "tau", 0.02, 0.20);
-        mn.setParam(4, "v_1", -10, -1);
+        //mn.setParam(4, "v_1", -10, -1);
+        mn.setParam(4, "v_1", 0, 0.1);
         mn.setParam(5, "v_2", -0.1, 0.1);
         mn.setParam(6, "v_3", -0.1, 0.1);
-        mn.setParam(7, "v_4", 0.0, 0.0);
-        //mn.setParam(7, "v_4", -0.1, 0.1);
+        mn.setParam(7, "v_4", -0.1, 0.1);
         mn.setParam(8, "v_5", -12, -9);
 
         mn.setParam(9, "A_ps_100", 0, 360);
