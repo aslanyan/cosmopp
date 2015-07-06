@@ -211,10 +211,14 @@ ModeCode::calculate(const std::vector<double>& vParams)
         check(tensorUpper_.find(k) != tensorUpper_.end(), "");
         const double sMin = scalarLower_[k], sMax = scalarUpper_[k], tMin = tensorLower_[k], tMax = tensorUpper_[k];
 #ifdef MODECODE_GFORT
+        if(__camb_interface_MOD_pk_bad != 0)
+            return false;
         __access_modpk_MOD_evolve(&k, &s, &t);
         if(__camb_interface_MOD_pk_bad != 0 || s <= sMin || s >= sMax || t <= tMin || t >= tMax)
             return false;
 #else
+        if(camb_interface_mp_pk_bad_ != 0)
+            return false;
         access_modpk_mp_evolve_(&k, &s, &t);
         if(camb_interface_mp_pk_bad_ != 0 || s <= sMin || s >= sMax || t <= tMin || t >= tMax)
             return false;
