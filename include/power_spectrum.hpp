@@ -17,7 +17,7 @@ public:
     /// \param ns The scalar tilt.
     /// \param pivot The pivot point in Mpc^(-1).
     /// \param run The scalar running, 0 by default.
-    StandardPowerSpectrum(double as, double ns, double pivot, double run = 0) : as_(as), ns_(ns), pivot_(pivot), run_(run) {}
+    StandardPowerSpectrum(double as, double ns, double pivot, double run = 0, double runRun = 0) : as_(as), ns_(ns), pivot_(pivot), run_(run), runRun2_(runRun * runRun) {}
 
     /// Get the scalar tilt.
     /// \return The scalar tilt.
@@ -43,12 +43,25 @@ public:
     /// \return The scalar running.
     double getRun() const { return run_; }
 
+    /// Set the scalar running.
+    /// \param run The scalar running.
+    void setRun(double run) { run_ = run; }
+
+    /// Get the running of the running.
+    /// \return The running of the running.
+    double getRunRun() const { return std::sqrt(runRun2_); }
+    
+    /// Set the running of the running.
+    /// \param runRun The running of the running.
+    void setRunRun(double runRun) { runRun2_ = runRun * runRun; }
+
     /// Calculate the scalar power spectrum at a given point.
     /// \param k The k value in Mpc^(-1).
     /// \return The scalar power spectrum value.
     virtual double evaluate(double k) const
     {
-        const double p = ns_ - 1.0 + 0.5 * run_ * std::log(k / pivot_);
+        const double lkPiv = std::log(k / pivot_);
+        const double p = ns_ - 1.0 + 0.5 * run_ * lkPiv + 1.0 / 6.0 * runRun2_ * lkPiv * lkPiv;
         return as_ * std::pow(k / pivot_, p);
     }
 
@@ -57,6 +70,7 @@ private:
     double as_;
     double pivot_;
     double run_;
+    double runRun2_;
 };
 
 class CutoffPowerSpectrum : public StandardPowerSpectrum

@@ -16,6 +16,9 @@ public:
     /// Constructor.
     CosmologicalParams() : temp_(2.726) {}
 
+    /// Destructor.
+    virtual ~CosmologicalParams() {}
+
     /// Omega baryon times h^2 (unitless).
     virtual double getOmBH2() const = 0;
 
@@ -143,7 +146,7 @@ class LambdaCDMParams : public CosmologicalParams
 
 public:
     LambdaCDMParams(double omBH2, double omCH2, double h, double tau, double ns, double as, double pivot, double run = 0.0) : CosmologicalParams(), omBH2_(omBH2), omCH2_(omCH2), h_(h), tau_(tau), ps_(as, ns, pivot, run) {}
-    ~LambdaCDMParams() {}
+    virtual ~LambdaCDMParams() {}
 
     virtual double getOmBH2() const { return omBH2_; }
     virtual double getOmCH2() const { return omCH2_; }

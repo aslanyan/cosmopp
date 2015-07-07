@@ -3,6 +3,7 @@
 #include <string>
 #include <sstream>
 #include <iomanip>
+#include <ctime>
 
 #include <macros.hpp>
 #include <exception_handler.hpp>
@@ -40,7 +41,13 @@ public:
 
     virtual void evaluate(const std::vector<double>& x, std::vector<double>* res) const
     {
+#ifdef CHECKS_ON
+        const bool success =
+#endif
         cosmoParams_->setAllParameters(x);
+
+        check(success, "");
+
         cmb_->initialize(*cosmoParams_, true, usePol_, true);
 
         cmb_->getLensedCl(clTT_, clEE_, clTE_);
@@ -134,7 +141,7 @@ private:
 
 } // namespace
 
-PlanckLikeFast::PlanckLikeFast(CosmologicalParams* params, bool useCommander, bool useCamspec, bool useLensing, bool usePolarization, bool useActSpt, bool includeTensors, double kPerDecade, double precision, unsigned long minCount) : cosmoParams_(params), useCommander_(useCommander), useCamspec_(useCamspec), useLensing_(useLensing), usePol_(usePolarization), useActSpt_(useActSpt), like_(useCommander, useCamspec, useLensing, usePolarization, useActSpt, includeTensors, kPerDecade, false), logError_(false)
+PlanckLikeFast::PlanckLikeFast(CosmologicalParams* params, bool useCommander, bool useCamspec, bool useLensing, bool usePolarization, bool useActSpt, bool includeTensors, double kPerDecade, double precision, unsigned long minCount) : cosmoParams_(params), useCommander_(useCommander), useCamspec_(useCamspec), useLensing_(useLensing), usePol_(usePolarization), useActSpt_(useActSpt), like_(useCommander, useCamspec, useLensing, usePolarization, useActSpt, includeTensors, kPerDecade, false), logError_(false), rand_(std::time(0), 0, 1)
 {
     check(useCommander_ || useCamspec_ || useLensing_ || usePol_ || useActSpt_, "at least one likelihood must be used");
 
@@ -196,7 +203,24 @@ PlanckLikeFast::doCalculation(double* params, int nPar, bool exact)
     for(int i = 0; i < nCosmoParams; ++i)
         cosmoParamsVec_[i] = params[i];
 
+    const bool success = cosmoParams_->setAllParameters(cosmoParamsVec_);
+
     double error1Sigma = 0, error2Sigma = 0, errorMean = 0, errorVar = 0;
+
+    if(!success)
+    {
+        const double res = 1e20 * (1.0 + rand_.generate());
+
+        if(logError_)
+        {
+            for(int i = 0; i < nPar; ++i)
+                outError_ << params[i] << '\t';
+            outError_ << res << '\t' << error1Sigma << '\t' << error2Sigma << '\t' << errorMean << '\t' << errorVar << std::endl;
+        }
+
+        return res;
+    }
+
 
     if(exact)
         layg_->evaluateExact(cosmoParamsVec_, &res_);
@@ -248,8 +272,8 @@ PlanckLikeFast::doCalculation(double* params, int nPar, bool exact)
     {
         for(int i = 0; i < nPar; ++i)
             outError_ << params[i] << '\t';
+        outError_ << res << '\t' << error1Sigma << '\t' << error2Sigma << '\t' << errorMean << '\t' << errorVar << std::endl;
     }
-    outError_ << res << '\t' << error1Sigma << '\t' << error2Sigma << '\t' << errorMean << '\t' << errorVar << std::endl;
 
     return res;
 }
