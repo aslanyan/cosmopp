@@ -234,10 +234,15 @@ InitialValPDESolver::setOwnBoundary()
 
             std::vector<int>& ind = indStorage_[threadId];
             std::vector<int>& ind1 = ind1Storage_[threadId];
-            for(ind = rangeBegin; ind[0] != rangeEnd[0]; increaseIndex(ind, rangeBegin, rangeEnd))
+
+            for(int j = 0; j < d_; ++j)
+                ind[j] = rangeBegin[j];
+
+            for(; ind[0] != rangeEnd[0]; increaseIndex(ind, rangeBegin, rangeEnd))
             {
+                for(int j = 0; j < d_; ++j)
+                    ind1[j] = ind[j];
                 unsigned long gridIndex = index(ind);
-                ind1 = ind;
                 ind1[i] = nx_[i] - 1;
                 unsigned long gridIndex1 = index(ind1);
                 ind1[i] = nx_[i];
@@ -449,18 +454,22 @@ InitialValPDESolver::takeStep()
         std::vector<int>& ind = indStorage_[threadId];
         std::vector<int>& ind1 = ind1Storage_[threadId];
 
-        for(ind = rangeBegin; ind[0] != rangeEnd[0]; increaseIndex(ind, rangeBegin, rangeEnd))
+        for(int i = 0; i < d_; ++i)
+            ind[i] = rangeBegin[i];
+
+        for(; ind[0] != rangeEnd[0]; increaseIndex(ind, rangeBegin, rangeEnd))
         {
             for(int j = 0; j < d_; ++j)
             {
                 rBeg[j] = ind[j] - 1;
                 rEnd[j] = ind[j] + 1;
+                ind1[j] = rBeg[j];
             }
 
             for(int i = 0; i < m_; ++i)
                 term1[i] = term2[i] = term3[i] = 0;
 
-            for(ind1 = rBeg; ind1[0] != rEnd[0]; increaseIndex(ind1, rBeg, rEnd))
+            for(; ind1[0] != rEnd[0]; increaseIndex(ind1, rBeg, rEnd))
             {
                 physicalCoords(ind1, &x);
                 pde_->evaluate(t_, x, grid_[index(ind1)], &f, &s);
@@ -513,16 +522,22 @@ InitialValPDESolver::takeStep()
         std::vector<int>& ind = indStorage_[threadId];
         std::vector<int>& ind1 = ind1Storage_[threadId];
 
-        for(ind = rangeBegin; ind[0] != rangeEnd[0]; increaseIndex(ind, rangeBegin, rangeEnd))
+        for(int i = 0; i < d_; ++i)
+            ind[i] = rangeBegin[i];
+
+        for(; ind[0] != rangeEnd[0]; increaseIndex(ind, rangeBegin, rangeEnd))
         {
-            rBeg = ind;
             for(int j = 0; j < d_; ++j)
+            {
+                rBeg[j] = ind[j];
                 rEnd[j] = ind[j] + 2;
+                ind1[j] = rBeg[j];
+            }
 
             for(int i = 0; i < m_; ++i)
                 term1[i] = term2[i] = 0;
 
-            for(ind1 = rBeg; ind1[0] != rEnd[0]; increaseIndex(ind1, rBeg, rEnd))
+            for(; ind1[0] != rEnd[0]; increaseIndex(ind1, rBeg, rEnd))
             {
                 physicalCoordsHalf(ind1, &x);
                 pde_->evaluate(t_ + deltaT_ / 2, x, halfGrid_[halfIndex(ind1)], &f, &s);
