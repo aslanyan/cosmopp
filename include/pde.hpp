@@ -64,6 +64,8 @@ private:
     inline void increaseIndex(std::vector<int>& i, const std::vector<int>& rangeBegin, const std::vector<int>& rangeEnd) const;
     inline void physicalCoordsHalf(const std::vector<int>& i, std::vector<double> *coords) const;
 
+    void allocateStorage();
+
 private:
     const InitialValPDEInterface *pde_;
 
@@ -93,6 +95,10 @@ private:
 
     int commTag_;
     std::vector<double> buffer_;
+
+    std::vector<std::vector<double> > xStorage_, term1Storage_, term2Storage_, term3Storage_, sStorage_;
+    std::vector<std::vector<int> > rangeBeginStorage_, rangeEndStorage_, rBegStorage_, rEndStorage_, indStorage_, ind1Storage_;
+    std::vector<std::vector<std::vector<double> > > fStorage_;
 };
 
 unsigned long
@@ -137,7 +143,7 @@ void
 InitialValPDESolver::physicalCoords(const std::vector<int>& i, std::vector<double> *coords) const
 {
     check(i.size() == d_, "");
-    check(coords->size() == d_, "");
+    check(coords->size() == d_, coords->size() << " != " << d_);
 
     check(i[0] >= -1 && i[0] <= nx_[0], "");
     (*coords)[0] = xMin_[0] + deltaX_[0] * (i[0] + nx0Starting_);

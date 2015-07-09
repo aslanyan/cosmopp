@@ -6,6 +6,10 @@
 #include <progress_meter.hpp>
 #include <pde.hpp>
 
+#ifdef COSMO_OMP
+#include <omp.h>
+#endif
+
 namespace Math
 {
 
@@ -113,7 +117,56 @@ InitialValPDESolver::setupGrid()
     for(unsigned long i = 0; i < halfDimProd_[0]; ++i)
         halfGrid_[i].resize(m_);
 
+    allocateStorage();
+}
+
+void
+InitialValPDESolver::allocateStorage()
+{
     buffer_.resize(dimProd_[1] * m_);
+    int nThreads = 1;
+#ifdef COSMO_OMP
+#pragma omp parallel
+    {
+        if(omp_get_thread_num() == 0)
+            nThreads = omp_get_num_threads();
+    }
+#endif
+
+    output_screen("Number of threads = " << nThreads << std::endl);
+
+    xStorage_.resize(nThreads);
+    rangeBeginStorage_.resize(nThreads);
+    rangeEndStorage_.resize(nThreads);
+    term1Storage_.resize(nThreads);
+    term2Storage_.resize(nThreads);
+    term3Storage_.resize(nThreads);
+    fStorage_.resize(nThreads);
+    sStorage_.resize(nThreads);
+    rBegStorage_.resize(nThreads);
+    rEndStorage_.resize(nThreads);
+    indStorage_.resize(nThreads);
+    ind1Storage_.resize(nThreads);
+    for(int i = 0; i < nThreads; ++i)
+    {
+        xStorage_[i].resize(d_);
+        rangeBeginStorage_[i].resize(d_);
+        rangeEndStorage_[i].resize(d_);
+        term1Storage_[i].resize(m_);
+        term2Storage_[i].resize(m_);
+        term3Storage_[i].resize(m_);
+
+        fStorage_[i].resize(d_);
+        for(int j = 0; j < d_; ++j)
+            fStorage_[i][j].resize(m_);
+
+        sStorage_[i].resize(m_);
+
+        rBegStorage_[i].resize(d_);
+        rEndStorage_[i].resize(d_);
+        indStorage_[i].resize(d_);
+        ind1Storage_[i].resize(d_);
+    }
 }
 
 void
@@ -155,32 +208,42 @@ InitialValPDESolver::setOwnBoundary()
 #pragma omp parallel for default(shared)
         for(int i0 = 0; i0 < nx_[0]; ++i0)
         {
-            std::vector<int> rangeBegin(d_, 0);
-            std::vector<int> rangeEnd = nx_;
+            int threadId = 0;
+#ifdef COSMO_OMP
+            threadId = omp_get_thread_num();
+#endif
+            std::vector<int>& rangeBegin = rangeBeginStorage_[threadId];
+            std::vector<int>& rangeEnd = rangeEndStorage_[threadId];
 
             rangeBegin[0] = i0;
             rangeEnd[0] = i0 + 1;
             for(int j = 1; j < i; ++j)
             {
-                --rangeBegin[j];
-                ++rangeEnd[j];
+                rangeBegin[j] = -1;
+                rangeEnd[j] = nx_[j] + 1;
             }
             
             rangeBegin[i] = -1;
             rangeEnd[i] = 0;
-            for(std::vector<int> ind = rangeBegin; ind[0] != rangeEnd[0]; increaseIndex(ind, rangeBegin, rangeEnd))
+            
+            for(int j = i + 1; j < d_; ++j)
             {
-                std::vector<int> ind1 = ind;
-                std::vector<int> ind2 = ind;
-                std::vector<int> ind3 = ind;
-                ind1[i] = nx_[i] - 1;
-                ind2[i] = nx_[i];
-                ind3[i] = 0;
+                rangeBegin[j] = 0;
+                rangeEnd[j] = nx_[j];
+            }
 
+            std::vector<int>& ind = indStorage_[threadId];
+            std::vector<int>& ind1 = ind1Storage_[threadId];
+            for(ind = rangeBegin; ind[0] != rangeEnd[0]; increaseIndex(ind, rangeBegin, rangeEnd))
+            {
                 unsigned long gridIndex = index(ind);
+                ind1 = ind;
+                ind1[i] = nx_[i] - 1;
                 unsigned long gridIndex1 = index(ind1);
-                unsigned long gridIndex2 = index(ind2);
-                unsigned long gridIndex3 = index(ind3);
+                ind1[i] = nx_[i];
+                unsigned long gridIndex2 = index(ind1);
+                ind1[i] = 0;
+                unsigned long gridIndex3 = index(ind1);
 
                 grid_[gridIndex] = grid_[gridIndex1];
                 grid_[gridIndex2] = grid_[gridIndex3];
@@ -193,6 +256,7 @@ void
 InitialValPDESolver::saveBuffer(unsigned long start)
 {
     check(buffer_.size() == dimProd_[1] * m_, "");
+#pragma omp parallel for default(shared)
     for(unsigned long i = 0; i < dimProd_[1]; ++i)
     {
         for(int j = 0; j < m_; ++j)
@@ -204,6 +268,7 @@ void
 InitialValPDESolver::retrieveBuffer(unsigned long start)
 {
     check(buffer_.size() == dimProd_[1] * m_, "");
+#pragma omp parallel for default(shared)
     for(unsigned long i = 0; i < dimProd_[1]; ++i)
     {
         for(int j = 0; j < m_; ++j)
@@ -355,24 +420,36 @@ InitialValPDESolver::takeStep()
 #pragma omp parallel for default(shared)
     for(int i0 = 0; i0 <= nx_[0]; ++i0)
     {
-        std::vector<int> rangeBegin(d_, 0);
-        std::vector<int> rangeEnd = nx_;
+        int threadId = 0;
+#ifdef COSMO_OMP
+        threadId = omp_get_thread_num();
+#endif
+
+        std::vector<int>& rangeBegin = rangeBeginStorage_[threadId];
+        std::vector<int>& rangeEnd = rangeEndStorage_[threadId];
+
         rangeBegin[0] = i0;
         rangeEnd[0] = i0 + 1;
 
         for(int i = 1; i < d_; ++i)
-            ++rangeEnd[i];
+        {
+            rangeBegin[i] = 0;
+            rangeEnd[i] = nx_[i] + 1;
+        }
 
-        std::vector<double> x(d_);
-        std::vector<double> term1(m_, 0), term2(m_, 0), term3(m_, 0);
-        std::vector<std::vector<double> > f(d_);
-        for(int i = 0; i < d_; ++i)
-            f[i].resize(m_);
-        std::vector<double> s(m_);
+        std::vector<double>& x = xStorage_[threadId];
+        std::vector<double>& term1 = term1Storage_[threadId];
+        std::vector<double>& term2 = term2Storage_[threadId];
+        std::vector<double>& term3 = term3Storage_[threadId];
+        std::vector<std::vector<double> >& f = fStorage_[threadId];
+        std::vector<double>& s = sStorage_[threadId];
 
-        std::vector<int> rBeg(d_), rEnd(d_), ind1(d_);
+        std::vector<int>& rBeg = rBegStorage_[threadId];
+        std::vector<int>& rEnd = rEndStorage_[threadId];
+        std::vector<int>& ind = indStorage_[threadId];
+        std::vector<int>& ind1 = ind1Storage_[threadId];
 
-        for(std::vector<int> ind = rangeBegin; ind[0] != rangeEnd[0]; increaseIndex(ind, rangeBegin, rangeEnd))
+        for(ind = rangeBegin; ind[0] != rangeEnd[0]; increaseIndex(ind, rangeBegin, rangeEnd))
         {
             for(int j = 0; j < d_; ++j)
             {
@@ -410,21 +487,33 @@ InitialValPDESolver::takeStep()
 #pragma omp parallel for default(shared)
     for(int i0 = 0; i0 < nx_[0]; ++i0)
     {
-        std::vector<int> rangeBegin(d_, 0);
-        std::vector<int> rangeEnd = nx_;
+        int threadId = 0;
+#ifdef COSMO_OMP
+        threadId = omp_get_thread_num();
+#endif
+
+        std::vector<int>& rangeBegin = rangeBeginStorage_[threadId];
+        std::vector<int>& rangeEnd = rangeEndStorage_[threadId];
         rangeBegin[0] = i0;
         rangeEnd[0] = i0 + 1;
+        for(int i = 1; i < d_; ++i)
+        {
+            rangeBegin[i] = 0;
+            rangeEnd[i] = nx_[i];
+        }
 
-        std::vector<double> x(d_);
-        std::vector<double> term1(m_, 0), term2(m_, 0);
-        std::vector<std::vector<double> > f(d_);
-        for(int i = 0; i < d_; ++i)
-            f[i].resize(m_);
-        std::vector<double> s(m_);
+        std::vector<double>& x = xStorage_[threadId];
+        std::vector<double>& term1 = term1Storage_[threadId];
+        std::vector<double>& term2 = term2Storage_[threadId];
+        std::vector<std::vector<double> >& f = fStorage_[threadId];
+        std::vector<double>& s = sStorage_[threadId];
 
-        std::vector<int> rBeg(d_), rEnd(d_), ind1(d_);
+        std::vector<int>& rBeg = rBegStorage_[threadId];
+        std::vector<int>& rEnd = rEndStorage_[threadId];
+        std::vector<int>& ind = indStorage_[threadId];
+        std::vector<int>& ind1 = ind1Storage_[threadId];
 
-        for(std::vector<int> ind = rangeBegin; ind[0] != rangeEnd[0]; increaseIndex(ind, rangeBegin, rangeEnd))
+        for(ind = rangeBegin; ind[0] != rangeEnd[0]; increaseIndex(ind, rangeBegin, rangeEnd))
         {
             rBeg = ind;
             for(int j = 0; j < d_; ++j)
