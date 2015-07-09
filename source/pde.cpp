@@ -116,94 +116,6 @@ InitialValPDESolver::setupGrid()
     buffer_.resize(dimProd_[1] * m_);
 }
 
-unsigned long
-InitialValPDESolver::index(const std::vector<int>& i) const
-{
-    check(i.size() == d_, "");
-    check(dimProd_.size() == d_ + 1, "");
-
-    unsigned long res = 0;
-
-    for(int j = 0; j < d_; ++j)
-    {
-        const int k = i[j];
-        check(k >= -1 && k <= nx_[j], "");
-
-        res += (unsigned long)(k + 1) * dimProd_[j + 1];
-    }
-
-    return res;
-}
-
-unsigned long
-InitialValPDESolver::halfIndex(const std::vector<int>& i) const
-{
-    check(i.size() == d_, "");
-    check(halfDimProd_.size() == d_ + 1, "");
-
-    unsigned long res = 0;
-
-    for(int j = 0; j < d_; ++j)
-    {
-        const int k = i[j];
-        check(k >= 0 && k <= nx_[j], "");
-
-        res += (unsigned long)(k) * halfDimProd_[j + 1];
-    }
-
-    return res;
-}
-
-void
-InitialValPDESolver::physicalCoords(const std::vector<int>& i, std::vector<double> *coords) const
-{
-    check(i.size() == d_, "");
-    check(coords->size() == d_, "");
-
-    check(i[0] >= -1 && i[0] <= nx_[0], "");
-    (*coords)[0] = xMin_[0] + deltaX_[0] * (i[0] + nx0Starting_);
-
-    for(int j = 1; j < d_; ++j)
-    {
-        check(i[j] >= -1 && i[j] <= nx_[j], "");
-        (*coords)[j] = xMin_[j] + deltaX_[j] * i[j];
-    }
-}
-
-void
-InitialValPDESolver::physicalCoordsHalf(const std::vector<int>& i, std::vector<double> *coords) const
-{
-    check(i.size() == d_, "");
-    check(coords->size() == d_, "");
-
-    check(i[0] >= 0 && i[0] <= nx_[0], "");
-    (*coords)[0] = xMin_[0] + deltaX_[0] * (i[0] + nx0Starting_) - deltaX_[0] / 2;
-
-    for(int j = 1; j < d_; ++j)
-    {
-        check(i[j] >= 0 && i[j] <= nx_[j], "");
-        (*coords)[j] = xMin_[j] + deltaX_[j] * i[j] - deltaX_[j]/ 2;
-    }
-}
-
-void
-InitialValPDESolver::increaseIndex(std::vector<int>& i, const std::vector<int>& rangeBegin, const std::vector<int>& rangeEnd) const
-{
-    check(i.size() == d_, "");
-    check(rangeBegin.size() == d_, "");
-    check(rangeEnd.size() == d_, "");
-
-    for(int j = d_ - 1; j >= 0; --j)
-    {
-        const int nx = nx_[j];
-        check(i[j] >= rangeBegin[j] && i[j] < rangeEnd[j], "");
-        if(++i[j] < rangeEnd[j])
-            return;
-        if(j > 0)
-            i[j] = rangeBegin[j];
-    }
-}
-
 void
 InitialValPDESolver::setInitial(const std::vector<RealFunctionMultiDim*>& w0)
 {
@@ -213,7 +125,7 @@ InitialValPDESolver::setInitial(const std::vector<RealFunctionMultiDim*>& w0)
 
     for(int i = 0; i < m_; ++i)
     {
-//#pragma omp parallel for default(shared)
+#pragma omp parallel for default(shared)
         for(int i0 = 0; i0 < nx_[0]; ++i0)
         {
             std::vector<int> rangeBegin(d_, 0);
@@ -240,7 +152,7 @@ InitialValPDESolver::setOwnBoundary()
 {
     for(int i = 1; i < d_; ++i)
     {
-//#pragma omp parallel for default(shared)
+#pragma omp parallel for default(shared)
         for(int i0 = 0; i0 < nx_[0]; ++i0)
         {
             std::vector<int> rangeBegin(d_, 0);
@@ -355,7 +267,7 @@ InitialValPDESolver::communicateBoundary()
     const unsigned long rightReceiveStart = (nx_[0] + 1) * size;
     if(nProcesses_ == 1)
     {
-//#pragma omp parallel for default(shared)
+#pragma omp parallel for default(shared)
         for(unsigned long i = 0; i < size; ++i)
         {
             grid_[leftReceiveStart + i] = grid_[rightStart + i];
@@ -440,7 +352,7 @@ void
 InitialValPDESolver::takeStep()
 {
     // evaluate half grid
-//#pragma omp parallel for default(shared)
+#pragma omp parallel for default(shared)
     for(int i0 = 0; i0 <= nx_[0]; ++i0)
     {
         std::vector<int> rangeBegin(d_, 0);
@@ -458,19 +370,20 @@ InitialValPDESolver::takeStep()
             f[i].resize(m_);
         std::vector<double> s(m_);
 
+        std::vector<int> rBeg(d_), rEnd(d_), ind1(d_);
+
         for(std::vector<int> ind = rangeBegin; ind[0] != rangeEnd[0]; increaseIndex(ind, rangeBegin, rangeEnd))
         {
-            std::vector<int> rBeg = ind, rEnd = ind;
             for(int j = 0; j < d_; ++j)
             {
-                --rBeg[j];
-                ++rEnd[j];
+                rBeg[j] = ind[j] - 1;
+                rEnd[j] = ind[j] + 1;
             }
 
             for(int i = 0; i < m_; ++i)
                 term1[i] = term2[i] = term3[i] = 0;
 
-            for(std::vector<int> ind1 = rBeg; ind1[0] != rEnd[0]; increaseIndex(ind1, rBeg, rEnd))
+            for(ind1 = rBeg; ind1[0] != rEnd[0]; increaseIndex(ind1, rBeg, rEnd))
             {
                 physicalCoords(ind1, &x);
                 pde_->evaluate(t_, x, grid_[index(ind1)], &f, &s);
@@ -494,7 +407,7 @@ InitialValPDESolver::takeStep()
     }
 
     // evaluate grid
-//#pragma omp parallel for default(shared)
+#pragma omp parallel for default(shared)
     for(int i0 = 0; i0 < nx_[0]; ++i0)
     {
         std::vector<int> rangeBegin(d_, 0);
@@ -509,16 +422,18 @@ InitialValPDESolver::takeStep()
             f[i].resize(m_);
         std::vector<double> s(m_);
 
+        std::vector<int> rBeg(d_), rEnd(d_), ind1(d_);
+
         for(std::vector<int> ind = rangeBegin; ind[0] != rangeEnd[0]; increaseIndex(ind, rangeBegin, rangeEnd))
         {
-            std::vector<int> rBeg = ind, rEnd = ind;
+            rBeg = ind;
             for(int j = 0; j < d_; ++j)
-                rEnd[j] += 2;
+                rEnd[j] = ind[j] + 2;
 
             for(int i = 0; i < m_; ++i)
                 term1[i] = term2[i] = 0;
 
-            for(std::vector<int> ind1 = rBeg; ind1[0] != rEnd[0]; increaseIndex(ind1, rBeg, rEnd))
+            for(ind1 = rBeg; ind1[0] != rEnd[0]; increaseIndex(ind1, rBeg, rEnd))
             {
                 physicalCoordsHalf(ind1, &x);
                 pde_->evaluate(t_ + deltaT_ / 2, x, halfGrid_[halfIndex(ind1)], &f, &s);
