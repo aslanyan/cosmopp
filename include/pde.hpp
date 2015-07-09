@@ -17,36 +17,37 @@ public:
     virtual int spaceDim() const = 0;
     virtual int funcDim() const = 0;
 
-    virtual double f(int i, int j, double t, const double *x, const double *u) const = 0;
-    virtual double s(int i, double t, const double *x, const double *u) const = 0;
+    virtual void evaluate(double t, const std::vector<double>& x, const std::vector<double>& u, std::vector<std::vector<double> > *f, std::vector<double> *s) const = 0;
 };
 
-class InitialValPDEOutputHandlerInterface
-{
-public:
-    InitialValPDEOutputHandlerInterface() {}
-    virtual ~InitialValPDEOutputHandlerInterface() {}
-
-    virtual void set(const std::vector<double>& xMin, const std::vector<double>& xMax, const std::vector<double>& deltaX, const std::vector<int>& nx, int nx0Starting);
-
-    virtual void setTimeSlice(int i, double t, const double *res) = 0;
-};
-
-class InitalValPDESolver
+class InitialValPDESolver
 {
 public:
     InitialValPDESolver(InitialValPDEInterface *pde);
     ~InitialValPDESolver();
 
-    void set(const std::vector<FunctionMultiDim*>& w0, const std::vector<double>& xMin, const std::vector<double>& xMax, const std::vector<int>& nx, InitialValPDEOutputHandlerInterface *output);
+    void set(const std::vector<RealFunctionMultiDim*>& w0, const std::vector<double>& xMin, const std::vector<double>& xMax, const std::vector<int>& nx);
 
     void propagate(double t);
 
+    void takeStep();
+
     double getCurrentT() const { return t_; }
+    double getDeltaT() const { return deltaT_; }
+    void setDeltaT(double deltaT) { check(deltaT > 0, ""); deltaT_ = deltaT; }
+
+    int getNx(int i) const { check(i >= 0 && i < d_, ""); return nx_[i]; }
+    int getNx0Starting() const { return nx0Starting_; }
+    int getXMax(int i) const { check(i >= 0 && i < d_, ""); return xMax_[i]; }
+    int getDeltaX(int i) const { check(i >= 0 && i < d_, ""); return deltaX_[i]; }
+
+    const std::vector<double>& getField(const std::vector<int>& ind) const { return grid_[index(ind)]; }
+
+    void physicalCoords(const std::vector<int>& i, std::vector<double> *coords) const;
 
 private:
     void setupGrid();
-    void setInitial(const std::vector<FunctionMultiDim*>& w0);
+    void setInitial(const std::vector<RealFunctionMultiDim*>& w0);
     void setOwnBoundary();
 
     void communicateBoundary();
@@ -55,22 +56,16 @@ private:
     void receiveLeft();
     void receiveRight();
 
-    void sendOutput();
-
-    void takeStep();
-
-    void setU(double *u, std::vector<int>& ind) const;
-    void setUHalf(double *u, std::vector<int>& ind) const;
+    void saveBuffer(unsigned long start);
+    void retrieveBuffer(unsigned long start);
 
     unsigned long index(const std::vector<int>& i) const;
     unsigned long halfIndex(const std::vector<int>& i) const;
     void increaseIndex(std::vector<int>& i, const std::vector<int>& rangeBegin, const std::vector<int>& rangeEnd) const;
-    void physicalCoords(const std::vector<int>& i, std::vector<double> *coords) const;
     void physicalCoordsHalf(const std::vector<int>& i, std::vector<double> *coords) const;
 
 private:
     const InitialValPDEInterface *pde_;
-    InitialValPDEOutputHandlerInterface *output_;
 
     const int d_;
     const int m_;
@@ -97,6 +92,7 @@ private:
     double deltaT_;
 
     int commTag_;
+    std::vector<double> buffer_;
 };
 
 } // namespace Math

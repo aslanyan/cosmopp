@@ -6,6 +6,28 @@
 namespace Math
 {
 
+/// Uniform int generator
+class UniformIntGenerator
+{
+public:
+    /// Constructor.
+    /// \param seed The seed to use for the generator.
+    /// \param min The minimum of the range.
+    /// \param max The maximum of the range.
+    UniformIntGenerator(int seed, int min = 0, int max = 1) : gen_(seed), dist_(min, max) {}
+
+    /// Destructor.
+    ~UniformIntGenerator() {}
+
+    /// A function to generate a random number form the distribution.
+    /// \return A random number from the uniform distribution.
+    int generate() { return dist_(gen_); }
+
+private:
+    std::mt19937 gen_;
+    std::uniform_int_distribution<int> dist_;
+};
+
 /// Uniform real generator
 class UniformRealGenerator
 {

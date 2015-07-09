@@ -38,6 +38,7 @@
 #include <test_fast_approximator_error.hpp>
 #include <test_mcmc_planck_fast.hpp>
 #include <test_multinest_planck_fast.hpp>
+#include <test_pde.hpp>
 
 TestFramework* createTest(const std::string& name)
 {
@@ -143,6 +144,8 @@ TestFramework* createTest(const std::string& name)
 #endif
 #endif
 #endif
+    else if(name == "pde")
+        test = new TestPDE(1e-2);
 
     return test;
 }
@@ -215,6 +218,7 @@ int main(int argc, char *argv[])
         fastTests.insert("fast_approximator");
         fastTests.insert("fast_approximator_error");
 #endif
+        fastTests.insert("pde");
 
 #ifdef COSMO_PLANCK
 #ifdef COSMO_CLASS
