@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
         if(useFast)
         {
             output_screen("Using the fast version of Planck likelihood!" << std::endl);
-            PlanckLikeFast *like = new PlanckLikeFast(&par, true, true, false, true, false, false, 5, 0.4, 10000);
+            PlanckLikeFast *like = new PlanckLikeFast(&par, true, true, false, true, false, false, 5, 0.4, 50000);
             std::string errorLogRoot = "slow_test_files/mn_planck_run_run_fast_error_log";
             like->logError(errorLogRoot.c_str());
             planckLike.reset(like);
