@@ -67,6 +67,13 @@ TestPolyChordFast::runSubTest(unsigned int i, double& res, double& expected, std
     else
         pc1.setParam(0, "x", 5, 5);
     pc1.setParam(1, "y", yMin, yMax);
+    if(i == 0)
+    {
+        std::vector<int> nPar(2, 1);
+        std::vector<double> frac(2, 0.2);
+        frac[1] = 0.8;
+        pc1.setParameterHierarchy(nPar, frac);
+    }
     pc1.run(false);
 
     subTestName = std::string("2_param_gauss");

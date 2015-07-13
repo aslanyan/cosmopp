@@ -8,13 +8,14 @@
 #include <macros.hpp>
 #include <exception_handler.hpp>
 #include <math_constants.hpp>
+#include <numerics.hpp>
 #include <polychord.hpp>
 
 #include <polychord_wrapper.h>
 
 bool PolyChord::running_ = false;
 
-PolyChord::PolyChord(int nPar, Math::LikelihoodFunction& like, int nLive, std::string fileRoot, int nRepeats) : n_(nPar), like_(like), nLive_(nLive), paramsStarting_(nPar, 0), paramNames_(nPar), paramsBest_(nPar, 0), paramsMean_(nPar, 0), paramsStd_(nPar, 0), paramsCurrent_(nPar, 0), priorTypes_(nPar, 1), priorMins_(nPar, 0), priorMaxs_(nPar, 1), paramsFixed_(nPar, 0), isFixed_(nPar, false), fileRoot_(fileRoot), nRepeats_(nRepeats)
+PolyChord::PolyChord(int nPar, Math::LikelihoodFunction& like, int nLive, std::string fileRoot, int nRepeats) : n_(nPar), like_(like), nLive_(nLive), paramsStarting_(nPar, 0), paramNames_(nPar), paramsBest_(nPar, 0), paramsMean_(nPar, 0), paramsStd_(nPar, 0), paramsCurrent_(nPar, 0), priorTypes_(nPar, 1), priorMins_(nPar, 0), priorMaxs_(nPar, 1), paramsFixed_(nPar, 0), isFixed_(nPar, false), fileRoot_(fileRoot), nRepeats_(nRepeats), nParams_(1, nPar), fracs_(1, 1.0)
 {
 }
 
@@ -102,6 +103,29 @@ PolyChord::logLike(double *theta)
 }
 
 void
+PolyChord::setParameterHierarchy(const std::vector<int>& nParams, const std::vector<double>& fracs)
+{
+    check(nParams.size() == fracs.size(), "");
+
+#ifdef CHECKS_ON
+    int nTotal = 0;
+    double fracTotal = 0;
+
+    for(int i = 0; i < nParams.size(); ++i)
+    {
+        nTotal += nParams[i];
+        fracTotal += fracs[i];
+    }
+#endif
+
+    check(nTotal == n_, "");
+    check(Math::areEqual(fracTotal, 1.0, 1e-5), "");
+
+    nParams_ = nParams;
+    fracs_ = fracs;
+}
+
+void
 PolyChord::run(bool res)
 {
     check(!running_, "an instance of PolyChord is currently running");
@@ -175,10 +199,10 @@ PolyChord::run(bool res)
 
     double logZ, errorZ, nDead, nLike, logZPlusLogP;
 
-    int nGrades = 2;
+    int nGrades = nParams_.size();
 
 	// calling PolyChord
-    poly::run(nDims, nDerived, nLive_, numRepeats, doClustering, nCluster, feedback, calculatePost, sigmaPost, thinPost, &(priorTypes[0]), &(priorMins[0]), &(priorMaxs[0]), baseDir.c_str(), root.c_str(), res, res, updateResume, writeLive, myLogLike, &logZ, &errorZ, &nDead, &nLike, &logZPlusLogP, nGrades);
+    poly::run(nDims, nDerived, nLive_, numRepeats, doClustering, nCluster, feedback, calculatePost, sigmaPost, thinPost, &(priorTypes[0]), &(priorMins[0]), &(priorMaxs[0]), baseDir.c_str(), root.c_str(), res, res, updateResume, writeLive, myLogLike, &logZ, &errorZ, &nDead, &nLike, &logZPlusLogP, nGrades, &(nParams_[0]), &(fracs_[0]));
 
     running_ = false;
 

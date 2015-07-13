@@ -45,6 +45,11 @@ public:
     /// \return The name of the parameter.
     const std::string& getParamName(int i) const { check(i >= 0 && i < n_, "invalid index " << i); return paramNames_[i]; }
 
+    /// Set the parameter hierarchy.
+    /// \param nParams A vector that contains the number of parameters at each hierarchy level (the sum should be the number of dimensions).
+    /// \parm fracs A vector that contains the fractions of time spent in each hierarchy level (the sum should be one).
+    void setParameterHierarchy(const std::vector<int>& nParams, const std::vector<double>& fracs);
+
     /// Run the scan. Should be called after all of the other necessary functions have been called to set all of the necessary settings. The resulting chain is written in the file (fileRoot).txt. The first column is the number of repetitions of the element, the second column is -2ln(likelihood), the following columns are the values of all of the parameters.
     /// \param resume Resume from previous job or not (true by default).
     void run(bool resume = true);
@@ -65,6 +70,9 @@ private:
     std::string fileRoot_;
 
     static bool running_;
+
+    std::vector<int> nParams_;
+    std::vector<double> fracs_;
 };
 
 #endif

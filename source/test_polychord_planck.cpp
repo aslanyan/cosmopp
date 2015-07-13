@@ -30,7 +30,7 @@ TestPolyChordPlanck::runSubTest(unsigned int i, double& res, double& expected, s
 
     PlanckLikelihood planckLike(true, true, false, true, false, false);
     std::string root = "slow_test_files/polychord_planck_test";
-    PolyChord pc(20, planckLike, 300, root, 10);
+    PolyChord pc(20, planckLike, 10, root, 10);
 
     pc.setParam(0, "ombh2", 0.02, 0.025);
     pc.setParam(1, "omch2", 0.1, 0.2);

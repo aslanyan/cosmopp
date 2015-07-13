@@ -34,7 +34,7 @@
                 prior_maxs, base_dir, file_root, &
                 read_resume, write_resume, update_resume, write_live, &
                 loglike, logz, errorz, ndead, nlike, &
-                logzpluslogp, num_grades) bind(c)
+                logzpluslogp, num_grades, grade_dims, grade_fracs) bind(c)
                       use iso_c_binding, only: c_int, c_bool, c_double, c_char, c_funptr, c_ptr, C_NULL_CHAR
                       use ini_module, only:initialise_program
                       use params_module, only:add_parameter,param_type
@@ -71,6 +71,8 @@
                       type(c_funptr), intent(in), value :: loglike
                       double precision logz, errorz, ndead, nlike, logzpluslogp
                       integer(c_int), intent(in), value :: num_grades
+                      integer(c_int), dimension(1), intent(in) :: grade_dims
+                      real(c_double), dimension(1), intent(in) :: grade_fracs
 
                       character(len=100) :: froot, fdir
                       integer :: i
@@ -147,12 +149,19 @@
                       settings%update_posterior = 1000
                       settings%boost_posterior = sigma_post
                       allocate(settings%grade_frac(num_grades))
+                      allocate(settings%grade_dims(num_grades))
 
-                      do i = 1, ndims
-                            settings%grade_frac(i) = 1d0 / num_grades
+                      print *, num_grades
+                      print *, size(settings%grade_dims)
+                      do i = 1, num_grades
+                            settings%grade_dims(i) = grade_dims(i)
+                            settings%grade_frac(i) = grade_fracs(i)
+                            print *, settings%grade_dims(i), ' ', settings%grade_frac(i)
                       end do
 
                       call initialise_program(settings,priors,params,derived_params)
+
+                      print *, size(settings%grade_dims)
 
 #ifdef COSMO_MPI
                       output_info = NestedSampling(loglike_f, priors, &
