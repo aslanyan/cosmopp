@@ -14,7 +14,7 @@
 
 bool PolyChord::running_ = false;
 
-PolyChord::PolyChord(int nPar, Math::LikelihoodFunction& like, int nLive, std::string fileRoot) : n_(nPar), like_(like), nLive_(nLive), paramsStarting_(nPar, 0), paramNames_(nPar), paramsBest_(nPar, 0), paramsMean_(nPar, 0), paramsStd_(nPar, 0), paramsCurrent_(nPar, 0), priorTypes_(nPar, 1), priorMins_(nPar, 0), priorMaxs_(nPar, 1), paramsFixed_(nPar, 0), isFixed_(nPar, false), fileRoot_(fileRoot)
+PolyChord::PolyChord(int nPar, Math::LikelihoodFunction& like, int nLive, std::string fileRoot, int nRepeats) : n_(nPar), like_(like), nLive_(nLive), paramsStarting_(nPar, 0), paramNames_(nPar), paramsBest_(nPar, 0), paramsMean_(nPar, 0), paramsStd_(nPar, 0), paramsCurrent_(nPar, 0), priorTypes_(nPar, 1), priorMins_(nPar, 0), priorMaxs_(nPar, 1), paramsFixed_(nPar, 0), isFixed_(nPar, false), fileRoot_(fileRoot), nRepeats_(nRepeats)
 {
 }
 
@@ -124,7 +124,8 @@ PolyChord::run(bool res)
 
 	const int nDims = n_ - nFixed_;
     const int nDerived = 0;
-    const int numRepeats = 3 * nDims;
+    const int numRepeats = (nRepeats_ == 0 ? 3 * nDims : nRepeats_);
+    check(numRepeats > 0, "");
     const bool doClustering = false;
     const int nCluster = 30;
     int feedback = 0;

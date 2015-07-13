@@ -18,7 +18,7 @@ public:
     /// \param like The likelihood function.
     /// \param nLive The number of live points.
     /// \param fileRoot The root for filenames produced by PolyChord.
-    PolyChord(int nPar, Math::LikelihoodFunction& like, int nLive, std::string fileRoot);
+    PolyChord(int nPar, Math::LikelihoodFunction& like, int nLive, std::string fileRoot, int nRepeats = 0);
 
     /// Define a given parameter to have a uniform prior. One of the parameter setting functions must be called for each parameter before the run.
     /// \param i The index of the parameter, 0 <= i < number of parameters.
@@ -61,7 +61,7 @@ private:
     std::vector<double> paramsFixed_;
     std::vector<bool> isFixed_;
     int nFixed_;
-    int n_, nLive_;
+    int n_, nLive_, nRepeats_;
     std::string fileRoot_;
 
     static bool running_;
