@@ -138,7 +138,7 @@
                       settings%read_resume = logical(read_resume)
                       settings%write_live = logical(write_live)
                       settings%write_stats = .false.
-                      settings%equals = .false.
+                      settings%equals = .true.
                       settings%posteriors = logical(calculate_post)
                       settings%cluster_posteriors = .false.
                       settings%feedback = feedback

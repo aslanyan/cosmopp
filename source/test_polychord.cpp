@@ -138,6 +138,19 @@ TestPolyChordFast::runSubTest(unsigned int i, double& res, double& expected, std
     delete px;
     delete py;
 
+    /*
+    if(i == 0)
+    {
+        output_screen("Expected x median is 5, the result is " << xMedian << std::endl);
+        output_screen("Expected x lower limit is 3, the result is " << xLower << std::endl);
+        output_screen("Expected x upper limit is 7, the result is " << xUpper << std::endl);
+    }
+
+    output_screen("Expected y median is -4, the result is " << yMedian << std::endl);
+    output_screen("Expected y lower limit is -7, the result is " << yLower << std::endl);
+    output_screen("Expected y upper limit is -1, the result is " << yUpper << std::endl);
+    */
+
     if(i == 0 && !Math::areEqual(5.0, xMedian, 0.4))
     {
         output_screen("FAIL: Expected x median is 5, the result is " << xMedian << std::endl);
