@@ -10,6 +10,14 @@
 #include <omp.h>
 #endif
 
+namespace
+{
+
+const int pdeMaxDim = 10;
+const int pdeMaxFields = 100;
+
+}
+
 namespace Math
 {
 
@@ -17,6 +25,9 @@ InitialValPDESolver::InitialValPDESolver(InitialValPDEInterface *pde) : pde_(pde
 { 
     check(d_ >= 1, "invalid number of spatial dimensions " << d_ << ", must be positive");
     check(m_ >= 1, "invalid number of fields " << m_ << ", must be positive");
+
+    check(d_ <= pdeMaxDim, "the dimensionality of " << d_ << " is too high! Maximum supported is " << pdeMaxDim << ". To change this, update pdeMaxDim above.");
+    check(m_ <= pdeMaxFields, "the number of fields " << m_ << " is too high! Maximum supported is " << pdeMaxFields << ". To change this, update pdeMaxFields above.");
 
     twoD_ = 1;
     for(int i = 0; i < d_; ++i)
@@ -135,37 +146,15 @@ InitialValPDESolver::allocateStorage()
 
     output_screen("Number of threads = " << nThreads << std::endl);
 
-    xStorage_.resize(nThreads);
-    rangeBeginStorage_.resize(nThreads);
-    rangeEndStorage_.resize(nThreads);
-    term1Storage_.resize(nThreads);
-    term2Storage_.resize(nThreads);
-    term3Storage_.resize(nThreads);
     fStorage_.resize(nThreads);
     sStorage_.resize(nThreads);
-    rBegStorage_.resize(nThreads);
-    rEndStorage_.resize(nThreads);
-    indStorage_.resize(nThreads);
-    ind1Storage_.resize(nThreads);
     for(int i = 0; i < nThreads; ++i)
     {
-        xStorage_[i].resize(d_);
-        rangeBeginStorage_[i].resize(d_);
-        rangeEndStorage_[i].resize(d_);
-        term1Storage_[i].resize(m_);
-        term2Storage_[i].resize(m_);
-        term3Storage_[i].resize(m_);
-
         fStorage_[i].resize(d_);
         for(int j = 0; j < d_; ++j)
             fStorage_[i][j].resize(m_);
 
         sStorage_[i].resize(m_);
-
-        rBegStorage_[i].resize(d_);
-        rEndStorage_[i].resize(d_);
-        indStorage_[i].resize(d_);
-        ind1Storage_[i].resize(d_);
     }
 }
 
@@ -178,19 +167,28 @@ InitialValPDESolver::setInitial(const std::vector<RealFunctionMultiDim*>& w0)
 
     for(int i = 0; i < m_; ++i)
     {
-#pragma omp parallel for default(shared)
+//#pragma omp parallel for default(shared)
         for(int i0 = 0; i0 < nx_[0]; ++i0)
         {
-            std::vector<int> rangeBegin(d_, 0);
-            std::vector<int> rangeEnd = nx_;
+            int rangeBegin[pdeMaxDim];
+            int rangeEnd[pdeMaxDim];
             rangeBegin[0] = i0;
             rangeEnd[0] = i0 + 1;
+            for(int j = 1; j < d_; ++j)
+            {
+                rangeBegin[j] = 0;
+                rangeEnd[j] = nx_[j];
+            }
 
             std::vector<double> coords(d_);
 
-            for(std::vector<int> ind = rangeBegin; ind[0] != rangeEnd[0]; increaseIndex(ind, rangeBegin, rangeEnd))
+            int ind[pdeMaxDim];
+            for(int j = 0; j < d_; ++j)
+                ind[j] = rangeBegin[j];
+
+            for(; ind[0] != rangeEnd[0]; increaseIndex(ind, rangeBegin, rangeEnd))
             {
-                physicalCoords(ind, &coords);
+                physicalCoords(ind, &(coords[0]));
                 const unsigned long gridIndex = index(ind);
                 grid_[gridIndex][i] = w0[i]->evaluate(coords);
             }
@@ -212,8 +210,8 @@ InitialValPDESolver::setOwnBoundary()
 #ifdef COSMO_OMP
             threadId = omp_get_thread_num();
 #endif
-            std::vector<int>& rangeBegin = rangeBeginStorage_[threadId];
-            std::vector<int>& rangeEnd = rangeEndStorage_[threadId];
+            int rangeBegin[pdeMaxDim];
+            int rangeEnd[pdeMaxDim];
 
             rangeBegin[0] = i0;
             rangeEnd[0] = i0 + 1;
@@ -232,8 +230,8 @@ InitialValPDESolver::setOwnBoundary()
                 rangeEnd[j] = nx_[j];
             }
 
-            std::vector<int>& ind = indStorage_[threadId];
-            std::vector<int>& ind1 = ind1Storage_[threadId];
+            int ind[pdeMaxDim];
+            int ind1[pdeMaxDim];
 
             for(int j = 0; j < d_; ++j)
                 ind[j] = rangeBegin[j];
@@ -430,8 +428,8 @@ InitialValPDESolver::takeStep()
         threadId = omp_get_thread_num();
 #endif
 
-        std::vector<int>& rangeBegin = rangeBeginStorage_[threadId];
-        std::vector<int>& rangeEnd = rangeEndStorage_[threadId];
+        int rangeBegin[pdeMaxDim];
+        int rangeEnd[pdeMaxDim];
 
         rangeBegin[0] = i0;
         rangeEnd[0] = i0 + 1;
@@ -442,17 +440,17 @@ InitialValPDESolver::takeStep()
             rangeEnd[i] = nx_[i] + 1;
         }
 
-        std::vector<double>& x = xStorage_[threadId];
-        std::vector<double>& term1 = term1Storage_[threadId];
-        std::vector<double>& term2 = term2Storage_[threadId];
-        std::vector<double>& term3 = term3Storage_[threadId];
+        double x[pdeMaxDim];
+        double term1[pdeMaxFields];
+        double term2[pdeMaxFields];
+        double term3[pdeMaxFields];
         std::vector<std::vector<double> >& f = fStorage_[threadId];
         std::vector<double>& s = sStorage_[threadId];
 
-        std::vector<int>& rBeg = rBegStorage_[threadId];
-        std::vector<int>& rEnd = rEndStorage_[threadId];
-        std::vector<int>& ind = indStorage_[threadId];
-        std::vector<int>& ind1 = ind1Storage_[threadId];
+        int rBeg[pdeMaxDim];
+        int rEnd[pdeMaxDim];
+        int ind[pdeMaxDim];
+        int ind1[pdeMaxDim];
 
         for(int i = 0; i < d_; ++i)
             ind[i] = rangeBegin[i];
@@ -471,7 +469,7 @@ InitialValPDESolver::takeStep()
 
             for(; ind1[0] != rEnd[0]; increaseIndex(ind1, rBeg, rEnd))
             {
-                physicalCoords(ind1, &x);
+                physicalCoords(ind1, x);
                 pde_->evaluate(t_, x, grid_[index(ind1)], &f, &s);
 
                 for(int i = 0; i < m_; ++i)
@@ -501,8 +499,8 @@ InitialValPDESolver::takeStep()
         threadId = omp_get_thread_num();
 #endif
 
-        std::vector<int>& rangeBegin = rangeBeginStorage_[threadId];
-        std::vector<int>& rangeEnd = rangeEndStorage_[threadId];
+        int rangeBegin[pdeMaxDim];
+        int rangeEnd[pdeMaxDim];
         rangeBegin[0] = i0;
         rangeEnd[0] = i0 + 1;
         for(int i = 1; i < d_; ++i)
@@ -511,16 +509,16 @@ InitialValPDESolver::takeStep()
             rangeEnd[i] = nx_[i];
         }
 
-        std::vector<double>& x = xStorage_[threadId];
-        std::vector<double>& term1 = term1Storage_[threadId];
-        std::vector<double>& term2 = term2Storage_[threadId];
+        double x[pdeMaxDim];
+        double term1[pdeMaxFields];
+        double term2[pdeMaxFields];
         std::vector<std::vector<double> >& f = fStorage_[threadId];
         std::vector<double>& s = sStorage_[threadId];
 
-        std::vector<int>& rBeg = rBegStorage_[threadId];
-        std::vector<int>& rEnd = rEndStorage_[threadId];
-        std::vector<int>& ind = indStorage_[threadId];
-        std::vector<int>& ind1 = ind1Storage_[threadId];
+        int rBeg[pdeMaxDim];
+        int rEnd[pdeMaxDim];
+        int ind[pdeMaxDim];
+        int ind1[pdeMaxDim];
 
         for(int i = 0; i < d_; ++i)
             ind[i] = rangeBegin[i];
@@ -539,7 +537,7 @@ InitialValPDESolver::takeStep()
 
             for(; ind1[0] != rEnd[0]; increaseIndex(ind1, rBeg, rEnd))
             {
-                physicalCoordsHalf(ind1, &x);
+                physicalCoordsHalf(ind1, x);
                 pde_->evaluate(t_ + deltaT_ / 2, x, halfGrid_[halfIndex(ind1)], &f, &s);
                 for(int i = 0; i < m_; ++i)
                 {

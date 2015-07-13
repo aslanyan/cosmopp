@@ -37,9 +37,8 @@ public:
     virtual int spaceDim() const { return 1; }
     virtual int funcDim() const { return 1; }
 
-    virtual void evaluate(double t, const std::vector<double>& x, const std::vector<double>& u, std::vector<std::vector<double> > *f, std::vector<double> *s) const
+    virtual void evaluate(double t, const double *x, const std::vector<double>& u, std::vector<std::vector<double> > *f, std::vector<double> *s) const
     {
-        check(x.size() == 1, "");
         check(u.size() == 1, "");
         check(f->size() == 1, "");
         check((*f)[0].size() == 1, "");
@@ -60,9 +59,8 @@ public:
     virtual int spaceDim() const { return 1; }
     virtual int funcDim() const { return 3; }
 
-    virtual void evaluate(double t, const std::vector<double>& x, const std::vector<double>& u, std::vector<std::vector<double> > *f, std::vector<double> *s) const
+    virtual void evaluate(double t, const double *x, const std::vector<double>& u, std::vector<std::vector<double> > *f, std::vector<double> *s) const
     {
-        check(x.size() == 1, "");
         check(u.size() == 3, "");
         check(f->size() == 1, "");
         check((*f)[0].size() == 3, "");
@@ -85,9 +83,8 @@ public:
     virtual int spaceDim() const { return 1; }
     virtual int funcDim() const { return 2; }
 
-    virtual void evaluate(double t, const std::vector<double>& x, const std::vector<double>& u, std::vector<std::vector<double> > *f, std::vector<double> *s) const
+    virtual void evaluate(double t, const double *x, const std::vector<double>& u, std::vector<std::vector<double> > *f, std::vector<double> *s) const
     {
-        check(x.size() == 1, "");
         check(u.size() == 2, "");
         check(f->size() == 1, "");
         check((*f)[0].size() == 2, "");
@@ -108,9 +105,8 @@ public:
     virtual int spaceDim() const { return 2; }
     virtual int funcDim() const { return 1; }
 
-    virtual void evaluate(double t, const std::vector<double>& x, const std::vector<double>& u, std::vector<std::vector<double> > *f, std::vector<double> *s) const
+    virtual void evaluate(double t, const double *x, const std::vector<double>& u, std::vector<std::vector<double> > *f, std::vector<double> *s) const
     {
-        check(x.size() == 2, "");
         check(u.size() == 1, "");
         check(f->size() == 2, "");
         check((*f)[0].size() == 1, "");
@@ -131,9 +127,8 @@ public:
     virtual int spaceDim() const { return 2; }
     virtual int funcDim() const { return 1; }
 
-    virtual void evaluate(double t, const std::vector<double>& x, const std::vector<double>& u, std::vector<std::vector<double> > *f, std::vector<double> *s) const
+    virtual void evaluate(double t, const double *x, const std::vector<double>& u, std::vector<std::vector<double> > *f, std::vector<double> *s) const
     {
-        check(x.size() == 2, "");
         check(u.size() == 1, "");
         check(f->size() == 2, "");
         check((*f)[0].size() == 1, "");
@@ -347,7 +342,7 @@ TestPDE::runSubTest(unsigned int i, double& res, double& expected, std::string& 
             std::vector<int> ind(1);
             for(ind[0] = -1; ind[0] <= solver.getNx(0); ++ind[0])
             {
-                solver.physicalCoords(ind, &coords);
+                solver.physicalCoords(&(ind[0]), &(coords[0]));
                 const double x = coords[0];
                 const double y = solver.getField(ind)[j];
                 double expY;
@@ -401,7 +396,7 @@ TestPDE::runSubTest(unsigned int i, double& res, double& expected, std::string& 
             {
                 for(ind[1] = -1; ind[1] <= solver.getNx(1); ++ind[1])
                 {
-                    solver.physicalCoords(ind, &coords);
+                    solver.physicalCoords(&(ind[0]), &(coords[0]));
                     const double x = coords[0];
                     const double y = coords[1];
                     const double z = solver.getField(ind)[j];

@@ -17,7 +17,7 @@ public:
     virtual int spaceDim() const = 0;
     virtual int funcDim() const = 0;
 
-    virtual void evaluate(double t, const std::vector<double>& x, const std::vector<double>& u, std::vector<std::vector<double> > *f, std::vector<double> *s) const = 0;
+    virtual void evaluate(double t, const double *x, const std::vector<double>& u, std::vector<std::vector<double> > *f, std::vector<double> *s) const = 0;
 };
 
 class InitialValPDESolver
@@ -41,9 +41,9 @@ public:
     int getXMax(int i) const { check(i >= 0 && i < d_, ""); return xMax_[i]; }
     int getDeltaX(int i) const { check(i >= 0 && i < d_, ""); return deltaX_[i]; }
 
-    const std::vector<double>& getField(const std::vector<int>& ind) const { return grid_[index(ind)]; }
+    const std::vector<double>& getField(const std::vector<int>& ind) const { return grid_[index(&(ind[0]))]; }
 
-    inline void physicalCoords(const std::vector<int>& i, std::vector<double> *coords) const;
+    inline void physicalCoords(const int *i, double *coords) const;
 
 private:
     void setupGrid();
@@ -59,10 +59,10 @@ private:
     void saveBuffer(unsigned long start);
     void retrieveBuffer(unsigned long start);
 
-    inline unsigned long index(const std::vector<int>& i) const;
-    inline unsigned long halfIndex(const std::vector<int>& i) const;
-    inline void increaseIndex(std::vector<int>& i, const std::vector<int>& rangeBegin, const std::vector<int>& rangeEnd) const;
-    inline void physicalCoordsHalf(const std::vector<int>& i, std::vector<double> *coords) const;
+    inline unsigned long index(const int *i) const;
+    inline unsigned long halfIndex(const int *i) const;
+    inline void increaseIndex(int *i, const int *rangeBegin, const int *rangeEnd) const;
+    inline void physicalCoordsHalf(const int *i, double *coords) const;
 
     void allocateStorage();
 
@@ -96,15 +96,13 @@ private:
     int commTag_;
     std::vector<double> buffer_;
 
-    std::vector<std::vector<double> > xStorage_, term1Storage_, term2Storage_, term3Storage_, sStorage_;
-    std::vector<std::vector<int> > rangeBeginStorage_, rangeEndStorage_, rBegStorage_, rEndStorage_, indStorage_, ind1Storage_;
+    std::vector<std::vector<double> > sStorage_;
     std::vector<std::vector<std::vector<double> > > fStorage_;
 };
 
 unsigned long
-InitialValPDESolver::index(const std::vector<int>& i) const
+InitialValPDESolver::index(const int *i) const
 {
-    check(i.size() == d_, "");
     check(dimProd_.size() == d_ + 1, "");
 
     unsigned long res = 0;
@@ -121,9 +119,8 @@ InitialValPDESolver::index(const std::vector<int>& i) const
 }
 
 unsigned long
-InitialValPDESolver::halfIndex(const std::vector<int>& i) const
+InitialValPDESolver::halfIndex(const int *i) const
 {
-    check(i.size() == d_, "");
     check(halfDimProd_.size() == d_ + 1, "");
 
     unsigned long res = 0;
@@ -140,44 +137,34 @@ InitialValPDESolver::halfIndex(const std::vector<int>& i) const
 }
 
 void
-InitialValPDESolver::physicalCoords(const std::vector<int>& i, std::vector<double> *coords) const
+InitialValPDESolver::physicalCoords(const int *i, double *coords) const
 {
-    check(i.size() == d_, "");
-    check(coords->size() == d_, coords->size() << " != " << d_);
-
     check(i[0] >= -1 && i[0] <= nx_[0], "");
-    (*coords)[0] = xMin_[0] + deltaX_[0] * (i[0] + nx0Starting_);
+    coords[0] = xMin_[0] + deltaX_[0] * (i[0] + nx0Starting_);
 
     for(int j = 1; j < d_; ++j)
     {
         check(i[j] >= -1 && i[j] <= nx_[j], "");
-        (*coords)[j] = xMin_[j] + deltaX_[j] * i[j];
+        coords[j] = xMin_[j] + deltaX_[j] * i[j];
     }
 }
 
 void
-InitialValPDESolver::physicalCoordsHalf(const std::vector<int>& i, std::vector<double> *coords) const
+InitialValPDESolver::physicalCoordsHalf(const int *i, double *coords) const
 {
-    check(i.size() == d_, "");
-    check(coords->size() == d_, "");
-
     check(i[0] >= 0 && i[0] <= nx_[0], "");
-    (*coords)[0] = xMin_[0] + deltaX_[0] * (i[0] + nx0Starting_) - deltaX_[0] / 2;
+    coords[0] = xMin_[0] + deltaX_[0] * (i[0] + nx0Starting_) - deltaX_[0] / 2;
 
     for(int j = 1; j < d_; ++j)
     {
         check(i[j] >= 0 && i[j] <= nx_[j], "");
-        (*coords)[j] = xMin_[j] + deltaX_[j] * i[j] - deltaX_[j]/ 2;
+        coords[j] = xMin_[j] + deltaX_[j] * i[j] - deltaX_[j]/ 2;
     }
 }
 
 void
-InitialValPDESolver::increaseIndex(std::vector<int>& i, const std::vector<int>& rangeBegin, const std::vector<int>& rangeEnd) const
+InitialValPDESolver::increaseIndex(int *i, const int *rangeBegin, const int *rangeEnd) const
 {
-    check(i.size() == d_, "");
-    check(rangeBegin.size() == d_, "");
-    check(rangeEnd.size() == d_, "");
-
     for(int j = d_ - 1; j >= 0; --j)
     {
         const int nx = nx_[j];
