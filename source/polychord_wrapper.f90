@@ -34,7 +34,7 @@
                 prior_maxs, base_dir, file_root, &
                 read_resume, write_resume, update_resume, write_live, &
                 loglike, logz, errorz, ndead, nlike, &
-                logzpluslogp) bind(c)
+                logzpluslogp, num_grades) bind(c)
                       use iso_c_binding, only: c_int, c_bool, c_double, c_char, c_funptr, c_ptr, C_NULL_CHAR
                       use ini_module, only:initialise_program
                       use params_module, only:add_parameter,param_type
@@ -70,6 +70,7 @@
                       logical(c_bool), intent(in), value :: write_live
                       type(c_funptr), intent(in), value :: loglike
                       double precision logz, errorz, ndead, nlike, logzpluslogp
+                      integer(c_int), intent(in), value :: num_grades
 
                       character(len=100) :: froot, fdir
                       integer :: i
@@ -145,8 +146,11 @@
                       settings%update_resume = update_resume
                       settings%update_posterior = 1000
                       settings%boost_posterior = sigma_post
-                      allocate(settings%grade_frac(1))
-                      settings%grade_frac=[1d0]
+                      allocate(settings%grade_frac(num_grades))
+
+                      do i = 1, ndims
+                            settings%grade_frac(i) = 1d0 / num_grades
+                      end do
 
                       call initialise_program(settings,priors,params,derived_params)
 
