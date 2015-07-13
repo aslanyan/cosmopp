@@ -547,6 +547,7 @@ PlanckLikelihood::calculate(double* params, int nPar)
         vModel_[i] = params[i];
 
     const bool success = modelParams_->setAllParameters(vModel_);
+    output_screen1("Planck likelihood evaluation: " << (success ? "GOOD REGION" : "BAD REGION") << std::endl);
     if(success)
         setCosmoParams(*modelParams_);
 
