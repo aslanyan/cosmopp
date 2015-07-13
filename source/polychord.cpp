@@ -124,7 +124,7 @@ PolyChord::run(bool res)
 
 	const int nDims = n_ - nFixed_;
     const int nDerived = 0;
-    const int numRepeats = 1;
+    const int numRepeats = 3 * nDims;
     const bool doClustering = false;
     const int nCluster = 30;
     int feedback = 0;
