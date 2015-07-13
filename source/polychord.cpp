@@ -128,10 +128,10 @@ PolyChord::run(bool res)
     const bool doClustering = false;
     const int nCluster = 30;
     int feedback = 0;
-#ifdef VERBOSE1
+#ifdef VERBOSE
     feedback = 1;
 #endif
-#ifdef VERBOSE2
+#ifdef VERBOSE1
     feedback = 2;
 #endif
     const bool calculatePost = true;
