@@ -143,7 +143,7 @@
                       settings%cluster_posteriors = .false.
                       settings%feedback = feedback
                       settings%update_resume = update_resume
-                      settings%update_posterior = -1
+                      settings%update_posterior = 1000
                       settings%boost_posterior = sigma_post
                       allocate(settings%grade_frac(1))
                       settings%grade_frac=[1d0]
