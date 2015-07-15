@@ -14,6 +14,683 @@
 #define MY_STRINGIZE(P) MY_STRINGIZE1(P)
 #define PLANCK_DATA_DIR_STR MY_STRINGIZE(PLANCK_DATA_DIR)
 
+#ifdef COSMO_PLANCK_15
+
+namespace
+{
+
+class PlanckLikelihoodContainer
+{
+public:
+    PlanckLikelihoodContainer() : lowT_(NULL), lowTP_(NULL), highT_(NULL), highTP_(NULL), highTLite_(NULL), highTPLite_(NULL), lensT_(NULL), lensTP_(NULL), planckLikeDir_(PLANCK_DATA_DIR_STR)
+    {
+    }
+
+    void* getLowT()
+    {
+        if(lowT_)
+            return lowT_;
+
+        std::stringstream path;
+        path << planckLikeDir_ << "/low_l/commander/commander_rc2_v1.1_l2_29_B.clik";
+        char pathCStr[200];
+        std::strcpy(pathCStr, path.str().c_str());
+        lowT_ = clik_init(pathCStr, NULL);
+        return lowT_;
+    }
+
+    void* getLowTP()
+    {
+        if(lowTP_)
+            return lowTP_;
+
+        std::stringstream path;
+        path << planckLikeDir_ << "/low_l/bflike/lowl_SMW_70_dx11d_2014_10_03_v5c_Ap.clik";
+        char pathCStr[200];
+        std::strcpy(pathCStr, path.str().c_str());
+        lowTP_ = clik_init(pathCStr, NULL);
+        return lowTP_;
+    }
+
+    void* getHighT()
+    {
+        if(highT_)
+            return highT_;
+
+        std::stringstream path;
+        path << planckLikeDir_ << "/hi_l/plik/plik_dx11dr2_HM_v18_TT.clik";
+        char pathCStr[200];
+        std::strcpy(pathCStr, path.str().c_str());
+        highT_ = clik_init(pathCStr, NULL);
+        return highT_;
+    }
+
+    void* getHighTP()
+    {
+        if(highTP_)
+            return highTP_;
+
+        std::stringstream path;
+        path << planckLikeDir_ << "/hi_l/plik/plik_dx11dr2_HM_v18_TTTEEE.clik";
+        char pathCStr[200];
+        std::strcpy(pathCStr, path.str().c_str());
+        highTP_ = clik_init(pathCStr, NULL);
+        return highTP_;
+    }
+
+    void* getHighTLite()
+    {
+        if(highTLite_)
+            return highTLite_;
+
+        check(!highTPLite_, "high TP already in use, cannot use high T in addition (it's a problem in Planck likelihood code itself)");
+
+        std::stringstream path;
+        path << planckLikeDir_ << "/hi_l/plik_lite/plik_lite_v18_TT.clik";
+        char pathCStr[200];
+        std::strcpy(pathCStr, path.str().c_str());
+        highTLite_ = clik_init(pathCStr, NULL);
+        return highTLite_;
+    }
+
+    void* getHighTPLite()
+    {
+        if(highTPLite_)
+            return highTPLite_;
+
+        check(!highTLite_, "high T already in use, cannot use high TP in addition (it's a problem in Planck likelihood code itself)");
+
+        std::stringstream path;
+        path << planckLikeDir_ << "/hi_l/plik_lite/plik_lite_v18_TTTEEE.clik";
+        char pathCStr[200];
+        std::strcpy(pathCStr, path.str().c_str());
+        highTPLite_ = clik_init(pathCStr, NULL);
+        return highTPLite_;
+    }
+
+    void* getLensT()
+    {
+        if(lensT_)
+            return lensT_;
+
+        std::stringstream path;
+        path << planckLikeDir_ << "/lensing/smica_g30_ftl_full_pttptt.clik_lensing";
+        char pathCStr[200];
+        std::strcpy(pathCStr, path.str().c_str());
+        lensT_ = clik_lensing_init(pathCStr, NULL);
+        return lensT_;
+    }
+
+    void* getLensTP()
+    {
+        if(lensTP_)
+            return lensTP_;
+
+        std::stringstream path;
+        path << planckLikeDir_ << "/lensing/smica_g30_ftl_full_pp.clik_lensing";
+        char pathCStr[200];
+        std::strcpy(pathCStr, path.str().c_str());
+        lensTP_ = clik_lensing_init(pathCStr, NULL);
+        return lensTP_;
+    }
+
+    ~PlanckLikelihoodContainer()
+    {
+        if(lowT_) clik_cleanup(&lowT_);
+        if(lowTP_) clik_cleanup(&lowTP_);
+        if(highT_) clik_cleanup(&highT_);
+        if(highTP_) clik_cleanup(&highTP_);
+        if(highTLite_) clik_cleanup(&highTLite_);
+        if(highTPLite_) clik_cleanup(&highTPLite_);
+        if(lensT_) clik_lensing_cleanup(&lensT_);
+        if(lensTP_) clik_lensing_cleanup(&lensTP_);
+    }
+
+private:
+    clik_object *lowT_;
+    clik_object *lowTP_;
+    clik_object *highT_;
+    clik_object *highTP_;
+    clik_object *highTLite_;
+    clik_object *highTPLite_;
+    clik_lensing_object *lensT_;
+    clik_lensing_object *lensTP_;
+    std::string planckLikeDir_;
+};
+
+}
+
+PlanckLikelihood::PlanckLikelihood(bool lowT, bool lowP, bool highT, bool highP, bool highLikeLite, bool lensingT, bool lensingP, bool includeTensors, double kPerDecade, bool useOwnCmb) : spectraNames_(6), lensSpectraNames_(7), low_(NULL), high_(NULL), lens_(NULL), lowT_(lowT), lowP_(lowP), highT_(highT), highP_(highP), highLikeLite_(highLikeLite), lensingT_(lensingT), lensingP_(lensingP), cmb_(NULL), modelParams_(NULL), aPlanck_(1), aPol_(1)
+{
+    check(!lowP || lowT, "cannot include lowP without lowT");
+    check(!highP || highT, "cannot include highP without highT");
+    check(!lensingP || lensingT, "cannot include lensingP wihtout lensingT");
+
+    check(lowT || highT || lensingT, "at least one likelihood must be specified");
+
+    std::string planckLikeDir = PLANCK_DATA_DIR_STR;
+    output_screen("Planck data dir = " << planckLikeDir << std::endl);
+
+    spectraNames_[0] = std::string("TT");
+    spectraNames_[1] = std::string("EE");
+    spectraNames_[2] = std::string("BB");
+    spectraNames_[3] = std::string("TE");
+    spectraNames_[4] = std::string("TB");
+    spectraNames_[5] = std::string("EB");
+
+    lensSpectraNames_[0] = std::string("PP");
+    lensSpectraNames_[1] = std::string("TT");
+    lensSpectraNames_[2] = std::string("EE");
+    lensSpectraNames_[3] = std::string("BB");
+    lensSpectraNames_[4] = std::string("TE");
+    lensSpectraNames_[5] = std::string("TB");
+    lensSpectraNames_[6] = std::string("EB");
+
+    int lMax[6];
+    int lensLMax[7];
+
+    lMax_ = 0;
+    lowLMax_ = 0;
+    highLMax_ = 0;
+    lensLMax_ = 0;
+
+    parname* names;
+
+    static PlanckLikelihoodContainer planckLikelihoodContainer;
+
+    if(lowT)
+    {
+        if(lowP)
+            low_ = planckLikelihoodContainer.getLowTP();
+        else
+            low_ = planckLikelihoodContainer.getLowT();
+
+        clik_get_lmax(low_, lMax, NULL);
+        for(int i = 0; i < 6; ++i)
+        {
+            output_screen1("Low likelihood has " << spectraNames_[i] << " with l_max = " << lMax[i] << std::endl);
+            if(lMax[i] > lowLMax_)
+                lowLMax_ = lMax[i];
+        }
+
+        if(lowLMax_ > lMax_)
+            lMax_ = lowLMax_;
+
+        /*
+        int extraParams = clik_get_extra_parameter_names(low_, &names, NULL);
+        output_screen1("Low likelihood has " << extraParams << " extra parameters. Their names are as follows:" << std::endl);
+        for(int i = 0; i < extraParams; ++i)
+        {
+            output_screen1(names[i] << std::endl);
+        }
+        output_screen1(std::endl);
+        delete names;
+        */
+    }
+
+    if(highT)
+    {
+        if(highLikeLite)
+        {
+            if(highP)
+                high_ = planckLikelihoodContainer.getHighTPLite();
+            else
+                high_ = planckLikelihoodContainer.getHighTLite();
+        }
+        else
+        {
+            if(highP)
+                high_ = planckLikelihoodContainer.getHighTP();
+            else
+                high_ = planckLikelihoodContainer.getHighT();
+        }
+        clik_get_lmax(high_, lMax, NULL);
+        for(int i = 0; i < 6; ++i)
+        {
+            output_screen1("High likelihood has " << spectraNames_[i] << " with l_max = " << lMax[i] << std::endl);
+            if(lMax[i] > highLMax_)
+                highLMax_ = lMax[i];
+        }
+
+        if(highLMax_ > lMax_)
+            lMax_ = highLMax_;
+
+        /*
+        int extraParams = clik_get_extra_parameter_names(high_, &names, NULL);
+        output_screen1("High likelihood has " << extraParams << " extra parameters. Their names are as follows:" << std::endl);
+        for(int i = 0; i < extraParams; ++i)
+        {
+            output_screen1(names[i] << std::endl);
+        }
+        output_screen1(std::endl);
+        delete names;
+        */
+    }
+
+    if(lensingT)
+    {
+        if(lensingP)
+            lens_ = planckLikelihoodContainer.getLensTP();
+        else
+            lens_ = planckLikelihoodContainer.getLensT();
+
+        clik_lensing_get_lmaxs(static_cast<clik_lensing_object*>(lens_), lensLMax, NULL);
+        for(int i = 0; i < 7; ++i)
+        {
+            output_screen1("Lensing likelihood has " << lensSpectraNames_[i] << " with l_max = " << lensLMax[i] << std::endl);
+            if(lensLMax[i] > lensLMax_)
+                lensLMax_ = lensLMax[i];
+        }
+
+        if(lensLMax_ > lMax_)
+            lMax_ = lensLMax_;
+
+        /*
+        int extraParams = clik_lensing_get_extra_parameter_names(static_cast<clik_lensing_object*>(lens_), &names, NULL);
+        output_screen1("Lensing likelihood has " << extraParams << " extra parameters. Their names are as follows:" << std::endl);
+        for(int i = 0; i < extraParams; ++i)
+        {
+            output_screen1(names[i] << std::endl);
+        }
+        output_screen1(std::endl);
+        delete names;
+        */
+    }
+
+    output_screen1("Low l_max = " << lowLMax_ << std::endl);
+    output_screen1("High l_max = " << highLMax_ << std::endl);
+    output_screen1("Lensing l_max = " << lensLMax_ << std::endl);
+    output_screen1("Total l_max = " << lMax_ << std::endl);
+
+    if(useOwnCmb)
+    {
+        cmb_ = new CMB;
+        cmb_->preInitialize(lMax_ + 1000, false, true, includeTensors, lMax_ + 1000, kPerDecade);
+    }
+
+    input_.resize(3 * lMax_ + 10000);
+    if(highT)
+    {
+        highExtra_.resize(highP ? 32 : 15, 0);
+        if(highP)
+            beamExtra_.resize(60, 0);
+    }
+}
+
+PlanckLikelihood::~PlanckLikelihood()
+{
+    if(cmb_)
+        delete cmb_;
+}
+
+void
+PlanckLikelihood::setCosmoParams(const CosmologicalParams& params)
+{
+    check(cmb_, "own CMB must be used (set in constructor)");
+
+    bool needToCalculate = true;
+    params.getAllParameters(currentCosmoParams_);
+    if(params.name() == prevCosmoParamsName_)
+    {
+        check(currentCosmoParams_.size() == prevCosmoParams_.size(), "");
+        bool areParamsEqual = true;
+        for(int i = 0; i < prevCosmoParams_.size(); ++i)
+        {
+            if(prevCosmoParams_[i] != currentCosmoParams_[i])
+            {
+                areParamsEqual = false;
+                break;
+            }
+        }
+
+        needToCalculate = !areParamsEqual;
+    }
+    else
+        prevCosmoParamsName_ = params.name();
+
+    if(!needToCalculate)
+        return;
+
+    haveLow_ = false;
+    haveLens_ = false;
+
+    params_ = &params;
+    prevCosmoParams_.swap(currentCosmoParams_);
+
+    const bool wantT = true;
+    const bool wantPol = (lowP_ || highP_ || lensingP_);
+    const bool wantLens = lensingT_;
+
+    cmb_->initialize(params, wantT, wantPol, true);
+
+    std::vector<double>* tt = &clTT_;
+    std::vector<double>* ee = (wantPol ? &clEE_ : NULL);
+    std::vector<double>* te = (wantPol ? &clTE_ : NULL);
+    std::vector<double>* bb = (lowP_ ? &clBB_ : NULL);
+
+    cmb_->getLensedCl(tt, ee, te, bb);
+
+    if(wantLens)
+        cmb_->getCl(NULL, NULL, NULL, &clPP_, NULL, NULL);
+}
+
+void
+PlanckLikelihood::setCls(const std::vector<double>* tt, const std::vector<double>* ee, const std::vector<double>* te, const std::vector<double> *bb, const std::vector<double>* pp)
+{
+    check(tt, "TT must be specified");
+
+    clTT_ = *tt;
+
+    if(ee)
+        clEE_ = *ee;
+    else
+        clEE_.clear();
+
+    if(te)
+        clTE_ = *te;
+    else
+        clTE_.clear();
+
+    if(bb)
+        clBB_ = *bb;
+    else
+        clBB_.clear();
+
+    if(pp)
+        clPP_ = *pp;
+    else
+        clPP_.clear();
+
+    haveLow_ = false;
+    haveLens_ = false;
+}
+
+void
+PlanckLikelihood::setAPlanck(double aPlanck)
+{
+    check(aPlanck > 0, "");
+    aPlanck_ = aPlanck;
+
+    haveLow_ = false;
+    haveLens_ = false;
+}
+
+void
+PlanckLikelihood::setAPol(double aPol)
+{
+    check(lowP_ || highP_ || lensingP_, "polarization not initialized");
+    check(aPol > 0, "");
+    aPol_ = aPol;
+
+    haveLow_ = false;
+    haveLens_ = false;
+}
+
+void
+PlanckLikelihood::setHighExtraParams(const std::vector<double>& params)
+{
+    check(highT_, "high l likelihood not initialized");
+    check(params.size() == (highP_ ? 32 : 15), "");
+    check(highExtra_.size() == params.size(), "");
+    for(int i = 0; i < highExtra_.size(); ++i)
+        highExtra_[i] = params[i];
+}
+
+void
+PlanckLikelihood::setBeamLeakageParams(const std::vector<double>& params)
+{
+    check(highP_, "high l polarization likelihood not initialized");
+    check(params.size() == 60, "");
+    check(beamExtra_.size() == 60, "");
+    for(int i = 0; i < 60; ++i)
+        beamExtra_[i] = params[i];
+}
+
+double
+PlanckLikelihood::lowLike()
+{
+    check(low_, "low l likelihood not initialized");
+
+    if(haveLow_)
+        return prevLow_;
+
+    check(!clTT_.empty(), "Cl-s not computed");
+    check(clTT_.size() >= lowLMax_ + 1, "");
+    check(!lowP_ || !clTE_.empty(), "Cl-s not computed");
+    check(!lowP_ || clTE_.size() >= lowLMax_ + 1, "");
+    check(!lowP_ || !clEE_.empty(), "Cl-s not computed");
+    check(!lowP_ || clEE_.size() >= lowLMax_ + 1, "");
+    check(!lowP_ || !clBB_.empty(), "Cl-s not computed");
+    check(!lowP_ || clBB_.size() >= lowLMax_ + 1, "");
+    check(input_.size() >= 4 * (lowLMax_ + 1) + 1, "");
+    output_screen2("Calculating low-l likelihood..." << std::endl);
+
+    //Timer timer("PLANCK LOW-L LIKELIHOOD");
+    //timer.start();
+
+    std::vector<double>::iterator it = input_.begin();
+    for(int l = 0; l <= lowLMax_; ++l)
+    {
+        *it = clTT_[l];
+        ++it;
+    }
+    if(lowP_)
+    {
+        for(int l = 0; l <= lowLMax_; ++l)
+        {
+            *it = clEE_[l];
+            ++it;
+        }
+        for(int l = 0; l <= lowLMax_; ++l)
+        {
+            *it = clBB_[l];
+            ++it;
+        }
+        for(int l = 0; l <= lowLMax_; ++l)
+        {
+            *it = clTE_[l];
+            ++it;
+        }
+    }
+    *it = aPlanck_;
+    const double l = clik_compute(low_, &(input_[0]), NULL);
+
+    //timer.end();
+
+    output_screen2("OK" << std::endl);
+
+    prevLow_ = -2.0 * l;
+    haveLow_ = true;
+
+    return prevLow_;
+}
+
+double
+PlanckLikelihood::highLike()
+{
+    check(high_, "high l likelihood not initialized");
+
+    check(!clTT_.empty(), "Cl-s not computed");
+    check(clTT_.size() >= highLMax_ + 1, "");
+    check(!highP_ || !clTE_.empty(), "Cl-s not computed");
+    check(!highP_ || clTE_.size() >= highLMax_ + 1, "");
+    check(!highP_ || !clEE_.empty(), "Cl-s not computed");
+    check(!highP_ || clEE_.size() >= highLMax_ + 1, "");
+    check(input_.size() >= 3 * (highLMax_ + 1) + 100, "");
+    output_screen2("Calculating high-l likelihood..." << std::endl);
+
+    //Timer timer("PLANCK HIGH-L LIKELIHOOD");
+    //timer.start();
+
+    std::vector<double>::iterator it = input_.begin();
+    for(int l = 0; l <= highLMax_; ++l)
+    {
+        *it = clTT_[l];
+        ++it;
+    }
+    if(highP_)
+    {
+        for(int l = 0; l <= highLMax_; ++l)
+        {
+            *it = clEE_[l];
+            ++it;
+        }
+        for(int l = 0; l <= highLMax_; ++l)
+        {
+            *it = clTE_[l];
+            ++it;
+        }
+    }
+    if(!highLikeLite_)
+    {
+        if(highP_)
+        {
+            check(highExtra_.size() == 32, "");
+            for(int i = 0; i < 27; ++i)
+            {
+                *it = highExtra_[i];
+                ++it;
+            }
+            check(beamExtra_.size() == 60, "");
+            for(int i  = 0; i < 60; ++i)
+            {
+                *it = beamExtra_[i];
+                ++it;
+            }
+            for(int i = 27; i < 32; ++i)
+            {
+                *it = highExtra_[i];
+                ++it;
+            }
+            *it = aPol_;
+            ++it;
+        }
+        else
+        {
+            check(highExtra_.size() == 15, "");
+            for(int i = 0; i < 15; ++i)
+            {
+                *it = highExtra_[i];
+                ++it;
+            }
+        }
+    }
+    *it = aPlanck_;
+    const double l = clik_compute(high_, &(input_[0]), NULL);
+
+    //timer.end();
+    output_screen2("OK" << std::endl);
+    return -2.0 * l;
+}
+
+double
+PlanckLikelihood::lensingLike()
+{
+    check(lens_, "lensing not initialized");
+
+    if(haveLens_)
+        return prevLens_;
+
+    check(!clPP_.empty(), "Cl-s not computed");
+    check(clPP_.size() >= lensLMax_ + 1, "");
+    check(!clTT_.empty(), "Cl-s not computed");
+    check(clTT_.size() >= lensLMax_ + 1, "");
+    check(!lensingP_ || !clTE_.empty(), "Cl-s not computed");
+    check(!lensingP_ || clTE_.size() >= lensLMax_ + 1, "");
+    check(!lensingP_ || !clEE_.empty(), "Cl-s not computed");
+    check(!lensingP_ || clEE_.size() >= lensLMax_ + 1, "");
+    check(input_.size() >= 4 * (lensLMax_ + 1) + 1, "");
+    output_screen2("Calculating lensing likelihood..." << std::endl);
+
+    //Timer timer("PLANCK LENSING LIKELIHOOD");
+    //timer.start();
+
+    std::vector<double>::iterator it = input_.begin();
+    for(int l = 0; l <= lensLMax_; ++l)
+    {
+        *it = clPP_[l];
+        ++it;
+    }
+    for(int l = 0; l <= lensLMax_; ++l)
+    {
+        *it = clTT_[l];
+        ++it;
+    }
+    if(lensingP_)
+    {
+        for(int l = 0; l <= lensLMax_; ++l)
+        {
+            *it = clEE_[l];
+            ++it;
+        }
+        for(int l = 0; l <= lensLMax_; ++l)
+        {
+            *it = clTE_[l];
+            ++it;
+        }
+    }
+    *it = aPlanck_;
+    const double l = clik_lensing_compute(static_cast<clik_lensing_object*>(lens_), &(input_[0]), NULL);
+
+    //timer.end();
+    output_screen2("OK" << std::endl);
+    
+    prevLens_ = -2.0 * l;
+    haveLens_ = true;
+
+    return prevLens_;
+}
+
+
+double
+PlanckLikelihood::calculate(double* params, int nPar)
+{
+    //Timer timer("Planck likelihood timer");
+    //timer.start();
+    
+    check(modelParams_, "model params must be set before calling this function");
+    check(!vModel_.empty(), "");
+    const int nModel = vModel_.size();
+    
+    check(nPar == (nModel + 1 + (highT_ && !highLikeLite_ ? (highP_ ? 33 : 15) : 0)), "");
+
+    for(int i = 0; i < nModel; ++i)
+        vModel_[i] = params[i];
+
+    modelParams_->setAllParameters(vModel_);
+    setCosmoParams(*modelParams_);
+
+    aPlanck_ = params[nModel];
+
+    if(highT_)
+    {
+        check(highExtra_.size() == (highP_ ? 32 : 15), "");
+        for(int i = 0; i < highExtra_.size(); ++i)
+            highExtra_[i] = params[nModel + 1 + i];
+    }
+
+    if(highP_)
+        aPol_ = params[nModel + 33];
+
+    //timer.end();
+    return likelihood();
+}
+
+double
+PlanckLikelihood::likelihood()
+{
+    double l = 0;
+    if(low_) l += lowLike();
+    if(high_) l += highLike();
+    if(lens_) l += lensingLike();
+    return l;
+}
+
+#else
+
+namespace
+{
+
 struct PlanckLikelihoodContainer
 {
     PlanckLikelihoodContainer() : commander(NULL), camspec(NULL), lens(NULL), pol(NULL), actspt(NULL)
@@ -55,6 +732,8 @@ struct PlanckLikelihoodContainer
     void* pol;
     void* actspt;
 };
+
+}
 
 PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useLensing, bool usePol, bool useActSpt, bool includeTensors, double kPerDecade, bool useOwnCmb) : spectraNames_(6), haveCommander_(false), havePol_(false), haveLens_(false), commander_(NULL), camspec_(NULL), lens_(NULL), pol_(NULL), actspt_(NULL), cmb_(NULL), modelParams_(NULL)
 {
@@ -587,4 +1266,6 @@ PlanckLikelihood::likelihood()
 
     return l;
 }
+
+#endif
 

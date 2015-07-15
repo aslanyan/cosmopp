@@ -13,6 +13,11 @@ int main(int argc, char *argv[])
     try {
         StandardException exc;
 
+#ifdef COSMO_PLANCK_15
+        output_screen("This is not implemented for Planck 15 likelihood!" << std::endl);
+        return 1;
+#else
+
         // Create the likelihood
         PlanckLikelihood like(true, true, true, true);
 
@@ -44,6 +49,7 @@ int main(int argc, char *argv[])
 
         // Run the scanner. The Results will be output in corresponding files at the end
         scanner.run();
+#endif
     } catch (std::exception& e)
     {
         output_screen("EXCEPTION CAUGHT!!! " << std::endl << e.what() << std::endl);

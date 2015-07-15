@@ -9,6 +9,10 @@
 #include <cubic_spline.hpp>
 #include <planck_like_fast.hpp>
 
+#ifdef COSMO_PLANCK_15
+
+#else
+
 namespace
 {
 
@@ -284,3 +288,6 @@ PlanckLikeFast::logError(const char* fileNameBase)
     outError_ << std::setprecision(10);
     logError_ = true;
 }
+
+#endif
+

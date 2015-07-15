@@ -29,9 +29,14 @@ TestMultinestPlanck::runSubTest(unsigned int i, double& res, double& expected, s
     
     using namespace Math;
 
-    PlanckLikelihood planckLike(true, true, false, true, false, false, 5);
     std::string root = "slow_test_files/multinest_planck_test";
+#ifdef COSMO_PLANCK_15
+    PlanckLikelihood planckLike(true, true, true, false, true, false, false, false, 5);
+    MnScanner mn(7, planckLike, 300, root);
+#else
+    PlanckLikelihood planckLike(true, true, false, true, false, false, 5);
     MnScanner mn(20, planckLike, 300, root);
+#endif
 
     mn.setParam(0, "ombh2", 0.02, 0.025);
     mn.setParam(1, "omch2", 0.1, 0.2);
@@ -40,6 +45,9 @@ TestMultinestPlanck::runSubTest(unsigned int i, double& res, double& expected, s
     mn.setParam(4, "ns", 0.9, 1.1);
     mn.setParam(5, "As", 2.7, 3.5);
 
+#ifdef COSMO_PLANCK_15
+    mn.setParamGauss(6, "A_planck", 1.0, 0.0025);
+#else
     mn.setParam(6, "A_ps_100", 0, 360);
     mn.setParam(7, "A_ps_143", 0, 270);
     mn.setParam(8, "A_ps_217", 0, 450);
@@ -54,6 +62,7 @@ TestMultinestPlanck::runSubTest(unsigned int i, double& res, double& expected, s
     mn.setParam(17, "xi_sz_cib", 0, 1);
     mn.setParam(18, "A_ksz", 0, 10);
     mn.setParam(19, "Bm_1_1", -20, 20);
+#endif
 
     const double pivot = 0.05;
     LambdaCDMParams par(0.022, 0.12, 0.7, 0.1, 1.0, std::exp(3.0) / 1e10, pivot);
@@ -76,13 +85,18 @@ TestMultinestPlanck::runSubTest(unsigned int i, double& res, double& expected, s
 
     const int nPoints = 1000;
 
-    //const double expectedMedian[6] = {0.02217, 0.1186, 0.679, 0.089, 0.9635, 3.085};
-    //const double expectedSigma[6] = {0.00033, 0.0031, 0.015, 0.032, 0.0094, 0.057};
+#ifdef COSMO_PLANCK_15
+    const double expectedMedian[6] = {0.02222, 0.1197, 0.6731, 0.078, 0.9655, 3.089};
+    const double expectedSigma[6] = {0.00023, 0.0022, 0.0096, 0.019, 0.0062, 0.036};
+    const int nPar = 7;
+#else
     const double expectedMedian[6] = {0.02205, 0.1199, 0.673, 0.089, 0.9603, 3.089};
     const double expectedSigma[6] = {0.00028, 0.0027, 0.012, 0.013, 0.0073, 0.025};
+    const int nPar = 20;
+#endif
 
     std::ofstream outParamLimits("slow_test_files/multinest_planck_param_limits.txt");
-    for(int i = 0; i < 20; ++i)
+    for(int i = 0; i < nPar; ++i)
     {
         const std::string& paramName = mn.getParamName(i);
         std::stringstream fileName;

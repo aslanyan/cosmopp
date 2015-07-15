@@ -7,6 +7,79 @@
 #include <likelihood_function.hpp>
 #include <cmb.hpp>
 
+#ifdef COSMO_PLANCK_15
+
+class PlanckLikelihood : public Math::LikelihoodFunction
+{
+public:
+    PlanckLikelihood(bool lowT = true, bool lowP = true, bool highT = true, bool highP = true, bool highLikeLite = true, bool lensingT = true, bool lensingP = true, bool includeTensors = false, double kPerDecade = 100, bool useOwnCmb = true);
+
+    /// Destructor.
+    ~PlanckLikelihood();
+
+    /// Set cosmological parameters. Either this function or setCls should be called before likelihood calculation.
+    /// \param params The cosmological parameters.
+    void setCosmoParams(const CosmologicalParams& params);
+
+    /// Set the Cl values. Either this function or setCosmoParams should be called before likelihood calculation.
+    /// \param tt The Cl_TT values.
+    /// \param ee The Cl_EE values. Can be NULL if do not want to specify this. Required if polarization likelihood has been initialized.
+    /// \param te The Cl_TE values. Can be NULL if do not want to specify this. Required if polarization likelihood has been initialized.
+    /// \param pp The Cl_PP values. Can be NULL if do not want to specify this. Required if lensing likelihood has been initialized.
+    void setCls(const std::vector<double>* tt, const std::vector<double>* ee = NULL, const std::vector<double>* te = NULL, const std::vector<double> *bb = NULL, const std::vector<double>* pp = NULL);
+
+    void setAPlanck(double aPlanck);
+    void setAPol(double aPol);
+    void setHighExtraParams(const std::vector<double>& params);
+    void setBeamLeakageParams(const std::vector<double>& params);
+
+    double lowLike();
+    double highLike();
+    double lensingLike();
+
+    /// Calculate all of the likelihoods included in the constructor. Must be called after setCosmoParams or setCls.
+    /// \return -2ln(likelihood).
+    double likelihood();
+
+    /// Use this parameters to set the model for the calculate function. The number of cosmological parameters will be determined from here, and when calculate is called the cosmological parameters will be assigned to this model.
+    /// \param params A pointer to the model parameters. Note that when calculate is called params will be changed to set the new parameters.
+    void setModelCosmoParams(CosmologicalParams *params) { modelParams_ = params; modelParams_->getAllParameters(vModel_); }
+
+    /// Calculate the likelihood taking all of the params as an input. This is for the general LikelihoodFunction interface. Can only be called if the model parameters are set by setModelCosmoParams.
+    /// \param params A vector of the parameters, should always start with the cosmological parameters, followed by camspec extra parameters (if camspec is included), followed by high-l extra parameters (if high l is included).
+    /// \param nPar The number of the parameters, used only for checking.
+    /// \return -2ln(likelihood).
+    double calculate(double* params, int nPar);
+
+    /// Get the l_max value.
+    int getLMax() const { return lMax_; }
+
+private:
+    void *low_, *high_, *lens_;
+    std::vector<std::string> spectraNames_, lensSpectraNames_;
+    int lowLMax_, highLMax_, lensLMax_, lMax_;
+
+    bool lowT_, lowP_, highT_, highP_, highLikeLite_, lensingT_, lensingP_;
+    CMB* cmb_;
+    double aPlanck_, aPol_;
+    std::vector<double> highExtra_, beamExtra_;
+    std::vector<double> clTT_, clEE_, clTE_, clBB_, clPP_;
+    std::vector<double> prevCosmoParams_;
+    std::string prevCosmoParamsName_;
+    std::vector<double> currentCosmoParams_;
+    double prevLow_, prevLens_;
+    bool haveLow_, haveLens_;
+
+    const CosmologicalParams* params_;
+
+    CosmologicalParams* modelParams_;
+    std::vector<double> vModel_;
+
+    std::vector<double> input_;
+};
+
+#else
+
 /// An interface for calculating the likelihood function for Planck.
 class PlanckLikelihood : public Math::LikelihoodFunction
 {
@@ -98,6 +171,8 @@ private:
     CosmologicalParams* modelParams_;
     std::vector<double> vModel_;
 };
+
+#endif
 
 #endif
 

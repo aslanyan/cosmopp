@@ -26,6 +26,11 @@ int main(int argc, char *argv[])
         const int nMassive = 1;
         const double sumMNu = 0.0;
 
+#ifdef COSMO_PLANCK_15
+        output_screen("This is not implemented for Planck 15!" << std::endl);
+        return 1;
+#else
+
         // Create a special case of cosmological params
         LCDMWithTensorAndDegenerateNeutrinosParams params(omBH2, omCH2, h, tau, ns, as, pivot, r, nt, pivot, nEff, nMassive, sumMNu);
 
@@ -56,6 +61,7 @@ int main(int argc, char *argv[])
 
         // Calculate and print the total likelihood
         output_screen(std::endl << "Total likelihood = " << planck.likelihood() << std::endl);
+#endif
     } catch (std::exception& e)
     {
         output_screen("EXCEPTION CAUGHT!!! " << std::endl << e.what() << std::endl);
