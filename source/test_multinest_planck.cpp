@@ -31,7 +31,8 @@ TestMultinestPlanck::runSubTest(unsigned int i, double& res, double& expected, s
 
     std::string root = "slow_test_files/multinest_planck_test";
 #ifdef COSMO_PLANCK_15
-    PlanckLikelihood planckLike(true, true, true, false, true, false, false, false, 5);
+    PlanckLikelihood planckLike(true, true, true, false, true, true, false, false, 5);
+    //PlanckLikelihood planckLike(true, true, true, false, true, false, false, false, 5);
     MnScanner mn(7, planckLike, 300, root);
 #else
     PlanckLikelihood planckLike(true, true, false, true, false, false, 5);
@@ -86,8 +87,13 @@ TestMultinestPlanck::runSubTest(unsigned int i, double& res, double& expected, s
     const int nPoints = 1000;
 
 #ifdef COSMO_PLANCK_15
-    const double expectedMedian[6] = {0.02222, 0.1197, 0.6731, 0.078, 0.9655, 3.089};
-    const double expectedSigma[6] = {0.00023, 0.0022, 0.0096, 0.019, 0.0062, 0.036};
+    //lowP + TT + lensing
+    const double expectedMedian[6] = {0.02226, 0.1186, 0.6781, 0.066, 0.9677, 3.062};
+    const double expectedSigma[6] = {0.00023, 0.0020, 0.0092, 0.016, 0.0060, 0.029};
+
+    //lowP + TT
+    //const double expectedMedian[6] = {0.02222, 0.1197, 0.6731, 0.078, 0.9655, 3.089};
+    //const double expectedSigma[6] = {0.00023, 0.0022, 0.0096, 0.019, 0.0062, 0.036};
     const int nPar = 7;
 #else
     const double expectedMedian[6] = {0.02205, 0.1199, 0.673, 0.089, 0.9603, 3.089};
