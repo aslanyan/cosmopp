@@ -127,7 +127,7 @@ TestMNModeCode::runSubTest(unsigned int i, double& res, double& expected, std::s
     check(i >= 0 && i < 1, "invalid index " << i);
 
     PlanckLikelihood like(true, true, false, true, false, false);
-    ModeCodeCosmologicalParams modelParams(0.02, 0.1, 0.7, 0.1, 0.05, 55, 1, true, false, true, 8e-7, 1.2, 500);
+    ModeCodeCosmologicalParams modelParams(0.02, 0.1, 0.7, 0.1, 0.05, 55, 1, true, false, true, true, 8e-7, 1.2, 500);
     like.setModelCosmoParams(&modelParams);
 
     std::string root = "slow_test_files/mn_modecode_test";

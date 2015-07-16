@@ -6,6 +6,7 @@
 
 #include <likelihood_function.hpp>
 #include <cmb.hpp>
+#include <random.hpp>
 
 /// An interface for calculating the likelihood function for Planck.
 class PlanckLikelihood : public Math::LikelihoodFunction
@@ -97,6 +98,8 @@ private:
 
     CosmologicalParams* modelParams_;
     std::vector<double> vModel_;
+
+    Math::UniformRealGenerator rand_;
 };
 
 #endif

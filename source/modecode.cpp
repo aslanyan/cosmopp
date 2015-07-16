@@ -53,10 +53,14 @@ int ModeCode::nVPar_ = 0;
 double* ModeCode::vParams_ = NULL;
 Math::TableFunction<double, double> ModeCode::scalarPs_;
 Math::TableFunction<double, double> ModeCode::tensorPs_;
+std::map<double, double> ModeCode::scalarLower_;
+std::map<double, double> ModeCode::scalarUpper_;
+std::map<double, double> ModeCode::tensorLower_;
+std::map<double, double> ModeCode::tensorUpper_;
 
 
 void
-ModeCode::initialize(int potentialChoice, double kPivot, double NPivot, bool instantReheating, bool physicalPriors, bool slowRollEnd, double kMin, double kMax, int nPoints)
+ModeCode::initialize(int potentialChoice, double kPivot, double NPivot, bool instantReheating, bool physicalPriors, bool slowRollEnd, bool eternalInflOK, double kMin, double kMax, int nPoints)
 {
     check(potentialChoice >= 1, "invalid potential choice " << potentialChoice);
     check(kPivot > 0, "invalid k_pivot = " << kPivot);
@@ -84,7 +88,7 @@ ModeCode::initialize(int potentialChoice, double kPivot, double NPivot, bool ins
     __modpkparams_MOD_n_pivot = NPivot;
     __modpkparams_MOD_slowroll_infl_end = slowRollEnd;
     __modpkparams_MOD_findiffdphi = 1.0e-16;
-    __modpkparams_MOD_eternal_infl_ok = true;
+    __modpkparams_MOD_eternal_infl_ok = eternalInflOK;
 
     vParams_ = &__modpkparams_MOD_vparams;
 #else
@@ -101,7 +105,7 @@ ModeCode::initialize(int potentialChoice, double kPivot, double NPivot, bool ins
     modpkparams_mp_n_pivot_ = NPivot;
     modpkparams_mp_slowroll_infl_end_ = slowRollEnd;
     modpkparams_mp_findiffdphi_ = 1.0e-16;
-    modpkparams_mp_eternal_infl_ok_ = true;
+    modpkparams_mp_eternal_infl_ok_ = eternalInflOK;
 
     vParams_ = &modpkparams_mp_vparams_;
 #endif
@@ -116,6 +120,10 @@ ModeCode::initialize(int potentialChoice, double kPivot, double NPivot, bool ins
         const double k = (i == nPoints ? kMax : kMin + i * deltaK);
         scalarPs_[k] = 0;
         tensorPs_[k] = 0;
+        scalarLower_[k] = 1e-10;
+        scalarUpper_[k] = 1e-8;
+        tensorLower_[k] = 0;
+        tensorUpper_[k] = 1e-8;
     }
 
     switch(potentialChoice)
@@ -155,6 +163,19 @@ ModeCode::getNPivot()
     return nPiv;
 }
 
+void
+ModeCode::addKValue(double k, double sMin, double sMax, double tMin, double tMax)
+{
+    check(k > 0, "");
+    check(scalarPs_.find(k) == scalarPs_.end(), "already exists");
+    scalarPs_[k] = 0;
+    tensorPs_[k] = 0;
+    scalarLower_[k] = sMin;
+    scalarUpper_[k] = sMax;
+    tensorLower_[k] = tMin;
+    tensorUpper_[k] = tMax;
+}
+
 bool
 ModeCode::calculate(const std::vector<double>& vParams)
 {
@@ -184,13 +205,22 @@ ModeCode::calculate(const std::vector<double>& vParams)
         double k = (*it).first;
         check((*it1).first == k, "");
         double s, t;
+        check(scalarLower_.find(k) != scalarLower_.end(), "");
+        check(scalarUpper_.find(k) != scalarUpper_.end(), "");
+        check(tensorLower_.find(k) != tensorLower_.end(), "");
+        check(tensorUpper_.find(k) != tensorUpper_.end(), "");
+        const double sMin = scalarLower_[k], sMax = scalarUpper_[k], tMin = tensorLower_[k], tMax = tensorUpper_[k];
 #ifdef MODECODE_GFORT
+        if(__camb_interface_MOD_pk_bad != 0)
+            return false;
         __access_modpk_MOD_evolve(&k, &s, &t);
-        if(__camb_interface_MOD_pk_bad != 0 || s <= 1e-10 || s >= 1e-8 || t <= 0 || t >= 1e-8)
+        if(__camb_interface_MOD_pk_bad != 0 || s <= sMin || s >= sMax || t <= tMin || t >= tMax)
             return false;
 #else
+        if(camb_interface_mp_pk_bad_ != 0)
+            return false;
         access_modpk_mp_evolve_(&k, &s, &t);
-        if(camb_interface_mp_pk_bad_ != 0 || s <= 1e-10 || s >= 1e-8 || t <= 0 || t >= 1e-8)
+        if(camb_interface_mp_pk_bad_ != 0 || s <= sMin || s >= sMax || t <= tMin || t >= tMax)
             return false;
 #endif
         (*it).second = s;
