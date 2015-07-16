@@ -30,9 +30,15 @@ set(CLASS_DIR "/Users/aslanyan/programs/class_public-2.4.2")
 set(MULTINEST_DIR "/Users/aslanyan/programs/MultiNest_v3.9_CMake/multinest")
 
 #planck
-set(PLANCK_DIR "/Users/aslanyan/programs/planck/COM_Code_Likelihood-v1.0_R1.10.ext/plc-1.0")
-set(PLANCK_DATA_DIR "/Users/aslanyan/programs/planck")
-set(PLANCK_COMPILE_FLAGS "-D LAPACK_CLIK")
+#for 2015
+set(PLANCK_DIR "/Users/aslanyan/programs/planck_2015/plc-2.0")
+set(PLANCK_DATA_DIR "/Users/aslanyan/programs/planck_2015/plc_2.0")
+set(PLANCK_2015 ON)
+#or for the old 2013
+#set(PLANCK_DIR "/Users/aslanyan/programs/planck/COM_Code_Likelihood-v1.0_R1.10.ext/plc-1.0")
+#set(PLANCK_DATA_DIR "/Users/aslanyan/programs/planck")
+#set(PLANCK_COMPILE_FLAGS "-D LAPACK_CLIK")
+#set(PLANCK_2015 OFF)
 
 #wmap9
 set(WMAP9_DIR "/Users/aslanyan/programs/wmap_likelihood_v5")

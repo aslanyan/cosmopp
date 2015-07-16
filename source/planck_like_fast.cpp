@@ -10,6 +10,10 @@
 #include <cubic_spline.hpp>
 #include <planck_like_fast.hpp>
 
+#ifdef COSMO_PLANCK_15
+
+#else
+
 namespace
 {
 
@@ -45,7 +49,7 @@ public:
         const bool success =
 #endif
         cosmoParams_->setAllParameters(x);
-
+        
         check(success, "");
 
         cmb_->initialize(*cosmoParams_, true, usePol_, true);
@@ -221,7 +225,6 @@ PlanckLikeFast::doCalculation(double* params, int nPar, bool exact)
         return res;
     }
 
-
     if(exact)
         layg_->evaluateExact(cosmoParamsVec_, &res_);
     else
@@ -308,3 +311,6 @@ PlanckLikeFast::logError(const char* fileNameBase)
     outError_ << std::setprecision(10);
     logError_ = true;
 }
+
+#endif
+
