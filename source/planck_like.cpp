@@ -589,6 +589,7 @@ PlanckLikelihood::highLike()
 
     if(szPrior_)
     {
+        check(!highLikeLite_, "");
         // using 1.6*A_sz + k_sz = 9.5 +/- 3.0
         const double sz = 1.6 * highExtra_[3] + highExtra_[8];
         const double szMean = 9.5;
