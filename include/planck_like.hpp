@@ -33,6 +33,8 @@ public:
     void setHighExtraParams(const std::vector<double>& params);
     void setBeamLeakageParams(const std::vector<double>& params);
 
+    void setSZPrior(bool szPrior = true);
+
     double lowLike();
     double highLike();
     double lensingLike();
@@ -76,6 +78,8 @@ private:
     std::vector<double> vModel_;
 
     std::vector<double> input_;
+
+    bool szPrior_;
 };
 
 #else

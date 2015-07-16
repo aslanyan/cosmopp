@@ -160,7 +160,7 @@ private:
 
 }
 
-PlanckLikelihood::PlanckLikelihood(bool lowT, bool lowP, bool highT, bool highP, bool highLikeLite, bool lensingT, bool lensingP, bool includeTensors, double kPerDecade, bool useOwnCmb) : spectraNames_(6), lensSpectraNames_(7), low_(NULL), high_(NULL), lens_(NULL), lowT_(lowT), lowP_(lowP), highT_(highT), highP_(highP), highLikeLite_(highLikeLite), lensingT_(lensingT), lensingP_(lensingP), cmb_(NULL), modelParams_(NULL), aPlanck_(1), aPol_(1)
+PlanckLikelihood::PlanckLikelihood(bool lowT, bool lowP, bool highT, bool highP, bool highLikeLite, bool lensingT, bool lensingP, bool includeTensors, double kPerDecade, bool useOwnCmb) : spectraNames_(6), lensSpectraNames_(7), low_(NULL), high_(NULL), lens_(NULL), lowT_(lowT), lowP_(lowP), highT_(highT), highP_(highP), highLikeLite_(highLikeLite), lensingT_(lensingT), lensingP_(lensingP), cmb_(NULL), modelParams_(NULL), aPlanck_(1), aPol_(1), szPrior_(false)
 {
     check(!lowP || lowT, "cannot include lowP without lowT");
     check(!highP || highT, "cannot include highP without highT");
@@ -446,6 +446,15 @@ PlanckLikelihood::setBeamLeakageParams(const std::vector<double>& params)
         beamExtra_[i] = params[i];
 }
 
+void
+PlanckLikelihood::setSZPrior(bool szPrior)
+{
+    check(high_, "high likelihood not initialized");
+    check(!highLikeLite_, "using the lite version of high likelihood");
+
+    szPrior_ = szPrior;
+}
+
 double
 PlanckLikelihood::lowLike()
 {
@@ -576,7 +585,16 @@ PlanckLikelihood::highLike()
         }
     }
     *it = aPlanck_;
-    const double l = clik_compute(high_, &(input_[0]), NULL);
+    double l = clik_compute(high_, &(input_[0]), NULL);
+
+    if(szPrior_)
+    {
+        // using 1.6*A_sz + k_sz = 9.5 +/- 3.0
+        const double sz = 1.6 * highExtra_[3] + highExtra_[8];
+        const double szMean = 9.5;
+        const double szSigma = 3;
+        l -= (sz - szMean) * (sz - szMean) / (2 * szSigma * szSigma);
+    }
 
     //timer.end();
     output_screen2("OK" << std::endl);
