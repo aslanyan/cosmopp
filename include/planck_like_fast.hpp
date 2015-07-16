@@ -9,6 +9,10 @@
 #include <learn_as_you_go.hpp>
 #include <random.hpp>
 
+#ifdef COSMO_PLANCK_15
+
+#else
+
 /// Fast Planck likelihood class, enhanced by LearnAsYouGo.
 class PlanckLikeFast : public Math::LikelihoodFunction
 {
@@ -79,9 +83,10 @@ private:
 
     std::ofstream outError_;
     bool logError_;
-
     Math::UniformRealGenerator rand_;
 };
+
+#endif
 
 #endif
 

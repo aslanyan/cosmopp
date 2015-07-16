@@ -29,9 +29,17 @@ TestMultinestPlanck::runSubTest(unsigned int i, double& res, double& expected, s
     
     using namespace Math;
 
-    PlanckLikelihood planckLike(true, true, false, true, false, false, 5);
     std::string root = "slow_test_files/multinest_planck_test";
+#ifdef COSMO_PLANCK_15
+    //PlanckLikelihood planckLike(true, true, true, false, true, true, false, false, 5);
+    //PlanckLikelihood planckLike(true, true, true, false, true, false, false, false, 5);
+    PlanckLikelihood planckLike(true, true, true, false, false, false, false, false, 5);
+    planckLike.setSZPrior(true);
+    MnScanner mn(22, planckLike, 300, root);
+#else
+    PlanckLikelihood planckLike(true, true, false, true, false, false, 5);
     MnScanner mn(20, planckLike, 300, root);
+#endif
 
     mn.setParam(0, "ombh2", 0.02, 0.025);
     mn.setParam(1, "omch2", 0.1, 0.2);
@@ -40,6 +48,25 @@ TestMultinestPlanck::runSubTest(unsigned int i, double& res, double& expected, s
     mn.setParam(4, "ns", 0.9, 1.1);
     mn.setParam(5, "As", 2.7, 3.5);
 
+#ifdef COSMO_PLANCK_15
+    mn.setParamGauss(6, "A_planck", 1.0, 0.0025);
+
+    mn.setParam(7, "A_cib_217", 0, 200);
+    mn.setParamFixed(8, "cib_index", -1.3);
+    mn.setParam(9, "xi_sz_cib", 0, 1);
+    mn.setParam(10, "A_sz", 0, 10);
+    mn.setParam(11, "ps_A_100_100", 0, 400);
+    mn.setParam(12, "ps_A_143_143", 0, 400);
+    mn.setParam(13, "ps_A_143_217", 0, 400);
+    mn.setParam(14, "ps_A_217_217", 0, 400);
+    mn.setParam(15, "k_sz", 0, 10);
+    mn.setParamGauss(16, "gal545_A_100", 7, 2);
+    mn.setParamGauss(17, "gal545_A_143", 9, 2);
+    mn.setParamGauss(18, "gal545_A_143_217", 21, 8.5);
+    mn.setParamGauss(19, "gal545_A_217", 80, 20);
+    mn.setParamGauss(20, "calib_100T", 0.999, 0.001);
+    mn.setParamGauss(21, "calib_217T", 0.995, 0.002);
+#else
     mn.setParam(6, "A_ps_100", 0, 360);
     mn.setParam(7, "A_ps_143", 0, 270);
     mn.setParam(8, "A_ps_217", 0, 450);
@@ -54,6 +81,7 @@ TestMultinestPlanck::runSubTest(unsigned int i, double& res, double& expected, s
     mn.setParam(17, "xi_sz_cib", 0, 1);
     mn.setParam(18, "A_ksz", 0, 10);
     mn.setParam(19, "Bm_1_1", -20, 20);
+#endif
 
     const double pivot = 0.05;
     LambdaCDMParams par(0.022, 0.12, 0.7, 0.1, 1.0, std::exp(3.0) / 1e10, pivot);
@@ -76,13 +104,24 @@ TestMultinestPlanck::runSubTest(unsigned int i, double& res, double& expected, s
 
     const int nPoints = 1000;
 
-    //const double expectedMedian[6] = {0.02217, 0.1186, 0.679, 0.089, 0.9635, 3.085};
-    //const double expectedSigma[6] = {0.00033, 0.0031, 0.015, 0.032, 0.0094, 0.057};
+#ifdef COSMO_PLANCK_15
+    //lowP + TT + lensing
+    const double expectedMedian[6] = {0.02226, 0.1186, 0.6781, 0.066, 0.9677, 3.062};
+    const double expectedSigma[6] = {0.00023, 0.0020, 0.0092, 0.016, 0.0060, 0.029};
+
+    //lowP + TT
+    //const double expectedMedian[6] = {0.02222, 0.1197, 0.6731, 0.078, 0.9655, 3.089};
+    //const double expectedSigma[6] = {0.00023, 0.0022, 0.0096, 0.019, 0.0062, 0.036};
+    //const int nPar = 7;
+    const int nPar = 21;
+#else
     const double expectedMedian[6] = {0.02205, 0.1199, 0.673, 0.089, 0.9603, 3.089};
     const double expectedSigma[6] = {0.00028, 0.0027, 0.012, 0.013, 0.0073, 0.025};
+    const int nPar = 20;
+#endif
 
     std::ofstream outParamLimits("slow_test_files/multinest_planck_param_limits.txt");
-    for(int i = 0; i < 20; ++i)
+    for(int i = 0; i < nPar; ++i)
     {
         const std::string& paramName = mn.getParamName(i);
         std::stringstream fileName;
