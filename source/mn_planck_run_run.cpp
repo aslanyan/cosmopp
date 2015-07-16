@@ -56,14 +56,14 @@ int main(int argc, char *argv[])
 {
     try {
         bool ucmhLim = false;
-        bool useFast = false;
+        //bool useFast = false;
 
         for(int i = 1; i < argc; ++i)
         {
             if(std::string(argv[i]) == "ucmh")
                 ucmhLim = true;
-            if(std::string(argv[i]) == "fast")
-                useFast = true;
+            //if(std::string(argv[i]) == "fast")
+                //useFast = true;
         }
 
         using namespace Math;
@@ -84,7 +84,14 @@ int main(int argc, char *argv[])
             output_screen("No UCMH limits! To add these limits specify \"ucmh\" as an argument." << std::endl);
         }
 
+        std::stringstream root;
+        root << "slow_test_files/mn_planck_run_run";
+        //if(useFast)
+            //root << "_fast";
+
         std::auto_ptr<Math::LikelihoodFunction> planckLike;
+
+        /*
         if(useFast)
         {
             output_screen("Using the fast version of Planck likelihood!" << std::endl);
@@ -94,17 +101,17 @@ int main(int argc, char *argv[])
             planckLike.reset(like);
         }
         else
+        */
         {
-            output_screen("Using the regular version of Planck likelihood! To use the fast version specify \"fast\" as an argument." << std::endl);
-            PlanckLikelihood *like = new PlanckLikelihood(true, true, false, true, false, false, 5);
+            //output_screen("Using the regular version of Planck likelihood! To use the fast version specify \"fast\" as an argument." << std::endl);
+#ifdef COSMO_PLANCK_15
+            PlanckLikelihood *like = new PlanckLikelihood(true, true, true, true, true, false, false, false, 100, true);
+#else
+            PlanckLikelihood *like = new PlanckLikelihood(true, true, false, true, false, false, 100);
+#endif
             like->setModelCosmoParams(&par);
             planckLike.reset(like);
         }
-
-        std::stringstream root;
-        root << "slow_test_files/mn_planck_run_run";
-        if(useFast)
-            root << "_fast";
 
         MnScanner mn(22, *planckLike, 300, root.str());
 
@@ -117,6 +124,9 @@ int main(int argc, char *argv[])
         mn.setParam(6, "nrun", -1.0, 1.0);
         mn.setParam(7, "nrunrun", 0.0, 1.0);
 
+#ifdef COSMO_PLANCK_15
+        mn.setParamGauss(8, "A_planck", 1.0, 0.0025);
+#else
         mn.setParam(8, "A_ps_100", 0, 360);
         mn.setParam(9, "A_ps_143", 0, 270);
         mn.setParam(10, "A_ps_217", 0, 450);
@@ -131,6 +141,7 @@ int main(int argc, char *argv[])
         mn.setParam(19, "xi_sz_cib", 0, 1);
         mn.setParam(20, "A_ksz", 0, 10);
         mn.setParam(21, "Bm_1_1", -20, 20);
+#endif
 
         Timer timer("MN PLANCK RUN_RUN");
         timer.start();
