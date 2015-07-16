@@ -89,8 +89,7 @@ int main(int argc, char *argv[])
         //if(useFast)
             //root << "_fast";
 
-        std::auto_ptr<Math::LikelihoodFunction> planckLike;
-
+        std::auto_ptr<PlanckLikelihood> planckLike;
         /*
         if(useFast)
         {
@@ -102,18 +101,21 @@ int main(int argc, char *argv[])
         }
         else
         */
-        {
+        //{
             //output_screen("Using the regular version of Planck likelihood! To use the fast version specify \"fast\" as an argument." << std::endl);
 #ifdef COSMO_PLANCK_15
             PlanckLikelihood *like = new PlanckLikelihood(true, true, true, true, true, false, false, false, 100, true);
-#else
-            PlanckLikelihood *like = new PlanckLikelihood(true, true, false, true, false, false, 100);
-#endif
             like->setModelCosmoParams(&par);
             planckLike.reset(like);
-        }
+            MnScanner mn(9, *planckLike, 300, root.str());
+#else
+            PlanckLikelihood *like = new PlanckLikelihood(true, true, false, true, false, false, 100);
+            like->setModelCosmoParams(&par);
+            planckLike.reset(like);
+            MnScanner mn(22, *planckLike, 300, root.str());
+#endif
+        //}
 
-        MnScanner mn(22, *planckLike, 300, root.str());
 
         mn.setParam(0, "ombh2", 0.02, 0.025);
         mn.setParam(1, "omch2", 0.1, 0.2);
