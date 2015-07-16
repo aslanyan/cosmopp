@@ -16,6 +16,9 @@ public:
     /// Constructor.
     CosmologicalParams() : temp_(2.726) {}
 
+    /// Destructor.
+    virtual ~CosmologicalParams() {}
+
     /// Omega baryon times h^2 (unitless).
     virtual double getOmBH2() const = 0;
 
@@ -88,7 +91,8 @@ public:
     virtual void getAllParameters(std::vector<double>& v) const { v.clear(); }
 
     /// Set all of the relevant parameters.
-    virtual void setAllParameters(const std::vector<double>& v) = 0;
+    /// \return true if successful, false otherwise.
+    virtual bool setAllParameters(const std::vector<double>& v) = 0;
 
     /// The Hubble constant without units (the reduced Planck mass is assumed to be 1, together with c and hbar).
     virtual double getHubbleUnitless() const
@@ -142,7 +146,7 @@ class LambdaCDMParams : public CosmologicalParams
 
 public:
     LambdaCDMParams(double omBH2, double omCH2, double h, double tau, double ns, double as, double pivot, double run = 0.0) : CosmologicalParams(), omBH2_(omBH2), omCH2_(omCH2), h_(h), tau_(tau), ps_(as, ns, pivot, run) {}
-    ~LambdaCDMParams() {}
+    virtual ~LambdaCDMParams() {}
 
     virtual double getOmBH2() const { return omBH2_; }
     virtual double getOmCH2() const { return omCH2_; }
@@ -178,7 +182,7 @@ public:
         v[5] = std::log(getAs() * 1e10);
     }
 
-    virtual void setAllParameters(const std::vector<double>& v)
+    virtual bool setAllParameters(const std::vector<double>& v)
     {
         check(v.size() >= 6, "");
         omBH2_ = v[0];
@@ -187,9 +191,11 @@ public:
         tau_ = v[3];
         ps_.setNs(v[4]);
         ps_.setAs(std::exp(v[5]) / 1e10);
+
+        return true;
     }
 
-private:
+protected:
     double omBH2_;
     double omCH2_;
     double h_;
@@ -221,7 +227,7 @@ public:
         v.push_back(getR());
     }
 
-    virtual void setAllParameters(const std::vector<double>& v)
+    virtual bool setAllParameters(const std::vector<double>& v)
     {
         check(v.size() >= 7, "");
 
@@ -230,6 +236,8 @@ public:
         nt_ = 0.0;
         const double piv = psT_->getPivot();
         psT_->set(powerSpectrum(), r_, nt_, piv);
+
+        return true;
     }
 
 private:
@@ -268,7 +276,7 @@ public:
 
     virtual std::string name() const { return "LCDMWithDegenerateNeutrinos"; }
     virtual void getAllParameters(std::vector<double>& v) const { check(false, "not implemented"); }
-    virtual void setAllParameters(const std::vector<double>& v) { check(false, "not implemented"); }
+    virtual bool setAllParameters(const std::vector<double>& v) { check(false, "not implemented"); return false; }
 
 private:
     double nEff_;
@@ -314,7 +322,7 @@ public:
 
     virtual std::string name() const { return "LCDMWithTensorAndDegenerateNeutrinos"; }
     virtual void getAllParameters(std::vector<double>& v) const { check(false, "not implemented"); }
-    virtual void setAllParameters(const std::vector<double>& v) { check(false, "not implemented"); }
+    virtual bool setAllParameters(const std::vector<double>& v) { check(false, "not implemented"); return false; }
 
 private:
     double nEff_;
@@ -341,7 +349,7 @@ public:
 
     virtual std::string name() const { return "LCDMWithCutoffTensorDegenerateNeutrinos"; }
     virtual void getAllParameters(std::vector<double>& v) const { check(false, "not implemented"); }
-    virtual void setAllParameters(const std::vector<double>& v) { check(false, "not implemented"); }
+    virtual bool setAllParameters(const std::vector<double>& v) { check(false, "not implemented"); return false; }
 
 private:
     CutoffPowerSpectrum psC_;
@@ -383,7 +391,7 @@ public:
 
     virtual std::string name() const { return "LinearSpline"; }
     virtual void getAllParameters(std::vector<double>& v) const { check(false, "not implemented"); }
-    virtual void setAllParameters(const std::vector<double>& v) { check(false, "not implemented"); }
+    virtual bool setAllParameters(const std::vector<double>& v) { check(false, "not implemented"); return false; }
 
 private:
     double omBH2_;
@@ -430,7 +438,7 @@ public:
 
     virtual std::string name() const { return "CubicSpline"; }
     virtual void getAllParameters(std::vector<double>& v) const { check(false, "not implemented"); }
-    virtual void setAllParameters(const std::vector<double>& v) { check(false, "not implemented"); }
+    virtual bool setAllParameters(const std::vector<double>& v) { check(false, "not implemented"); return false; }
 
 private:
     double omBH2_;

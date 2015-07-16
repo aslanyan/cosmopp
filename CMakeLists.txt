@@ -168,7 +168,7 @@ if(WMAP9_DIR)
 	elseif(Fortran_COMPILER_NAME MATCHES "ifort.*")
 		add_definitions(-DWMAP9_IFORT)
 	else(Fortran_COMPILER_NAME MATCHES "gfortran.*")
-		message(FATAL_ERROR "WMAP9_COMPILER can only be gfortran or ifort, others not supported at the time")
+		message(FATAL_ERROR "fortran can only be gfortran or ifort, others not supported at the time")
 	endif(Fortran_COMPILER_NAME MATCHES "gfortran.*")
 
 	find_library(WMAP9LIB wmap9 ${WMAP9_DIR})
