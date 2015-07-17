@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
         //{
             //output_screen("Using the regular version of Planck likelihood! To use the fast version specify \"fast\" as an argument." << std::endl);
 #ifdef COSMO_PLANCK_15
-            PlanckLikelihood *like = new PlanckLikelihood(true, true, true, true, true, false, false, false, 100, true);
+            PlanckLikelihood *like = new PlanckLikelihood(true, true, true, false, true, false, false, false, 100, true);
             like->setModelCosmoParams(&par);
             planckLike.reset(like);
             MnScanner mn(9, *planckLike, 300, root.str());
