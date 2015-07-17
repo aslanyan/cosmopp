@@ -132,6 +132,12 @@ protected:
     double kMax_;
 
     double* dum1_[1000], *dum2_[1000];
+
+    // previous values of params
+    double prevH_, prevT_, prevOmB_, prevOmC_, prevOmK_, prevOmG_, prevOmNeutrino_, prevTau_, prevYHe_, prevZMaxPk_;
+    int prevNCDM_;
+    std::vector<double> prevTCDM_, prevMCDM_;
+    bool prevWantMatter_, prevWantT_, prevWantP_, prevWantLens_;
 };
 
 #endif
