@@ -33,6 +33,7 @@ TestCMB::runSubTest(unsigned int i, double& res, double& expected, std::string& 
     const int nMassive = 1;
     const double sumMNu = 0.0;
 
+    LambdaCDMParams paramsLCDM1(omBH2, omCH2, h, tau, ns + 0.02, as, pivot);
     LambdaCDMParams paramsLCDM(omBH2, omCH2, h, tau, ns, as, pivot);
     LCDMWithTensorParams paramsLCDMTens(omBH2, omCH2, h, tau, ns, as, pivot, r, nt, pivot); 
 
@@ -45,6 +46,7 @@ TestCMB::runSubTest(unsigned int i, double& res, double& expected, std::string& 
     {
     case 0:
         cmb.preInitialize(lMax, false, true, false);
+        cmb.initialize(paramsLCDM1, true, false, true, false);
         cmb.initialize(paramsLCDM, true, false, true, false);
         cmb.getLensedCl(&clTT);
 
