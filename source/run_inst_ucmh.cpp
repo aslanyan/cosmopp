@@ -88,7 +88,18 @@ int main(int argc, char *argv[])
         if(argc > 1 && std::string(argv[1]) == std::string("ucmh"))
             ucmhLim = true;
 
+        std::string root = "slow_test_files/mn_ucmh";
+
+#ifdef COSMO_PLANCK_15
+        PlanckLikelihood like(true, true, true, true, true, false, false, true, 500);
+        MnScanner mn(10, like, 500, root);
+        const int nPar = 10;
+#else
         PlanckLikelihood like(true, true, false, true, false, true, 500);
+        MnScanner mn(23, like, 500, root);
+        const int nPar = 23;
+#endif
+
         ModeCodeParamsInst modelParams(0.02, 0.1, 0.7, 0.1, 0.002, 55, 12, true, false, false, 8e-7, 1.2, 500);
 
         if(ucmhLim)
@@ -106,9 +117,6 @@ int main(int argc, char *argv[])
 
         like.setModelCosmoParams(&modelParams);
 
-        std::string root = "slow_test_files/mn_ucmh";
-        MnScanner mn(23, like, 500, root);
-
         mn.setParam(0, "ombh2", 0.02, 0.025);
         mn.setParam(1, "omch2", 0.1, 0.2);
         mn.setParam(2, "h", 0.55, 0.85);
@@ -120,6 +128,9 @@ int main(int argc, char *argv[])
         mn.setParam(7, "v_4", -0.1, 0.1);
         mn.setParam(8, "v_5", -12, -9);
 
+#ifdef COSMO_PLANCK_15
+        mn.setParamGauss(10, "A_planck", 1.0, 0.0025);
+#else
         mn.setParam(9, "A_ps_100", 0, 360);
         mn.setParam(10, "A_ps_143", 0, 270);
         mn.setParam(11, "A_ps_217", 0, 450);
@@ -134,6 +145,7 @@ int main(int argc, char *argv[])
         mn.setParam(20, "xi_sz_cib", 0, 1);
         mn.setParam(21, "A_ksz", 0, 10);
         mn.setParam(22, "Bm_1_1", -20, 20);
+#endif
 
         mn.run(true);
         
@@ -146,7 +158,7 @@ int main(int argc, char *argv[])
         chain.getRange(container, 1.0, 0.0);
 
         std::ofstream outParamLimits("slow_test_files/mn_ucmh_param_limits.txt");
-        for(int i = 0; i < 23; ++i)
+        for(int i = 0; i < nPar; ++i)
         {
             std::string paramName = mn.getParamName(i);
 
