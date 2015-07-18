@@ -78,11 +78,6 @@ TestPolyChordPlanck::runSubTest(unsigned int i, double& res, double& expected, s
 
     MarkovChain chain("slow_test_files/polychord_planck_test.txt");
 
-    //const double expectedMedian[6] = {0.02217, 0.1186, 0.679, 0.089, 0.9635, 3.085};
-    //const double expectedSigma[6] = {0.00033, 0.0031, 0.015, 0.032, 0.0094, 0.057};
-    const double expectedMedian[6] = {0.02205, 0.1199, 0.673, 0.089, 0.9603, 3.089};
-    const double expectedSigma[6] = {0.00028, 0.0027, 0.012, 0.013, 0.0073, 0.025};
-
     std::ofstream outParamLimits("slow_test_files/polychord_planck_param_limits.txt");
 #ifdef COSMO_PLANCK_15
     const double expectedMedian[6] = {0.02222, 0.1197, 0.6731, 0.078, 0.9655, 3.089};
