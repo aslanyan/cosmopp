@@ -30,13 +30,8 @@ TestPolyChordPlanck::runSubTest(unsigned int i, double& res, double& expected, s
 
     std::string root = "slow_test_files/polychord_planck_test";
 #ifdef COSMO_PLANCK_15
-    PlanckLikelihood planckLike(true, false, true, false, true, false, false, false, 5);
-    PolyChord pc(7, planckLike, 10, root, 1);
-    const int nPar = 7;
-#else
-    PlanckLikelihood planckLike(true, true, false, true, false, false);
-    PolyChord pc(20, planckLike, 300, root);
-    const int nPar = 20;
+    PlanckLikelihood planckLike(true, true, true, false, true, false, false, false, 5);
+    PolyChord pc(7, planckLike, 300, root);
 #endif
 
     pc.setParam(0, "ombh2", 0.02, 0.025, 1);
@@ -65,7 +60,7 @@ TestPolyChordPlanck::runSubTest(unsigned int i, double& res, double& expected, s
     pc.setParam(19, "Bm_1_1", -20, 20);
 #endif
 
-    const std::vector<double> fracs{0.6, 0.35, 0.05};
+    const std::vector<double> fracs{0.9, 0.09, 0.01};
     pc.setParameterHierarchy(fracs);
 
     const double pivot = 0.05;
@@ -89,6 +84,15 @@ TestPolyChordPlanck::runSubTest(unsigned int i, double& res, double& expected, s
     const double expectedSigma[6] = {0.00028, 0.0027, 0.012, 0.013, 0.0073, 0.025};
 
     std::ofstream outParamLimits("slow_test_files/polychord_planck_param_limits.txt");
+#ifdef COSMO_PLANCK_15
+    const double expectedMedian[6] = {0.02222, 0.1197, 0.6731, 0.078, 0.9655, 3.089};
+    const double expectedSigma[6] = {0.00023, 0.0022, 0.0096, 0.019, 0.0062, 0.036};
+    const int nPar = 7;
+#else
+    const double expectedMedian[6] = {0.02205, 0.1199, 0.673, 0.089, 0.9603, 3.089};
+    const double expectedSigma[6] = {0.00028, 0.0027, 0.012, 0.013, 0.0073, 0.025};
+    const int nPar = 20;
+#endif
     for(int i = 0; i < nPar; ++i)
     {
         const std::string& paramName = pc.getParamName(i);
