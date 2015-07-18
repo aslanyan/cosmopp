@@ -145,8 +145,16 @@ int main(int argc, char *argv[])
         pc.setParam(21, "Bm_1_1", -20, 20, 3);
 #endif
 
-        const std::vector<double> fracs{0.80, 0.18, 0.02};
-        pc.setParameterHierarchy(fracs);
+        if(ucmhLim)
+        {
+            const std::vector<double> fracs{0.4, 0.5, 0.1};
+            pc.setParameterHierarchy(fracs);
+        }
+        else
+        {
+            const std::vector<double> fracs{0.80, 0.18, 0.02};
+            pc.setParameterHierarchy(fracs);
+        }
 
         Timer timer("MN PLANCK RUN_RUN");
         timer.start();
