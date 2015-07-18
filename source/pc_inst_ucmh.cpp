@@ -6,7 +6,7 @@
 
 #include <macros.hpp>
 #include <planck_like.hpp>
-#include <mn_scanner.hpp>
+#include <polychord.hpp>
 #include <markov_chain.hpp>
 #include <numerics.hpp>
 #include <modecode.hpp>
@@ -88,15 +88,15 @@ int main(int argc, char *argv[])
         if(argc > 1 && std::string(argv[1]) == std::string("ucmh"))
             ucmhLim = true;
 
-        std::string root = "slow_test_files/mn_ucmh";
+        std::string root = "slow_test_files/pc_ucmh";
 
 #ifdef COSMO_PLANCK_15
         PlanckLikelihood like(true, true, true, false, true, false, false, true, 500);
-        MnScanner mn(10, like, 500, root);
+        PolyChord pc(10, like, 500, root, 4);
         const int nPar = 10;
 #else
         PlanckLikelihood like(true, true, false, true, false, true, 500);
-        MnScanner mn(23, like, 500, root);
+        PolyChord pc(23, like, 500, root, 4);
         const int nPar = 23;
 #endif
 
@@ -117,53 +117,56 @@ int main(int argc, char *argv[])
 
         like.setModelCosmoParams(&modelParams);
 
-        mn.setParam(0, "ombh2", 0.02, 0.025);
-        mn.setParam(1, "omch2", 0.1, 0.2);
-        mn.setParam(2, "h", 0.55, 0.85);
-        mn.setParam(3, "tau", 0.02, 0.20);
-        //mn.setParam(4, "v_1", -10, -1);
-        mn.setParam(4, "v_1", 0, 0.1);
-        mn.setParam(5, "v_2", -0.1, 0.1);
-        mn.setParam(6, "v_3", -0.1, 0.1);
-        mn.setParam(7, "v_4", -0.1, 0.1);
-        mn.setParam(8, "v_5", -12, -9);
+        pc.setParam(0, "ombh2", 0.02, 0.025, 1);
+        pc.setParam(1, "omch2", 0.1, 0.2, 1);
+        pc.setParam(2, "h", 0.55, 0.85, 1);
+        pc.setParam(3, "tau", 0.02, 0.20, 1);
+        //pc.setParam(4, "v_1", -10, -1, 2);
+        pc.setParam(4, "v_1", 0, 0.1, 2);
+        pc.setParam(5, "v_2", -0.1, 0.1, 2);
+        pc.setParam(6, "v_3", -0.1, 0.1, 2);
+        pc.setParam(7, "v_4", -0.1, 0.1, 2);
+        pc.setParam(8, "v_5", -12, -9, 2);
 
 #ifdef COSMO_PLANCK_15
-        mn.setParamGauss(9, "A_planck", 1.0, 0.0025);
+        pc.setParamGauss(9, "A_planck", 1.0, 0.0025, 3);
 #else
-        mn.setParam(9, "A_ps_100", 0, 360);
-        mn.setParam(10, "A_ps_143", 0, 270);
-        mn.setParam(11, "A_ps_217", 0, 450);
-        mn.setParam(12, "A_cib_143", 0, 20);
-        mn.setParam(13, "A_cib_217", 0, 80);
-        mn.setParam(14, "A_sz", 0, 10);
-        mn.setParam(15, "r_ps", 0.0, 1.0);
-        mn.setParam(16, "r_cib", 0.0, 1.0);
-        mn.setParam(17, "n_Dl_cib", -2, 2);
-        mn.setParam(18, "cal_100", 0.98, 1.02);
-        mn.setParam(19, "cal_127", 0.95, 1.05);
-        mn.setParam(20, "xi_sz_cib", 0, 1);
-        mn.setParam(21, "A_ksz", 0, 10);
-        mn.setParam(22, "Bm_1_1", -20, 20);
+        pc.setParam(9, "A_ps_100", 0, 360, 3);
+        pc.setParam(10, "A_ps_143", 0, 270, 3);
+        pc.setParam(11, "A_ps_217", 0, 450, 3);
+        pc.setParam(12, "A_cib_143", 0, 20, 3);
+        pc.setParam(13, "A_cib_217", 0, 80, 3);
+        pc.setParam(14, "A_sz", 0, 10, 3);
+        pc.setParam(15, "r_ps", 0.0, 1.0, 3);
+        pc.setParam(16, "r_cib", 0.0, 1.0, 3);
+        pc.setParam(17, "n_Dl_cib", -2, 2, 3);
+        pc.setParam(18, "cal_100", 0.98, 1.02, 3);
+        pc.setParam(19, "cal_127", 0.95, 1.05, 3);
+        pc.setParam(20, "xi_sz_cib", 0, 1, 3);
+        pc.setParam(21, "A_ksz", 0, 10, 3);
+        pc.setParam(22, "Bm_1_1", -20, 20, 3);
 #endif
 
-        mn.run(true);
+        const std::vector<double> fracs{0.05, 0.9, 0.05};
+        pc.setParameterHierarchy(fracs);
+
+        pc.run(true);
         
         if(!CosmoMPI::create().isMaster())
             return 0;
 
-        MarkovChain chain("slow_test_files/mn_ucmh.txt");
+        MarkovChain chain("slow_test_files/pc_ucmh.txt");
 
         std::vector<MarkovChain::Element*> container;
         chain.getRange(container, 1.0, 0.0);
 
-        std::ofstream outParamLimits("slow_test_files/mn_ucmh_param_limits.txt");
+        std::ofstream outParamLimits("slow_test_files/pc_ucmh_param_limits.txt");
         for(int i = 0; i < nPar; ++i)
         {
-            std::string paramName = mn.getParamName(i);
+            std::string paramName = pc.getParamName(i);
 
             std::stringstream fileName;
-            fileName << "slow_test_files/mn_ucmh_" << paramName << ".txt";
+            fileName << "slow_test_files/pc_ucmh_" << paramName << ".txt";
             std::auto_ptr<Posterior1D> p(chain.posterior(i));
             p->writeIntoFile(fileName.str().c_str());
 
