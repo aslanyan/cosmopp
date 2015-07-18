@@ -200,8 +200,8 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
         }
     }
 
-    Timer t1("BACKGROUND");
-    t1.start();
+    //Timer t1("BACKGROUND");
+    //t1.start();
 
     if(initBr)
     {
@@ -326,7 +326,7 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
         //pr_->k_max_tau0_over_l_max = kMax_ * br_->conformal_age / lMax_;
     }
 
-    t1.end();
+    //t1.end();
 
     bool initThermo = false;
     if(!init_)
@@ -336,8 +336,8 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
     else if(prevTau_ != params.getTau() || prevYHe_ != params.getYHe())
         initThermo = true;
 
-    Timer t2("THERMO");
-    t2.start();
+    //Timer t2("THERMO");
+    //t2.start();
 
     if(initThermo)
     {
@@ -395,7 +395,7 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
         }
     }
 
-    t2.end();
+    //t2.end();
 
     bool initPt = false;
     if(!init_)
@@ -407,8 +407,8 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
     else if(prevZMaxPk_ != zMaxPk)
         initPt = true;
 
-    Timer t3("PERTURBATIONS");
-    t3.start();
+    //Timer t3("PERTURBATIONS");
+    //t3.start();
 
     if(initPt)
     {
@@ -544,10 +544,10 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
         }
     }
 
-    t3.end();
+    //t3.end();
 
-    Timer t4("PRIMORDIAL");
-    t4.start();
+    //Timer t4("PRIMORDIAL");
+    //t4.start();
 
     if(init_ && primordial_free(pm_) == _FAILURE_)
     {
@@ -620,7 +620,7 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
         throw exc;
     }
 
-    t4.end();
+    //t4.end();
 
     /*
     if(primordialInitialize_)
@@ -667,8 +667,8 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
     }
     */
 
-    Timer t5("NONLINEAR");
-    t5.start();
+    //Timer t5("NONLINEAR");
+    //t5.start();
 
     if(init_ && nonlinear_free(nl_) == _FAILURE_)
     {
@@ -686,7 +686,7 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
         throw exc;
     }
 
-    t5.end();
+    //t5.end();
 
     bool initTr = false;
     if(!init_)
@@ -696,8 +696,8 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
     else if(nl_->method != nl_none) // TBD: this condition might be too strict
         initTr = true;
 
-    Timer t6("TRANSFER");
-    t6.start();
+    //Timer t6("TRANSFER");
+    //t6.start();
     if(initTr)
     {
         if(init_ && transfer_free(tr_) == _FAILURE_)
@@ -716,11 +716,11 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
             throw exc;
         }
     }
-    t6.end();
+    //t6.end();
 
 
-    Timer t7("SPECTRA");
-    t7.start();
+    //Timer t7("SPECTRA");
+    //t7.start();
 
     if(init_ && spectra_free(sp_) == _FAILURE_)
     {
@@ -745,10 +745,10 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
         exc.set(exceptionStr.str());
         throw exc;
     }
-    t7.end();
+    //t7.end();
 
-    Timer t8("LENSING");
-    t8.start();
+    //Timer t8("LENSING");
+    //t8.start();
 
     lensing_ = wantLensing;
 
@@ -778,7 +778,7 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
         }
     }
 
-    t8.end();
+    //t8.end();
 
     init_ = true;
 }
