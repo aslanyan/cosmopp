@@ -682,7 +682,7 @@ PlanckLikelihood::calculate(double* params, int nPar)
     if(success)
         setCosmoParams(*modelParams_);
 
-    aPlanck_ = params[nModel];
+    setAPlanck(params[nModel]);
 
     if(highT_)
     {
@@ -692,7 +692,7 @@ PlanckLikelihood::calculate(double* params, int nPar)
     }
 
     if(highP_)
-        aPol_ = params[nModel + 33];
+        setAPol(params[nModel + 33]);
 
     //timer.end();
     if(success)
