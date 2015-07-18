@@ -15,15 +15,16 @@
 
 bool PolyChord::running_ = false;
 
-PolyChord::PolyChord(int nPar, Math::LikelihoodFunction& like, int nLive, std::string fileRoot, int nRepeats) : n_(nPar), like_(like), nLive_(nLive), paramsStarting_(nPar, 0), paramNames_(nPar), paramsBest_(nPar, 0), paramsMean_(nPar, 0), paramsStd_(nPar, 0), paramsCurrent_(nPar, 0), priorTypes_(nPar, 1), priorMins_(nPar, 0), priorMaxs_(nPar, 1), paramsFixed_(nPar, 0), isFixed_(nPar, false), fileRoot_(fileRoot), nRepeats_(nRepeats), nParams_(1, nPar), fracs_(1, 1.0)
+PolyChord::PolyChord(int nPar, Math::LikelihoodFunction& like, int nLive, std::string fileRoot, int nRepeats) : n_(nPar), like_(like), nLive_(nLive), paramsStarting_(nPar, 0), paramNames_(nPar), paramsBest_(nPar, 0), paramsMean_(nPar, 0), paramsStd_(nPar, 0), paramsCurrent_(nPar, 0), priorTypes_(nPar, 1), priorMins_(nPar, 0), priorMaxs_(nPar, 1), speeds_(nPar, 1), paramsFixed_(nPar, 0), isFixed_(nPar, false), fileRoot_(fileRoot), nRepeats_(nRepeats), fracs_(1, 1.0)
 {
 }
 
 void
-PolyChord::setParam(int i, const std::string& name, double min, double max)
+PolyChord::setParam(int i, const std::string& name, double min, double max, int speed)
 {
     check(i >= 0 && i < n_, "invalid index " << i);
     check(max >= min, "");
+    check(speed >= 1 && speed < 100, "invalid speed");
 
     if(min == max)
     {
@@ -35,6 +36,7 @@ PolyChord::setParam(int i, const std::string& name, double min, double max)
     priorTypes_[i] = 1;
     priorMins_[i] = min;
     priorMaxs_[i] = max;
+    speeds_[i] = speed;
     isFixed_[i] = false;
 }
 
@@ -48,10 +50,11 @@ PolyChord::setParamFixed(int i, const std::string& name, double val)
 }
 
 void
-PolyChord::setParamGauss(int i, const std::string& name, double mean, double sigma)
+PolyChord::setParamGauss(int i, const std::string& name, double mean, double sigma, int speed)
 {
     check(i >= 0 && i < n_, "invalid index " << i);
     check(sigma >= 0, "");
+    check(speed >= 1 && speed < 100, "invalid speed");
 
     if(sigma == 0)
     {
@@ -60,9 +63,10 @@ PolyChord::setParamGauss(int i, const std::string& name, double mean, double sig
     }
 
     paramNames_[i] = name;
-    priorTypes_[i] = 2;
+    priorTypes_[i] = 3;
     priorMins_[i] = mean;
     priorMaxs_[i] = sigma;
+    speeds_[i] = speed;
     isFixed_[i] = false;
 }
 
@@ -103,25 +107,19 @@ PolyChord::logLike(double *theta)
 }
 
 void
-PolyChord::setParameterHierarchy(const std::vector<int>& nParams, const std::vector<double>& fracs)
+PolyChord::setParameterHierarchy(const std::vector<double>& fracs)
 {
-    check(nParams.size() == fracs.size(), "");
-
 #ifdef CHECKS_ON
-    int nTotal = 0;
     double fracTotal = 0;
 
-    for(int i = 0; i < nParams.size(); ++i)
+    for(int i = 0; i < fracs.size(); ++i)
     {
-        nTotal += nParams[i];
         fracTotal += fracs[i];
     }
 #endif
 
-    check(nTotal == n_, "");
     check(Math::areEqual(fracTotal, 1.0, 1e-5), "");
 
-    nParams_ = nParams;
     fracs_ = fracs;
 }
 
@@ -184,7 +182,11 @@ PolyChord::run(bool res)
 
     std::vector<int> priorTypes;
     std::vector<double> priorMins, priorMaxs;
-    
+    std::vector<int> speeds;
+
+    std::vector<int> gradeDims;
+    int prevDims = 0;
+
     for(int i = 0; i < n_; ++i)
     {
         if(!isFixed_[i])
@@ -192,17 +194,29 @@ PolyChord::run(bool res)
             priorTypes.push_back(priorTypes_[i]);
             priorMins.push_back(priorMins_[i]);
             priorMaxs.push_back(priorMaxs_[i]);
+            speeds.push_back(speeds_[i]);
+            if(speeds.size() > 1 || speeds.back() == 1, "the first parameter should have speed 1");
+            if(speeds.size() > 1)
+            {
+                check(speeds.back() == speeds[speeds.size() - 2] || speeds.back() == speeds[speeds.size() - 2] + 1, "each parameter should either have the same speed as before or 1 larger");
+                if(speeds.back() != speeds[speeds.size() - 2])
+                {
+                    gradeDims.push_back(speeds.size() - 1 - prevDims);
+                    prevDims += gradeDims.back();
+                }
+            }
         }
     }
+    gradeDims.push_back(speeds.size() - prevDims);
+    int nGrades = gradeDims.size();
+    check(fracs_.size() == nGrades, "");
 
     CosmoMPI::create();
 
     double logZ, errorZ, nDead, nLike, logZPlusLogP;
 
-    int nGrades = nParams_.size();
-
 	// calling PolyChord
-    poly::run(nDims, nDerived, nLive_, numRepeats, doClustering, nCluster, feedback, calculatePost, sigmaPost, thinPost, &(priorTypes[0]), &(priorMins[0]), &(priorMaxs[0]), baseDir.c_str(), root.c_str(), res, res, updateResume, writeLive, myLogLike, &logZ, &errorZ, &nDead, &nLike, &logZPlusLogP, nGrades, &(nParams_[0]), &(fracs_[0]));
+    poly::run(nDims, nDerived, nLive_, numRepeats, doClustering, nCluster, feedback, calculatePost, sigmaPost, thinPost, &(priorTypes[0]), &(priorMins[0]), &(priorMaxs[0]), &(speeds[0]), baseDir.c_str(), root.c_str(), res, res, updateResume, writeLive, myLogLike, &logZ, &errorZ, &nDead, &nLike, &logZPlusLogP, nGrades, &(gradeDims[0]), &(fracs_[0]));
 
     running_ = false;
 

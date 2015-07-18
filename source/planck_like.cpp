@@ -667,6 +667,14 @@ PlanckLikelihood::calculate(double* params, int nPar)
 {
     //Timer timer("Planck likelihood timer");
     //timer.start();
+
+    /*
+    for(int i = 0; i < nPar; ++i)
+    {
+        output_screen_clean1(params[i] << '\t');
+    }
+    output_screen_clean1(std::endl);
+    */
     
     check(modelParams_, "model params must be set before calling this function");
     check(!vModel_.empty(), "");

@@ -31,7 +31,7 @@
               subroutine polycwraprun(ndims, nderived, nlive, num_repeats, &
                 do_clustering, ncluster, feedback, calculate_post, &
                 sigma_post, thin_post, prior_types, prior_mins, &
-                prior_maxs, base_dir, file_root, &
+                prior_maxs, speeds, base_dir, file_root, &
                 read_resume, write_resume, update_resume, write_live, &
                 loglike, logz, errorz, ndead, nlike, &
                 logzpluslogp, num_grades, grade_dims, grade_fracs) bind(c)
@@ -62,6 +62,7 @@
                       integer(c_int), dimension(1), intent(in) :: prior_types
                       real(c_double), dimension(1), intent(in) :: prior_mins
                       real(c_double), dimension(1), intent(in) :: prior_maxs
+                      integer(c_int), dimension(1), intent(in) :: speeds
                       character(kind=c_char,len=1), dimension(1), intent(in) :: base_dir
                       character(kind=c_char,len=1), dimension(1), intent(in) :: file_root
                       logical(c_bool), intent(in), value :: read_resume
@@ -112,6 +113,7 @@
 
                       allocate(params(0),derived_params(0))
 
+
                       do i = 1, ndims
                                 minimums(1) = prior_mins(i)
                                 maximums(1) = prior_maxs(i)
@@ -119,13 +121,13 @@
                                 physical_indices(1) = i
                                 if (prior_types(i) == 1) then
                                         call add_parameter(params,'p',&
-                        'p',1,uniform_type,1,[prior_mins(i),prior_maxs(i)])
+                        'p',speeds(i),uniform_type,i,[prior_mins(i),prior_maxs(i)])
                                 else if (prior_types(i) == 2) then
                                         call add_parameter(params,'p',&
-                        'p',1,log_uniform_type,1,[prior_mins(i),prior_maxs(i)])
+                        'p',speeds(i),log_uniform_type,i,[prior_mins(i),prior_maxs(i)])
                                 else if (prior_types(i) == 3) then
                                         call add_parameter(params,'p',&
-                        'p',1,gaussian_type,1,[prior_mins(i),prior_maxs(i)])
+                        'p',speeds(i),gaussian_type,i,[prior_mins(i),prior_maxs(i)])
                                 else
                                         print*,'INVALID PRIOR TYPE ',i
                                         stop 1
@@ -151,17 +153,13 @@
                       allocate(settings%grade_frac(num_grades))
                       allocate(settings%grade_dims(num_grades))
 
-                      print *, num_grades
-                      print *, size(settings%grade_dims)
                       do i = 1, num_grades
                             settings%grade_dims(i) = grade_dims(i)
                             settings%grade_frac(i) = grade_fracs(i)
-                            print *, settings%grade_dims(i), ' ', settings%grade_frac(i)
                       end do
 
                       call initialise_program(settings,priors,params,derived_params)
 
-                      print *, size(settings%grade_dims)
 
 #ifdef COSMO_MPI
                       output_info = NestedSampling(loglike_f, priors, &

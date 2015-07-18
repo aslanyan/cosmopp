@@ -38,6 +38,8 @@ public:
         const double x = params[0], y = params[1];
         const double deltaX = (x - x0_), deltaY = (y - y0_);
 
+        output_log("PolyChord test: " << x << '\t' << y << std::endl);
+
         return deltaX * deltaX / (sigmaX_ * sigmaX_) + deltaY * deltaY / (sigmaY_ * sigmaY_);
     }
 
@@ -63,16 +65,15 @@ TestPolyChordFast::runSubTest(unsigned int i, double& res, double& expected, std
 
     const double xMin = -20, xMax = 20, yMin = -20, yMax = 20;
     if(i == 0)
-        pc1.setParam(0, "x", xMin, xMax);
+        pc1.setParam(0, "x", xMin, xMax, 1);
     else
-        pc1.setParam(0, "x", 5, 5);
-    pc1.setParam(1, "y", yMin, yMax);
+        pc1.setParam(0, "x", 5, 5, 1);
+    pc1.setParam(1, "y", yMin, yMax, (i == 0 ? 2 : 1));
     if(i == 0)
     {
-        std::vector<int> nPar(2, 1);
-        std::vector<double> frac(2, 0.2);
-        frac[1] = 0.8;
-        pc1.setParameterHierarchy(nPar, frac);
+        std::vector<double> frac(2, 0.5);
+        frac[1] = 0.5;
+        pc1.setParameterHierarchy(frac);
     }
     pc1.run(false);
 
