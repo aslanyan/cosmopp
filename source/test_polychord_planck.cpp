@@ -63,7 +63,7 @@ TestPolyChordPlanck::runSubTest(unsigned int i, double& res, double& expected, s
     pc.setParam(19, "Bm_1_1", -20, 20);
 #endif
 
-    const std::vector<double> fracs{0.95, 0.045, 0.005};
+    const std::vector<double> fracs{0.85, 0.1, 0.05};
     pc.setParameterHierarchy(fracs);
 
     const double pivot = 0.05;
