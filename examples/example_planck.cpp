@@ -19,22 +19,32 @@ int main(int argc, char *argv[])
         const double as = 2.2154e-9;
         const double pivot = 0.05;
 
-        const double r = 0.2;
-        const double nt = 0;
-
-        const double nEff = 3.046; 
-        const int nMassive = 1;
-        const double sumMNu = 0.0;
-
         // Create a special case of cosmological params
-        LCDMWithTensorAndDegenerateNeutrinosParams params(omBH2, omCH2, h, tau, ns, as, pivot, r, nt, pivot, nEff, nMassive, sumMNu);
+        LambdaCDMParams params(omBH2, omCH2, h, tau, ns, as, pivot);
 
         // Create the Planck likelihood
+#ifdef COSMO_PLANCK_15
+        PlanckLikelihood planck(true, true, true, true, true, true, true);
+#else
         PlanckLikelihood planck(true, true, true, true, false, true);
+#endif
 
         // Set the cosmological parameters
         planck.setCosmoParams(params);
 
+#ifdef COSMO_PLANCK_15
+        // Calculate and print the low-l likelihood
+        const double lowLike = planck.lowLike();
+        output_screen("Low-l likelihood = " << lowLike << std::endl);
+
+        // Calculate and print the high-l likelihood
+        const double highLike = planck.highLike();
+        output_screen("High-l likelihood = " << highLike << std::endl);
+
+        // Calculate and print the lensing likelihood
+        const double lensingLike = planck.lensingLike();
+        output_screen("Lensing likelihood = " << lensingLike << std::endl);
+#else
         // Set the foreground parameters for Camspec
         planck.setCamspecExtraParams(153, 54.9, 55.8, 4, 55.5, 4, 0.91, 0.63, 0.6, 1, 1, 0.1, 1, 0.3);
 
@@ -53,6 +63,7 @@ int main(int argc, char *argv[])
         // Calculate and print the lensing likelihood
         const double lensingLike = planck.lensingLike();
         output_screen("Lensing likelihood = " << lensingLike << std::endl);
+#endif
 
         // Calculate and print the total likelihood
         output_screen(std::endl << "Total likelihood = " << planck.likelihood() << std::endl);
