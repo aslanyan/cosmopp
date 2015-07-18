@@ -22,7 +22,7 @@ public:
         started_ = true;
 #endif
         start_ = std::chrono::steady_clock::now();
-        output_screen2("Starting the timer " << name_ << "..." << std::endl);
+        output_screen1("Starting the timer " << name_ << "..." << std::endl);
         //output_log("Starting the timer " << name_ << "..." << std::endl);
     }
 
@@ -34,7 +34,7 @@ public:
 #endif
         std::chrono::steady_clock::time_point end_ = std::chrono::steady_clock::now();
         const unsigned long c = std::chrono::duration_cast<std::chrono::microseconds>(end_ - start_).count();
-        output_screen2("The timer " << name_ << " has ended." << std::endl << "Duration: " << c << " microseconds." << std::endl);
+        output_screen1("The timer " << name_ << " has ended." << std::endl << "Duration: " << c << " microseconds." << std::endl);
         //output_log("The timer " << name_ << " has ended." << std::endl << "Duration: " << c << " microseconds." << std::endl);
         return c;
     }
