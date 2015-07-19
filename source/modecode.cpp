@@ -187,8 +187,14 @@ ModeCode::calculate(const std::vector<double>& vParams, double *badLike)
 {
     check(vParams.size() <= 10, "too many params");
 
+    double bad1 = 0;
     for(int i = 0; i < vParams.size(); ++i)
+    {
         vParams_[i] = vParams[i];
+        bad1 += vParams[i] * vParams[i];
+    }
+
+    check(bad1 >= 0, "");
 
 #ifdef MODECODE_GFORT
     __access_modpk_MOD_potinit();
@@ -199,13 +205,13 @@ ModeCode::calculate(const std::vector<double>& vParams, double *badLike)
 #ifdef MODECODE_GFORT
     if(__camb_interface_MOD_pk_bad != 0)
     {
-        if(badLike) *badLike = 1e10;
+        if(badLike) *badLike = 1e10 * bad1;
         return false;
     }
 #else
     if(camb_interface_mp_pk_bad_ != 0)
     {
-        if(badLike) *badLike = 1e10;
+        if(badLike) *badLike = 1e10 * bad1;
         return false;
     }
 #endif
@@ -227,13 +233,13 @@ ModeCode::calculate(const std::vector<double>& vParams, double *badLike)
 #ifdef MODECODE_GFORT
         if(__camb_interface_MOD_pk_bad != 0)
         {
-            if(badLike) *badLike = 1e10;
+            if(badLike) *badLike = 1e10 * bad1;
             return false;
         }
         __access_modpk_MOD_evolve(&k, &s, &t);
         if(__camb_interface_MOD_pk_bad != 0)
         {
-            if(badLike) *badLike = 1e10;
+            if(badLike) *badLike = 1e10 * bad1;
             return false;
         }
         if(s < sMin)
@@ -247,13 +253,13 @@ ModeCode::calculate(const std::vector<double>& vParams, double *badLike)
 #else
         if(camb_interface_mp_pk_bad_ != 0)
         {
-            if(badLike) *badLike = 1e10;
+            if(badLike) *badLike = 1e10 * bad1;
             return false;
         }
         access_modpk_mp_evolve_(&k, &s, &t);
         if(camb_interface_mp_pk_bad_ != 0)
         {
-            if(badLike) *badLike = 1e10;
+            if(badLike) *badLike = 1e10 * bad1;
             return false;
         }
         if(s < sMin)
