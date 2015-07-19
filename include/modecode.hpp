@@ -21,7 +21,7 @@ public:
 
     static void addKValue(double k, double sMin = 0, double sMax = 1, double tMin = 0, double tMax = 1);
 
-    static bool calculate(const std::vector<double>& vParams);
+    static bool calculate(const std::vector<double>& vParams, double *badLike = NULL);
 
     static int getNumVParams() { return nVPar_; }
 
