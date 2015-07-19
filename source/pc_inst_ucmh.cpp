@@ -37,7 +37,7 @@ public:
     }
 
     void setNPivot(double NPivot) { ModeCode::setNPivot(NPivot); }
-    bool setVParams(const std::vector<double>& vParams) { return ModeCode::calculate(vParams); }
+    bool setVParams(const std::vector<double>& vParams, double *badLike) { return ModeCode::calculate(vParams, badLike); }
 
     virtual const Math::RealFunction& powerSpectrum() const { return ModeCode::getScalarPs(); }
     virtual const Math::RealFunction& powerSpectrumTensor() const { return ModeCode::getTensorPs(); }
@@ -54,7 +54,7 @@ public:
             v[4 + i] = vParams_[i];
     }
 
-    virtual bool setAllParameters(const std::vector<double>& v)
+    virtual bool setAllParameters(const std::vector<double>& v, double *badLike)
     {
         check(v.size() == 4 + ModeCode::getNumVParams(), "");
 
@@ -69,7 +69,7 @@ public:
         for(int i = 0; i < vParams_.size(); ++i)
             vParams_[i] = v[4 + i];
 
-        const bool res = setVParams(vParams_);
+        const bool res = setVParams(vParams_, badLike);
         output_screen1("N_piv = " << ModeCode::getNPivot() << std::endl);
         output_screen1("Result = " << res << std::endl);
         return res;
