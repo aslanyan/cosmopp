@@ -6,7 +6,6 @@
 
 #include <likelihood_function.hpp>
 #include <cmb.hpp>
-#include <random.hpp>
 
 #ifdef COSMO_PLANCK_15
 
@@ -113,7 +112,6 @@ private:
     std::vector<double> input_;
 
     bool szPrior_;
-    Math::UniformRealGenerator rand_;
 };
 
 #else
@@ -208,8 +206,6 @@ private:
 
     CosmologicalParams* modelParams_;
     std::vector<double> vModel_;
-
-    Math::UniformRealGenerator rand_;
 };
 
 #endif
