@@ -161,7 +161,7 @@ private:
 
 }
 
-PlanckLikelihood::PlanckLikelihood(bool lowT, bool lowP, bool highT, bool highP, bool highLikeLite, bool lensingT, bool lensingP, bool includeTensors, double kPerDecade, bool useOwnCmb) : spectraNames_(6), lensSpectraNames_(7), low_(NULL), high_(NULL), lens_(NULL), lowT_(lowT), lowP_(lowP), highT_(highT), highP_(highP), highLikeLite_(highLikeLite), lensingT_(lensingT), lensingP_(lensingP), cmb_(NULL), modelParams_(NULL), aPlanck_(1), aPol_(1), szPrior_(false), rand_(std::time(0), 0, 1)
+PlanckLikelihood::PlanckLikelihood(bool lowT, bool lowP, bool highT, bool highP, bool highLikeLite, bool lensingT, bool lensingP, bool includeTensors, double kPerDecade, bool useOwnCmb) : spectraNames_(6), lensSpectraNames_(7), low_(NULL), high_(NULL), lens_(NULL), lowT_(lowT), lowP_(lowP), highT_(highT), highP_(highP), highLikeLite_(highLikeLite), lensingT_(lensingT), lensingP_(lensingP), cmb_(NULL), modelParams_(NULL), aPlanck_(1), aPol_(1), szPrior_(false)
 {
     check(!lowP || lowT, "cannot include lowP without lowT");
     check(!highP || highT, "cannot include highP without highT");
@@ -677,10 +677,14 @@ PlanckLikelihood::calculate(double* params, int nPar)
     for(int i = 0; i < nModel; ++i)
         vModel_[i] = params[i];
 
-    const bool success = modelParams_->setAllParameters(vModel_);
+    double badLike = 0;
+    const bool success = modelParams_->setAllParameters(vModel_, &badLike);
     output_screen2("Planck likelihood evaluation: " << (success ? "GOOD REGION" : "BAD REGION") << std::endl);
     if(success)
+    {
         setCosmoParams(*modelParams_);
+        check(badLike == 0, "");
+    }
 
     setAPlanck(params[nModel]);
 
@@ -698,7 +702,10 @@ PlanckLikelihood::calculate(double* params, int nPar)
     if(success)
         return likelihood();
     else
-        return 1e20 * (1.0 + rand_.generate());
+    {
+        check(badLike >= 0, "");
+        return 1e10 + badLike;
+    }
 }
 
 double
@@ -760,7 +767,7 @@ struct PlanckLikelihoodContainer
 
 }
 
-PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useLensing, bool usePol, bool useActSpt, bool includeTensors, double kPerDecade, bool useOwnCmb) : spectraNames_(6), haveCommander_(false), havePol_(false), haveLens_(false), commander_(NULL), camspec_(NULL), lens_(NULL), pol_(NULL), actspt_(NULL), cmb_(NULL), modelParams_(NULL), rand_(std::time(0), 0, 1)
+PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useLensing, bool usePol, bool useActSpt, bool includeTensors, double kPerDecade, bool useOwnCmb) : spectraNames_(6), haveCommander_(false), havePol_(false), haveLens_(false), commander_(NULL), camspec_(NULL), lens_(NULL), pol_(NULL), actspt_(NULL), cmb_(NULL), modelParams_(NULL)
 {
     check(useCommander || useCamspec || useLensing || usePol || useActSpt, "at least one likelihood must be specified");
 
@@ -1249,10 +1256,14 @@ PlanckLikelihood::calculate(double* params, int nPar)
     for(int i = 0; i < nModel; ++i)
         vModel_[i] = params[i];
 
-    const bool success = modelParams_->setAllParameters(vModel_);
+    double badLike = 0;
+    const bool success = modelParams_->setAllParameters(vModel_, &badLike);
     output_screen2("Planck likelihood evaluation: " << (success ? "GOOD REGION" : "BAD REGION") << std::endl);
     if(success)
+    {
         setCosmoParams(*modelParams_);
+        check(badLike == 0, "");
+    }
 
     if(camspec_)
     {
@@ -1271,7 +1282,10 @@ PlanckLikelihood::calculate(double* params, int nPar)
     if(success)
         return likelihood();
     else
-        return 1e20 * (1.0 + rand_.generate());
+    {
+        check(badLike >= 0, "");
+        return 1e10 + badLike;
+    }
 }
 
 double

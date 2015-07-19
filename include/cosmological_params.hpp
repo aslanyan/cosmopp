@@ -91,8 +91,10 @@ public:
     virtual void getAllParameters(std::vector<double>& v) const { v.clear(); }
 
     /// Set all of the relevant parameters.
+    /// \param v A vector containing all of the cosmological parameters.
+    /// \param badLike If the result is false, this number will be set to a large value, which can show how bad it is. This will be used to assess a very large negative likelihood. This parameter can be set to NULL in which case it will be ignored.
     /// \return true if successful, false otherwise.
-    virtual bool setAllParameters(const std::vector<double>& v) = 0;
+    virtual bool setAllParameters(const std::vector<double>& v, double *badLike = NULL) = 0;
 
     /// The Hubble constant without units (the reduced Planck mass is assumed to be 1, together with c and hbar).
     virtual double getHubbleUnitless() const
@@ -182,7 +184,7 @@ public:
         v[5] = std::log(getAs() * 1e10);
     }
 
-    virtual bool setAllParameters(const std::vector<double>& v)
+    virtual bool setAllParameters(const std::vector<double>& v, double *badLike = NULL)
     {
         check(v.size() >= 6, "");
         omBH2_ = v[0];
@@ -191,6 +193,9 @@ public:
         tau_ = v[3];
         ps_.setNs(v[4]);
         ps_.setAs(std::exp(v[5]) / 1e10);
+
+        if(badLike)
+            *badLike = 0;
 
         return true;
     }
@@ -227,11 +232,11 @@ public:
         v.push_back(getR());
     }
 
-    virtual bool setAllParameters(const std::vector<double>& v)
+    virtual bool setAllParameters(const std::vector<double>& v, double *badLike = NULL)
     {
         check(v.size() >= 7, "");
 
-        LambdaCDMParams::setAllParameters(v);
+        LambdaCDMParams::setAllParameters(v, badLike);
         r_ = v[6];
         nt_ = 0.0;
         const double piv = psT_->getPivot();
@@ -276,7 +281,7 @@ public:
 
     virtual std::string name() const { return "LCDMWithDegenerateNeutrinos"; }
     virtual void getAllParameters(std::vector<double>& v) const { check(false, "not implemented"); }
-    virtual bool setAllParameters(const std::vector<double>& v) { check(false, "not implemented"); return false; }
+    virtual bool setAllParameters(const std::vector<double>& v, double *badLike = NULL) { check(false, "not implemented"); return false; }
 
 private:
     double nEff_;
@@ -322,7 +327,7 @@ public:
 
     virtual std::string name() const { return "LCDMWithTensorAndDegenerateNeutrinos"; }
     virtual void getAllParameters(std::vector<double>& v) const { check(false, "not implemented"); }
-    virtual bool setAllParameters(const std::vector<double>& v) { check(false, "not implemented"); return false; }
+    virtual bool setAllParameters(const std::vector<double>& v, double *badLike = NULL) { check(false, "not implemented"); return false; }
 
 private:
     double nEff_;
@@ -349,7 +354,7 @@ public:
 
     virtual std::string name() const { return "LCDMWithCutoffTensorDegenerateNeutrinos"; }
     virtual void getAllParameters(std::vector<double>& v) const { check(false, "not implemented"); }
-    virtual bool setAllParameters(const std::vector<double>& v) { check(false, "not implemented"); return false; }
+    virtual bool setAllParameters(const std::vector<double>& v, double *badLike = NULL) { check(false, "not implemented"); return false; }
 
 private:
     CutoffPowerSpectrum psC_;
@@ -391,7 +396,7 @@ public:
 
     virtual std::string name() const { return "LinearSpline"; }
     virtual void getAllParameters(std::vector<double>& v) const { check(false, "not implemented"); }
-    virtual bool setAllParameters(const std::vector<double>& v) { check(false, "not implemented"); return false; }
+    virtual bool setAllParameters(const std::vector<double>& v, double *badLike = NULL) { check(false, "not implemented"); return false; }
 
 private:
     double omBH2_;
@@ -438,7 +443,7 @@ public:
 
     virtual std::string name() const { return "CubicSpline"; }
     virtual void getAllParameters(std::vector<double>& v) const { check(false, "not implemented"); }
-    virtual bool setAllParameters(const std::vector<double>& v) { check(false, "not implemented"); return false; }
+    virtual bool setAllParameters(const std::vector<double>& v, double *badLike = NULL) { check(false, "not implemented"); return false; }
 
 private:
     double omBH2_;
