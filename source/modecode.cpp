@@ -193,6 +193,9 @@ ModeCode::calculate(const std::vector<double>& vParams, double *badLike)
         vParams_[i] = vParams[i];
         bad1 += vParams[i] * vParams[i];
     }
+    
+    if(bad1 > 0)
+        while(bad1 < 1) bad1 *= 10;
 
     check(bad1 >= 0, "");
 
