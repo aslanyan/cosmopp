@@ -25,7 +25,7 @@ public:
         v[7] = ps_.getRunRun();
     }
 
-    virtual bool setAllParameters(const std::vector<double>& v)
+    virtual bool setAllParameters(const std::vector<double>& v, double *badLike)
     {
         check(v.size() >= 8, "");
         omBH2_ = v[0];
@@ -37,13 +37,19 @@ public:
         ps_.setRun(v[6]);
         ps_.setRunRun(v[7]);
 
+        double bad = 0;
+
         for(std::map<double, double>::const_iterator it = kLim_.begin(); it != kLim_.end(); ++it)
         {
             if(ps_.evaluate(it->first) > it->second)
-                return false;
+                bad += (ps_.evaluate(it->first) - it->second) / it->second;
         }
 
-        return true;
+        check(bad >= 0, "");
+        if(badLike)
+            *badLike = bad * 1e10;
+
+        return (bad == 0);
     }
 
     void addKLimit(double k, double lim) { kLim_[k] = lim; }
