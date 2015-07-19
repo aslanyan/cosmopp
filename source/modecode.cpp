@@ -168,6 +168,12 @@ ModeCode::addKValue(double k, double sMin, double sMax, double tMin, double tMax
 {
     check(k > 0, "");
     check(scalarPs_.find(k) == scalarPs_.end(), "already exists");
+    check(sMax >= sMin, "");
+    check(sMin >= 0, "");
+    check(sMax > 0, "");
+    check(tMax >= tMin, "");
+    check(tMin >= 0, "");
+    check(tMax > 0, "");
     scalarPs_[k] = 0;
     tensorPs_[k] = 0;
     scalarLower_[k] = sMin;
@@ -177,7 +183,7 @@ ModeCode::addKValue(double k, double sMin, double sMax, double tMin, double tMax
 }
 
 bool
-ModeCode::calculate(const std::vector<double>& vParams)
+ModeCode::calculate(const std::vector<double>& vParams, double *badLike)
 {
     check(vParams.size() <= 10, "too many params");
 
@@ -192,11 +198,19 @@ ModeCode::calculate(const std::vector<double>& vParams)
 
 #ifdef MODECODE_GFORT
     if(__camb_interface_MOD_pk_bad != 0)
+    {
+        if(badLike) *badLike = 1e10;
         return false;
+    }
 #else
     if(camb_interface_mp_pk_bad_ != 0)
+    {
+        if(badLike) *badLike = 1e10;
         return false;
+    }
 #endif
+
+    double bad = 0;
 
     Math::TableFunction<double, double>::iterator it = scalarPs_.begin(), it1 = tensorPs_.begin();
     for(; it != scalarPs_.end(); ++it)
@@ -212,21 +226,54 @@ ModeCode::calculate(const std::vector<double>& vParams)
         const double sMin = scalarLower_[k], sMax = scalarUpper_[k], tMin = tensorLower_[k], tMax = tensorUpper_[k];
 #ifdef MODECODE_GFORT
         if(__camb_interface_MOD_pk_bad != 0)
+        {
+            if(badLike) *badLike = 1e10;
             return false;
+        }
         __access_modpk_MOD_evolve(&k, &s, &t);
-        if(__camb_interface_MOD_pk_bad != 0 || s <= sMin || s >= sMax || t <= tMin || t >= tMax)
+        if(__camb_interface_MOD_pk_bad != 0)
+        {
+            if(badLike) *badLike = 1e10;
             return false;
+        }
+        if(s < sMin)
+            bad += (sMin - s) / sMin;
+        if(s > sMax)
+            bad += (s - sMax) / sMax;
+        if(t < tMin)
+            bad += (tMin - t) / tMin; 
+        if(t > tMax)
+            bad += (t - tMax) / tMax;
 #else
         if(camb_interface_mp_pk_bad_ != 0)
+        {
+            if(badLike) *badLike = 1e10;
             return false;
+        }
         access_modpk_mp_evolve_(&k, &s, &t);
-        if(camb_interface_mp_pk_bad_ != 0 || s <= sMin || s >= sMax || t <= tMin || t >= tMax)
+        if(camb_interface_mp_pk_bad_ != 0)
+        {
+            if(badLike) *badLike = 1e10;
             return false;
+        }
+        if(s < sMin)
+            bad += (sMin - s) / sMin;
+        if(s > sMax)
+            bad += (s - sMax) / sMax;
+        if(t < tMin)
+            bad += (tMin - t) / tMin; 
+        if(t > tMax)
+            bad += (t - tMax) / tMax;
 #endif
         (*it).second = s;
         (*it1).second = t;
         ++it1;
     }
 
-    return true;
+    check(bad >= 0, "");
+
+    if(badLike)
+        *badLike = bad * 1e10;
+
+    return (bad == 0);
 }
