@@ -130,7 +130,7 @@ int main(int argc, char *argv[])
         mn.setParam(4, "ns", 0.9, 1.1);
         mn.setParam(5, "As", 2.7, 3.5);
         mn.setParam(6, "nrun", -1.0, 1.0);
-        mn.setParam(7, "nrunrun", 0.0, 1.0);
+        mn.setParam(7, "nrunrun", -1.0, 1.0);
 
 #ifdef COSMO_PLANCK_15
         mn.setParamGauss(8, "A_planck", 1.0, 0.0025);
