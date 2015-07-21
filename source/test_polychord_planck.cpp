@@ -41,30 +41,30 @@ TestPolyChordPlanck::runSubTest(unsigned int i, double& res, double& expected, s
     pc.setParam(1, "omch2", 0.1, 0.2, 1);
     pc.setParam(2, "h", 0.55, 0.85, 1);
     pc.setParam(3, "tau", 0.02, 0.20, 1);
-    pc.setParam(4, "ns", 0.9, 1.1, 2);
-    pc.setParam(5, "As", 2.7, 3.5, 2);
+    pc.setParam(4, "ns", 0.9, 1.1, 1);
+    pc.setParam(5, "As", 2.7, 3.5, 1);
 
 #ifdef COSMO_PLANCK_15
-    pc.setParamGauss(6, "A_planck", 1, 0.0025, 3);
+    pc.setParamGauss(6, "A_planck", 1, 0.0025, 1);
 #else
-    pc.setParam(6, "A_ps_100", 0, 360, 3);
-    pc.setParam(7, "A_ps_143", 0, 270, 3);
-    pc.setParam(8, "A_ps_217", 0, 450, 3);
-    pc.setParam(9, "A_cib_143", 0, 20, 3);
-    pc.setParam(10, "A_cib_217", 0, 80, 3);
-    pc.setParam(11, "A_sz", 0, 10, 3);
-    pc.setParam(12, "r_ps", 0.0, 1.0, 3);
-    pc.setParam(13, "r_cib", 0.0, 1.0, 3);
-    pc.setParam(14, "n_Dl_cib", -2, 2, 3);
-    pc.setParam(15, "cal_100", 0.98, 1.02, 3);
-    pc.setParam(16, "cal_127", 0.95, 1.05, 3);
-    pc.setParam(17, "xi_sz_cib", 0, 1, 3);
-    pc.setParam(18, "A_ksz", 0, 10, 3);
-    pc.setParam(19, "Bm_1_1", -20, 20);
+    pc.setParam(6, "A_ps_100", 0, 360, 1);
+    pc.setParam(7, "A_ps_143", 0, 270, 1);
+    pc.setParam(8, "A_ps_217", 0, 450, 1);
+    pc.setParam(9, "A_cib_143", 0, 20, 1);
+    pc.setParam(10, "A_cib_217", 0, 80, 1);
+    pc.setParam(11, "A_sz", 0, 10, 1);
+    pc.setParam(12, "r_ps", 0.0, 1.0, 1);
+    pc.setParam(13, "r_cib", 0.0, 1.0, 1);
+    pc.setParam(14, "n_Dl_cib", -2, 2, 1);
+    pc.setParam(15, "cal_100", 0.98, 1.02, 1);
+    pc.setParam(16, "cal_127", 0.95, 1.05, 1);
+    pc.setParam(17, "xi_sz_cib", 0, 1, 1);
+    pc.setParam(18, "A_ksz", 0, 10, 1);
+    pc.setParam(19, "Bm_1_1", -20, 20, 1);
 #endif
 
     const std::vector<double> fracs{0.85, 0.1, 0.05};
-    pc.setParameterHierarchy(fracs);
+    //pc.setParameterHierarchy(fracs);
 
     const double pivot = 0.05;
     LambdaCDMParams par(0.022, 0.12, 0.7, 0.1, 1.0, std::exp(3.0) / 1e10, pivot);
