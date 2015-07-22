@@ -36,6 +36,12 @@ public:
     double getDeltaT() const { return deltaT_; }
     void setDeltaT(double deltaT) { check(deltaT > 0, ""); deltaT_ = deltaT; }
 
+    void setBoundaryPeriodic(int i);
+    void setBoundaryValLeft(int i, double val);
+    void setBoundaryValRight(int i, double val);
+    void setBoundaryGradLeft(int i);
+    void setBoundaryGradRight(int i);
+
     int getNx(int i) const { check(i >= 0 && i < d_, ""); return nx_[i]; }
     int getNx0Starting() const { return nx0Starting_; }
     int getXMax(int i) const { check(i >= 0 && i < d_, ""); return xMax_[i]; }
@@ -98,6 +104,12 @@ private:
 
     std::vector<std::vector<double> > sStorage_;
     std::vector<std::vector<std::vector<double> > > fStorage_;
+
+    std::vector<bool> boundaryPeriodic_;
+    std::vector<bool> boundaryGradLeft_;
+    std::vector<bool> boundaryGradRight_;
+    std::vector<double> boundaryValLeft_;
+    std::vector<double> boundaryValRight_;
 };
 
 unsigned long
