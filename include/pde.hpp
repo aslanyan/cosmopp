@@ -37,10 +37,10 @@ public:
     void setDeltaT(double deltaT) { check(deltaT > 0, ""); deltaT_ = deltaT; }
 
     void setBoundaryPeriodic(int i);
-    void setBoundaryValLeft(int i, double val);
-    void setBoundaryValRight(int i, double val);
-    void setBoundaryGradLeft(int i);
-    void setBoundaryGradRight(int i);
+    void setBoundaryValLeft(int i, int j, double val);
+    void setBoundaryValRight(int i, int j, double val);
+    void setBoundaryGradLeft(int i, int j);
+    void setBoundaryGradRight(int i, int j);
 
     int getNx(int i) const { check(i >= 0 && i < d_, ""); return nx_[i]; }
     int getNx0Starting() const { return nx0Starting_; }
@@ -55,6 +55,7 @@ private:
     void setupGrid();
     void setInitial(const std::vector<RealFunctionMultiDim*>& w0);
     void setOwnBoundary();
+    void setOwnBoundary0();
 
     void communicateBoundary();
     void sendLeft();
@@ -106,10 +107,10 @@ private:
     std::vector<std::vector<std::vector<double> > > fStorage_;
 
     std::vector<bool> boundaryPeriodic_;
-    std::vector<bool> boundaryGradLeft_;
-    std::vector<bool> boundaryGradRight_;
-    std::vector<double> boundaryValLeft_;
-    std::vector<double> boundaryValRight_;
+    std::vector<std::vector<bool> > boundaryGradLeft_;
+    std::vector<std::vector<bool> > boundaryGradRight_;
+    std::vector<std::vector<double> > boundaryValLeft_;
+    std::vector<std::vector<double> > boundaryValRight_;
 };
 
 unsigned long

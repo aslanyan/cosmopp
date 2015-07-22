@@ -21,7 +21,7 @@ const int pdeMaxFields = 100;
 namespace Math
 {
 
-InitialValPDESolver::InitialValPDESolver(InitialValPDEInterface *pde) : pde_(pde), d_(pde->spaceDim()), m_(pde->funcDim()), grid_(0), halfGrid_(0)
+InitialValPDESolver::InitialValPDESolver(InitialValPDEInterface *pde) : pde_(pde), d_(pde->spaceDim()), m_(pde->funcDim()), grid_(0), halfGrid_(0), boundaryPeriodic_(pde->spaceDim(), true)
 { 
     check(d_ >= 1, "invalid number of spatial dimensions " << d_ << ", must be positive");
     check(m_ >= 1, "invalid number of fields " << m_ << ", must be positive");
@@ -38,6 +38,18 @@ InitialValPDESolver::InitialValPDESolver(InitialValPDEInterface *pde) : pde_(pde
     check(processId_ >= 0 && processId_ < nProcesses_, "");
 
     commTag_ = CosmoMPI::create().getCommTag();
+
+    boundaryGradLeft_.resize(d_);
+    boundaryGradRight_.resize(d_);
+    boundaryValLeft_.resize(d_);
+    boundaryValRight_.resize(d_);
+    for(int i = 0; i < d_; ++i)
+    {
+        boundaryGradLeft_[i].resize(m_, false);
+        boundaryGradRight_[i].resize(m_, false);
+        boundaryValLeft_[i].resize(m_, 0);
+        boundaryValRight_[i].resize(m_, 0);
+    }
 }
 
 InitialValPDESolver::~InitialValPDESolver()
@@ -77,6 +89,7 @@ InitialValPDESolver::set(const std::vector<RealFunctionMultiDim*>& w0, const std
     setInitial(w0);
     setOwnBoundary();
     communicateBoundary();
+    setOwnBoundary0();
 }
 
 void
@@ -199,6 +212,86 @@ InitialValPDESolver::setInitial(const std::vector<RealFunctionMultiDim*>& w0)
 }
 
 void
+InitialValPDESolver::setOwnBoundary0()
+{
+    check(boundaryPeriodic_.size() == d_, "");
+    if(boundaryPeriodic_[0])
+        return;
+
+    if(processId_ == 0)
+    {
+        // set left boundary
+        int rangeBegin[pdeMaxDim], rangeEnd[pdeMaxDim];
+        rangeBegin[0] = -1;
+        rangeEnd[0] = 0;
+        for(int j = 1; j < d_; ++j)
+        {
+            rangeBegin[j] = -1;
+            rangeEnd[j] = nx_[j] + 1;
+        }
+
+        int ind[pdeMaxDim], ind1[pdeMaxDim];
+        for(int j = 0; j < d_; ++j)
+            ind[j] = rangeBegin[j];
+
+        ind1[0] = 0;
+
+        for(; ind[0] != rangeEnd[0]; increaseIndex(ind, rangeBegin, rangeEnd))
+        {
+            const unsigned long gridIndex = index(ind);
+            for(int l = 0; l < m_; ++l)
+            {
+                if(boundaryGradLeft_[0][l])
+                {
+                    for(int j = 1; j < d_; ++j)
+                        ind1[j] = ind[j];
+                    const unsigned long gridIndex1 = index(ind1);
+                    grid_[gridIndex][l] = grid_[gridIndex1][l];
+                }
+                else
+                    grid_[gridIndex][l] = boundaryValLeft_[0][l];
+            }
+        }
+    }
+
+    if(processId_ == nProcesses_ - 1)
+    {
+        // set right boundary
+        int rangeBegin[pdeMaxDim], rangeEnd[pdeMaxDim];
+        rangeBegin[0] = nx_[0];
+        rangeEnd[0] = nx_[0] + 1;
+        for(int j = 1; j < d_; ++j)
+        {
+            rangeBegin[j] = -1;
+            rangeEnd[j] = nx_[j] + 1;
+        }
+
+        int ind[pdeMaxDim], ind1[pdeMaxDim];
+        for(int j = 0; j < d_; ++j)
+            ind[j] = rangeBegin[j];
+
+        ind1[0] = nx_[0] - 1;
+
+        for(; ind[0] != rangeEnd[0]; increaseIndex(ind, rangeBegin, rangeEnd))
+        {
+            const unsigned long gridIndex = index(ind);
+            for(int l = 0; l < m_; ++l)
+            {
+                if(boundaryGradRight_[0][l])
+                {
+                    for(int j = 1; j < d_; ++j)
+                        ind1[j] = ind[j];
+                    const unsigned long gridIndex1 = index(ind1);
+                    grid_[gridIndex][l] = grid_[gridIndex1][l];
+                }
+                else
+                    grid_[gridIndex][l] = boundaryValRight_[0][l];
+            }
+        }
+    }
+}
+
+void
 InitialValPDESolver::setOwnBoundary()
 {
     for(int i = 1; i < d_; ++i)
@@ -238,18 +331,51 @@ InitialValPDESolver::setOwnBoundary()
 
             for(; ind[0] != rangeEnd[0]; increaseIndex(ind, rangeBegin, rangeEnd))
             {
+                const unsigned long gridIndex = index(ind);
                 for(int j = 0; j < d_; ++j)
                     ind1[j] = ind[j];
-                unsigned long gridIndex = index(ind);
-                ind1[i] = nx_[i] - 1;
-                unsigned long gridIndex1 = index(ind1);
-                ind1[i] = nx_[i];
-                unsigned long gridIndex2 = index(ind1);
-                ind1[i] = 0;
-                unsigned long gridIndex3 = index(ind1);
+                if(boundaryPeriodic_[i])
+                {
+                    ind1[i] = nx_[i] - 1;
+                    const unsigned long gridIndex1 = index(ind1);
+                    ind1[i] = nx_[i];
+                    const unsigned long gridIndex2 = index(ind1);
+                    ind1[i] = 0;
+                    const unsigned long gridIndex3 = index(ind1);
 
-                grid_[gridIndex] = grid_[gridIndex1];
-                grid_[gridIndex2] = grid_[gridIndex3];
+                    grid_[gridIndex] = grid_[gridIndex1];
+                    grid_[gridIndex2] = grid_[gridIndex3];
+                }
+                else
+                {
+                    for(int l = 0; l < m_; ++l)
+                    {
+                        if(boundaryGradLeft_[i][l])
+                        {
+                            ind1[i] = 0;
+                            const unsigned long gridIndex1 = index(ind1);
+                            grid_[gridIndex][l] = grid_[gridIndex1][l];
+                        }
+                        else
+                        {
+                            grid_[gridIndex][l] = boundaryValLeft_[i][l];
+                        }
+                        if(boundaryGradRight_[i][l])
+                        {
+                            ind1[i] = nx_[i];
+                            const unsigned long gridIndex2 = index(ind1);
+                            ind1[i] = nx_[i] - 1;
+                            const unsigned long gridIndex3 = index(ind1);
+                            grid_[gridIndex2][l] = grid_[gridIndex3][l];
+                        }
+                        else
+                        {
+                            ind1[i] = nx_[i];
+                            const unsigned long gridIndex2 = index(ind1);
+                            grid_[gridIndex2][l] = boundaryValRight_[i][l];
+                        }
+                    }
+                }
             }
         }
     }
@@ -560,6 +686,77 @@ InitialValPDESolver::takeStep()
 
     setOwnBoundary();
     communicateBoundary();
+    setOwnBoundary0();
+}
+
+void
+InitialValPDESolver::setBoundaryPeriodic(int i)
+{
+    check(i >= 0 && i < d_, "");
+    check(boundaryPeriodic_.size() == d_, "");
+    boundaryPeriodic_[i] = true;
+}
+
+void
+InitialValPDESolver::setBoundaryGradLeft(int i, int j)
+{
+    check(i >= 0 && i < d_, "");
+    check(j >= 0 && j < m_, "");
+    check(boundaryGradLeft_.size() == d_, "");
+    check(boundaryGradLeft_[i].size() == m_, "");
+
+    boundaryGradLeft_[i][j] = true;
+    
+    check(boundaryPeriodic_.size() == d_, "");
+    boundaryPeriodic_[i] = false;
+}
+
+void
+InitialValPDESolver::setBoundaryGradRight(int i, int j)
+{
+    check(i >= 0 && i < d_, "");
+    check(j >= 0 && j < m_, "");
+    check(boundaryGradRight_.size() == d_, "");
+    check(boundaryGradRight_[i].size() == m_, "");
+
+    boundaryGradRight_[i][j] = true;
+    
+    check(boundaryPeriodic_.size() == d_, "");
+    boundaryPeriodic_[i] = false;
+}
+
+void
+InitialValPDESolver::setBoundaryValLeft(int i, int j, double val)
+{
+    check(i >= 0 && i < d_, "");
+    check(j >= 0 && j < m_, "");
+
+    boundaryValLeft_[i][j] = val;
+
+    check(boundaryGradLeft_.size() == d_, "");
+    check(boundaryGradLeft_[i].size() == m_, "");
+
+    boundaryGradLeft_[i][j] = false;
+
+    check(boundaryPeriodic_.size() == d_, "");
+    boundaryPeriodic_[i] = false;
+}
+
+void
+InitialValPDESolver::setBoundaryValRight(int i, int j, double val)
+{
+    check(i >= 0 && i < d_, "");
+    check(j >= 0 && j < m_, "");
+
+    boundaryValRight_[i][j] = val;
+
+    check(boundaryGradRight_.size() == d_, "");
+    check(boundaryGradRight_[i].size() == m_, "");
+
+    boundaryGradRight_[i][j] = false;
+
+    check(boundaryPeriodic_.size() == d_, "");
+    boundaryPeriodic_[i] = false;
 }
 
 } // namespace Math
