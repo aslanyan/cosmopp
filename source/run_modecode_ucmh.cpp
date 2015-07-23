@@ -9,19 +9,19 @@ int main(int argc, char *argv[])
 {
     try {
         StandardException exc;
-        if(argc < 7)
+        if(argc < 6)
         {
-            std::string exceptionString = "Need to specify N_pivot followed by the 5 potential params.";
+            std::string exceptionString = "Need to specify the 5 potential params.";
             exc.set(exceptionString);
             throw exc;
         }
 
         std::stringstream args;
-        args << argv[1] << ' ' << argv[2] << ' ' << argv[3] << ' ' << argv[4] << ' ' << argv[5] << ' ' << argv[6];
-        double NPivot;
+        args << argv[1] << ' ' << argv[2] << ' ' << argv[3] << ' ' << argv[4] << ' ' << argv[5];
         std::vector<double> v(5);
-        args >> NPivot >> v[0] >> v[1] >> v[2] >> v[3] >> v[4];
-        ModeCode::initialize(12, 0.002, NPivot, false, true, false, false, 8e-7, 1.2, 10);
+        args >> v[0] >> v[1] >> v[2] >> v[3] >> v[4];
+        const double NPivot = 55;
+        ModeCode::initialize(12, 0.002, NPivot, true, true, false, false, 8e-7, 1.2, 10);
 
         /*
         ModeCode::addKValue(10, 0, 1e10, 0, 1e10);
@@ -36,6 +36,8 @@ int main(int argc, char *argv[])
         */
 
         const bool res = ModeCode::calculate(v);
+
+        output_screen(v[0] << ' ' << v[1] << ' ' << v[2] << ' ' << v[3] << ' ' << v[4] << std::endl);
 
         if(!res)
         {
