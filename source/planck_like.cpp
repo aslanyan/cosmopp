@@ -306,7 +306,7 @@ PlanckLikelihood::PlanckLikelihood(bool lowT, bool lowP, bool highT, bool highP,
     if(useOwnCmb)
     {
         cmb_ = new CMB;
-        cmb_->preInitialize(lMax_ + 1000, false, true, includeTensors, lMax_ + 1000, kPerDecade);
+        cmb_->preInitialize(lMax_ + 1000, false, true, includeTensors, lMax_ + 1000, kPerDecade, 5.5e-6, 1.0);
     }
 
     input_.resize(3 * lMax_ + 10000);
@@ -981,7 +981,7 @@ PlanckLikelihood::PlanckLikelihood(bool useCommander, bool useCamspec, bool useL
     if(useOwnCmb)
     {
         cmb_ = new CMB;
-        cmb_->preInitialize(lMax_ + 1000, false, true, includeTensors, lMax_ + 1000, kPerDecade);
+        cmb_->preInitialize(lMax_ + 1000, false, true, includeTensors, lMax_ + 1000, kPerDecade, 5.5e-6, 1.0);
     }
 }
 

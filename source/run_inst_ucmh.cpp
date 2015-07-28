@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
         //model 2
         const bool slowRollEnd = false;
         const bool eternalInflOK = true;
-        ModeCodeParamsUCMH modelParams(0.02, 0.1, 0.7, 0.1, 0.002, 55, 12, slowRollEnd, eternalInflOK, 8e-7, 1.2, 500);
+        ModeCodeParamsUCMH modelParams(0.02, 0.1, 0.7, 0.1, 0.002, 55, 12, slowRollEnd, eternalInflOK, 5e-6, 1.2, 500);
 
         if(ucmhLim)
         {
