@@ -91,7 +91,7 @@ int main(int argc, char *argv[])
         std::string root = "slow_test_files/mn_ucmh";
 
 #ifdef COSMO_PLANCK_15
-        PlanckLikelihood like(true, true, true, false, true, false, false, true, 500);
+        PlanckLikelihood like(true, true, true, true, true, false, false, true, 500);
         MnScanner mn(10, like, 500, root);
         const int nPar = 10;
 #else
@@ -126,7 +126,7 @@ int main(int argc, char *argv[])
         mn.setParam(5, "v_2", -0.1, 0.1);
         mn.setParam(6, "v_3", -0.1, 0.1);
         mn.setParam(7, "v_4", -0.1, 0.1);
-        mn.setParam(8, "v_5", -12, -9);
+        mn.setParam(8, "v_5", -12, -7);
 
 #ifdef COSMO_PLANCK_15
         mn.setParamGauss(9, "A_planck", 1.0, 0.0025);

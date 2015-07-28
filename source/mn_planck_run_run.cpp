@@ -25,7 +25,7 @@ public:
         v[7] = ps_.getRunRun();
     }
 
-    virtual bool setAllParameters(const std::vector<double>& v)
+    virtual bool setAllParameters(const std::vector<double>& v, double *badLike)
     {
         check(v.size() >= 8, "");
         omBH2_ = v[0];
@@ -37,13 +37,19 @@ public:
         ps_.setRun(v[6]);
         ps_.setRunRun(v[7]);
 
+        double bad = 0;
+
         for(std::map<double, double>::const_iterator it = kLim_.begin(); it != kLim_.end(); ++it)
         {
             if(ps_.evaluate(it->first) > it->second)
-                return false;
+                bad += (ps_.evaluate(it->first) - it->second) / it->second;
         }
 
-        return true;
+        check(bad >= 0, "");
+        if(badLike)
+            *badLike = bad * 1e10;
+
+        return (bad == 0);
     }
 
     void addKLimit(double k, double lim) { kLim_[k] = lim; }
@@ -124,7 +130,7 @@ int main(int argc, char *argv[])
         mn.setParam(4, "ns", 0.9, 1.1);
         mn.setParam(5, "As", 2.7, 3.5);
         mn.setParam(6, "nrun", -1.0, 1.0);
-        mn.setParam(7, "nrunrun", 0.0, 1.0);
+        mn.setParam(7, "nrunrun", -1.0, 1.0);
 
 #ifdef COSMO_PLANCK_15
         mn.setParamGauss(8, "A_planck", 1.0, 0.0025);
