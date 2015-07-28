@@ -61,7 +61,7 @@ public:
 
         output_screen1("Param values:");
         for(int i = 0; i < v.size(); ++i)
-            output_screen_clean1(std::setprecision(10) << "\t" << v[i]);
+            output_screen_clean1(std::setprecision(20) << "\t" << v[i]);
         output_screen_clean1(std::endl);
 
         setBaseParams(v[0], v[1], v[2], v[3]);
