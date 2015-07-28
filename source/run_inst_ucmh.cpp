@@ -15,16 +15,16 @@
 namespace
 {
 
-class ModeCodeParamsInst : public LambdaCDMParams
+class ModeCodeParamsUCMH : public LambdaCDMParams
 {
 public:
-    ModeCodeParamsInst(double omBH2, double omCH2, double h, double tau, double kPivot, double NPivot, int potentialChoice, bool physicalPriors = true, bool slowRollEnd = true, bool eternalInflOK = true, double kMin = 8e-7, double kMax = 1.2, int nPoints = 500) : LambdaCDMParams(omBH2, omCH2, h, tau, 1.0, 1.0, kPivot)
+    ModeCodeParamsUCMH(double omBH2, double omCH2, double h, double tau, double kPivot, double NPivot, int potentialChoice, bool slowRollEnd, bool eternalInflOK, double kMin = 8e-7, double kMax = 1.2, int nPoints = 500) : LambdaCDMParams(omBH2, omCH2, h, tau, 1.0, 1.0, kPivot)
     {
-        ModeCode::initialize(potentialChoice, kPivot, NPivot, true, physicalPriors, slowRollEnd, eternalInflOK, kMin, kMax, nPoints);
+        ModeCode::initialize(potentialChoice, kPivot, NPivot, false, false, slowRollEnd, eternalInflOK, kMin, kMax, nPoints);
         vParams_.resize(ModeCode::getNumVParams());
     }
 
-    ~ModeCodeParamsInst()
+    ~ModeCodeParamsUCMH()
     {
     }
 
@@ -100,7 +100,14 @@ int main(int argc, char *argv[])
         const int nPar = 23;
 #endif
 
-        ModeCodeParamsInst modelParams(0.02, 0.1, 0.7, 0.1, 0.002, 55, 12, true, false, false, 8e-7, 1.2, 500);
+        //model 1
+        //const bool slowRollEnd = true;
+        //const bool eternalInflOK = false;
+
+        //model 2
+        const bool slowRollEnd = false;
+        const bool eternalInflOK = true;
+        ModeCodeParamsUCMH modelParams(0.02, 0.1, 0.7, 0.1, 0.002, 55, 12, slowRollEnd, eternalInflOK, 8e-7, 1.2, 500);
 
         if(ucmhLim)
         {
