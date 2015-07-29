@@ -326,7 +326,8 @@ public:
 
     virtual void evaluate(const std::vector<double>& x, std::vector<double>* res) const
     {
-        res->resize(1, like_->calculate(const_cast<double*>(&(x[0])), x.size()));
+        res->resize(1);
+        (*res)[0] = like_->calculate(const_cast<double*>(&(x[0])), x.size());
     }
 
 private:
