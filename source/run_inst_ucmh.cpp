@@ -60,9 +60,14 @@ public:
         check(v.size() == 4 + ModeCode::getNumVParams(), "");
 
         output_screen1("Param values:");
+        output_log("Param values:");
         for(int i = 0; i < v.size(); ++i)
+        {
             output_screen_clean1(std::setprecision(20) << "\t" << v[i]);
+            output_log(std::setprecision(20) << "\t" << v[i]);
+        }
         output_screen_clean1(std::endl);
+        output_log(std::endl);
 
         setBaseParams(v[0], v[1], v[2], v[3]);
 
@@ -73,6 +78,8 @@ public:
         const bool res = setVParams(vParams_, badLike);
         output_screen1("N_piv = " << ModeCode::getNPivot() << std::endl);
         output_screen1("Result = " << res << std::endl);
+        output_log("N_piv = " << ModeCode::getNPivot() << std::endl);
+        output_log("Result = " << res << std::endl);
         return res;
     }
 

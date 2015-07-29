@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
 
         output_screen("Now: " << v[0] << ' ' << v[1] << ' ' << v[2] << ' ' << v[3] << ' ' << v[4] << std::endl);
 
-        ModeCode::calculate(v1);
+        //ModeCode::calculate(v1);
         const bool res = ModeCode::calculate(v);
 
 
