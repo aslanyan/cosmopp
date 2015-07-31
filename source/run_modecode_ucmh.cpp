@@ -20,8 +20,8 @@ int main(int argc, char *argv[])
         args << argv[1] << ' ' << argv[2] << ' ' << argv[3] << ' ' << argv[4] << ' ' << argv[5];
         std::vector<double> v(5);
         args >> v[0] >> v[1] >> v[2] >> v[3] >> v[4];
-        const double NPivot = 55;
-        ModeCode::initialize(12, 0.002, NPivot, true, true, false, false, 8e-7, 1.2, 10);
+        const double NPivot = 70;
+        ModeCode::initialize(12, 0.002, NPivot, false, false, false, true, 8e-7, 1.2, 10);
 
         /*
         ModeCode::addKValue(10, 0, 1e10, 0, 1e10);
@@ -35,9 +35,13 @@ int main(int argc, char *argv[])
         ModeCode::addKValue(1e9, 0, 1e10, 0, 1e10);
         */
 
+        //std::vector<double>  v1{0.063324347453767582117, 0.087259287071610569519, -0.07146682502014208016, -0.012870094586320449115,    -8.6053603888697871582};
+
+        //output_screen("Now: " << v[0] << ' ' << v[1] << ' ' << v[2] << ' ' << v[3] << ' ' << v[4] << std::endl);
+        //ModeCode::calculate(v1);
+
         const bool res = ModeCode::calculate(v);
 
-        output_screen(v[0] << ' ' << v[1] << ' ' << v[2] << ' ' << v[3] << ' ' << v[4] << std::endl);
 
         if(!res)
         {
