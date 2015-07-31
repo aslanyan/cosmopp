@@ -1,3 +1,5 @@
+#include <cmath>
+
 #include <macros.hpp>
 #include <modecode.hpp>
 
@@ -110,14 +112,14 @@ ModeCode::initialize(int potentialChoice, double kPivot, double NPivot, bool ins
     vParams_ = &modpkparams_mp_vparams_;
 #endif
 
-    const double deltaK = (kMax - kMin) / nPoints;
+    const double deltaLogK = (std::log(kMax) - std::log(kMin)) / nPoints;
 
     scalarPs_.clear();
     tensorPs_.clear();
 
     for(int i = 0; i <= nPoints; ++i)
     {
-        const double k = (i == nPoints ? kMax : kMin + i * deltaK);
+        const double k = (i == nPoints ? kMax : std::exp(std::log(kMin) + i * deltaLogK));
         scalarPs_[k] = 0;
         tensorPs_[k] = 0;
         scalarLower_[k] = 1e-10;
