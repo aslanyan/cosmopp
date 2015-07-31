@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
         std::vector<double> v(5);
         args >> v[0] >> v[1] >> v[2] >> v[3] >> v[4];
         const double NPivot = 70;
-        ModeCode::initialize(12, 0.002, NPivot, false, false, false, true, 8e-7, 1.2, 10);
+        ModeCode::initialize(12, 0.002, NPivot, false, false, false, true, 5e-6, 1.2, 500);
 
         /*
         ModeCode::addKValue(10, 0, 1e10, 0, 1e10);
