@@ -23,7 +23,6 @@ int main(int argc, char *argv[])
         const double NPivot = 70;
         ModeCode::initialize(12, 0.002, NPivot, false, false, false, true, 5e-6, 1.2, 500);
 
-        /*
         ModeCode::addKValue(10, 0, 1e10, 0, 1e10);
         ModeCode::addKValue(1e2, 0, 1e10, 0, 1e10);
         ModeCode::addKValue(1e3, 0, 1e10, 0, 1e10);
@@ -33,7 +32,6 @@ int main(int argc, char *argv[])
         ModeCode::addKValue(1e7, 0, 1e10, 0, 1e10);
         ModeCode::addKValue(1e8, 0, 1e10, 0, 1e10);
         ModeCode::addKValue(1e9, 0, 1e10, 0, 1e10);
-        */
 
         //std::vector<double>  v1{0.063324347453767582117, 0.087259287071610569519, -0.07146682502014208016, -0.012870094586320449115,    -8.6053603888697871582};
 

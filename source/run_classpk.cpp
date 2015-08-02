@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
         std::vector<double> v(5);
         args >> v[0] >> v[1] >> v[2] >> v[3] >> v[4];
 
-        const double kMin = 5e-6, kMax = 1.2;
+        const double kMin = 5e-6, kMax = 1e9;
         const double kPerDecade = 500;
         const double kPivot = 0.002;
 
@@ -123,11 +123,14 @@ int main(int argc, char *argv[])
             throw exc;
         }
 
+        pt.k_min = kMin;
+        pt.k_max = kMax;
+
         pm.primordial_spec_type = inflation_V;
         pm.potential = polynomial;
         pm.V0 = std::pow(10.0, v[4]) / (64 * Math::pi * Math::pi);
         pm.V1 = -pm.V0 * std::sqrt(2.0 * v[0] * 8 * Math::pi);
-        pm.V2 = pm.V0 * pm.V0 * v[1] * 8 * Math::pi;
+        pm.V2 = pm.V0 * v[1] * 8 * Math::pi;
         pm.V3 = pm.V0 * pm.V0 / (pm.V1) * v[2] * (64 * Math::pi * Math::pi);
         pm.V4 = pm.V0 * pm.V0 * pm.V0 / (pm.V1 * pm.V1) * v[3] * (512 * Math::pi * Math::pi * Math::pi);
 
