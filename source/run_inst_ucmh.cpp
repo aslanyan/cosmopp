@@ -4,6 +4,7 @@
 #include <sstream>
 #include <memory>
 #include <iomanip>
+#include <memory>
 
 #include <macros.hpp>
 #include <planck_like.hpp>
@@ -11,22 +12,39 @@
 #include <markov_chain.hpp>
 #include <numerics.hpp>
 #include <modecode.hpp>
+#include <taylor_pk.hpp>
 #include <progress_meter.hpp>
 
 namespace
 {
 
-class ModeCodeParamsUCMH : public LambdaCDMParams
+class TaylorParamsUCMH : public LambdaCDMParams
 {
 public:
-    ModeCodeParamsUCMH(double omBH2, double omCH2, double h, double tau, double kPivot, double NPivot, int potentialChoice, bool slowRollEnd, bool eternalInflOK, double kMin = 8e-7, double kMax = 1.2, int nPoints = 500) : LambdaCDMParams(omBH2, omCH2, h, tau, 1.0, 1.0, kPivot)
+    TaylorParamsUCMH(double omBH2, double omCH2, double h, double tau, double kPivot, double NPivot, int potentialChoice, bool slowRollEnd, bool eternalInflOK, double kMin = 8e-7, double kMax = 1.2, int nPoints = 500, bool useClass = false) : LambdaCDMParams(omBH2, omCH2, h, tau, 1.0, 1.0, kPivot), useClass_(useClass)
     {
-        ModeCode::initialize(potentialChoice, kPivot, NPivot, false, false, slowRollEnd, eternalInflOK, kMin, kMax, nPoints);
-        vParams_.resize(ModeCode::getNumVParams());
+        if(useClass)
+        {
+            taylor_.reset(new TaylorPk(kPivot, kMin, kMax, 10));
+            vParams_.resize(5);
+        }
+        else
+        {
+            ModeCode::initialize(potentialChoice, kPivot, NPivot, false, false, slowRollEnd, eternalInflOK, kMin, kMax, nPoints);
+            vParams_.resize(ModeCode::getNumVParams());
+        }
     }
 
-    ~ModeCodeParamsUCMH()
+    ~TaylorParamsUCMH()
     {
+    }
+
+    void addKValue(double k, double sMin = 0, double sMax = 1, double tMin = 0, double tMax = 1)
+    {
+        if(useClass_)
+            taylor_->addKValue(k, sMin, sMax, tMin, tMax);
+        else
+            ModeCode::addKValue(k, sMin, sMax, tMin, tMax);
     }
 
     void setBaseParams(double omBH2, double omCH2, double h, double tau)
@@ -37,15 +55,31 @@ public:
         tau_ = tau;
     }
 
-    void setNPivot(double NPivot) { ModeCode::setNPivot(NPivot); }
-    bool setVParams(const std::vector<double>& vParams, double *badLike) { return ModeCode::calculate(vParams, badLike); }
+    bool setVParams(const std::vector<double>& vParams, double *badLike)
+    {
+        if(useClass_)
+            return taylor_->calculate(vParams, badLike);
 
-    virtual const Math::RealFunction& powerSpectrum() const { return ModeCode::getScalarPs(); }
-    virtual const Math::RealFunction& powerSpectrumTensor() const { return ModeCode::getTensorPs(); }
+        return ModeCode::calculate(vParams, badLike);
+    }
+
+    virtual const Math::RealFunction& powerSpectrum() const
+    {
+        if(useClass_) return taylor_->getScalarPs();
+
+        return ModeCode::getScalarPs();
+    }
+
+    virtual const Math::RealFunction& powerSpectrumTensor() const
+    {
+        if(useClass_) return taylor_->getTensorPs();
+
+        return ModeCode::getTensorPs();
+    }
 
     virtual void getAllParameters(std::vector<double>& v) const
     {
-        check(vParams_.size() == ModeCode::getNumVParams(), "");
+        check(useClass_ || vParams_.size() == ModeCode::getNumVParams(), "");
         v.resize(4 + vParams_.size());
         v[0] = omBH2_;
         v[1] = omCH2_;
@@ -57,7 +91,7 @@ public:
 
     virtual bool setAllParameters(const std::vector<double>& v, double *badLike)
     {
-        check(v.size() == 4 + ModeCode::getNumVParams(), "");
+        check(useClass_ || v.size() == 4 + ModeCode::getNumVParams(), "");
 
         output_screen1("Param values:");
         //output_log("Param values:");
@@ -71,19 +105,22 @@ public:
 
         setBaseParams(v[0], v[1], v[2], v[3]);
 
-        check(vParams_.size() == ModeCode::getNumVParams(), "");
+        check(useClass_ || vParams_.size() == ModeCode::getNumVParams(), "");
         for(int i = 0; i < vParams_.size(); ++i)
             vParams_[i] = v[4 + i];
 
         const bool res = setVParams(vParams_, badLike);
-        output_screen1("N_piv = " << ModeCode::getNPivot() << std::endl);
+        if(!useClass_)
+        {
+            output_screen1("N_piv = " << ModeCode::getNPivot() << std::endl);
+        }
         output_screen1("Result = " << res << std::endl);
-        //output_log("N_piv = " << ModeCode::getNPivot() << std::endl);
-        //output_log("Result = " << res << std::endl);
         return res;
     }
 
 private:
+    const bool useClass_;
+    std::auto_ptr<TaylorPk> taylor_;
     std::vector<double> vParams_;
 };
 
@@ -93,8 +130,24 @@ int main(int argc, char *argv[])
 {
     try {
         bool ucmhLim = false;
-        if(argc > 1 && std::string(argv[1]) == std::string("ucmh"))
-            ucmhLim = true;
+        bool useClass = false;
+        for(int i = 1; i < argc; ++i)
+        {
+            if(std::string(argv[i]) == std::string("ucmh"))
+                ucmhLim = true;
+
+            if(std::string(argv[i]) == std::string("class"))
+                useClass = true;
+        }
+
+        if(useClass)
+        {
+            output_screen("Using CLASS for calculating pk." << std::endl);
+        }
+        else
+        {
+            output_screen("Using Modecode for calculating pk. To use CLASS instead specify \"class\" as an argument." << std::endl);
+        }
 
         std::string root = "slow_test_files/mn_ucmh";
 
@@ -115,19 +168,19 @@ int main(int argc, char *argv[])
         //model 2
         const bool slowRollEnd = false;
         const bool eternalInflOK = true;
-        ModeCodeParamsUCMH modelParams(0.02, 0.1, 0.7, 0.1, 0.002, 55, 12, slowRollEnd, eternalInflOK, 5e-6, 1.2, 500);
+        TaylorParamsUCMH modelParams(0.02, 0.1, 0.7, 0.1, 0.002, 55, 12, slowRollEnd, eternalInflOK, 5e-6, 1.2, 500, useClass);
 
         if(ucmhLim)
         {
             output_screen("Adding UCMH limits!" << std::endl);
-            ModeCode::addKValue(10, 0, 1e-6, 0, 1e10);
-            ModeCode::addKValue(1e3, 0, 1e-7, 0, 1e10);
-            ModeCode::addKValue(1e6, 0, 1e-7, 0, 1e10);
-            ModeCode::addKValue(1e9, 0, 1e-2, 0, 1e10);
+            modelParams.addKValue(10, 0, 1e-6, 0, 1e10);
+            modelParams.addKValue(1e3, 0, 1e-7, 0, 1e10);
+            modelParams.addKValue(1e6, 0, 1e-7, 0, 1e10);
+            modelParams.addKValue(1e9, 0, 1e-2, 0, 1e10);
         }
         else
         {
-            output_screen("No UCMH limits! To add these limits specify \"ucmh\" as the first argument." << std::endl);
+            output_screen("No UCMH limits! To add these limits specify \"ucmh\" as an argument." << std::endl);
         }
 
         like.setModelCosmoParams(&modelParams);

@@ -19,6 +19,10 @@ if(CLASS_DIR)
 	set(TEST_FILES ${TEST_FILES} test_cmb.cpp)
 endif(CLASS_DIR)
 
+if(CLASS_DIR)
+	set(LIB_FILES ${LIB_FILES} taylor_pk.cpp)
+endif(CLASS_DIR)
+
 if(MINUIT_DIR)
 	set(TEST_FILES ${TEST_FILES} test_fit.cpp)
 endif(MINUIT_DIR)
