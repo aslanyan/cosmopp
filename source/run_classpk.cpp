@@ -2,6 +2,7 @@
 #include <fstream>
 
 #include <macros.hpp>
+#include <exception_handler.hpp>
 #include <taylor_pk.hpp>
 
 int main(int argc, char *argv[])
