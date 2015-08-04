@@ -9,6 +9,7 @@
 #include <macros.hpp>
 #include <planck_like.hpp>
 #include <mn_scanner.hpp>
+#include <mcmc.hpp>
 #include <markov_chain.hpp>
 #include <numerics.hpp>
 #include <modecode.hpp>
@@ -131,6 +132,7 @@ int main(int argc, char *argv[])
     try {
         bool ucmhLim = false;
         bool useClass = false;
+        bool useMH = false;
         for(int i = 1; i < argc; ++i)
         {
             if(std::string(argv[i]) == std::string("ucmh"))
@@ -138,6 +140,9 @@ int main(int argc, char *argv[])
 
             if(std::string(argv[i]) == std::string("class"))
                 useClass = true;
+
+            if(std::string(argv[i]) == std::string("mh"))
+                useMH = true;
         }
 
         if(useClass)
@@ -149,17 +154,32 @@ int main(int argc, char *argv[])
             output_screen("Using Modecode for calculating pk. To use CLASS instead specify \"class\" as an argument." << std::endl);
         }
 
-        std::string root = "slow_test_files/mn_ucmh";
+        if(useMH)
+        {
+            output_screen("Using Metropolis-Hastings sampler." << std::endl);
+        }
+        else
+        {
+            output_screen("Using MultiNest sampler. To use Metropolis-Hastings instead specify \"mh\" as an argument." << std::endl);
+        }
+
+        std::string root = (useMH ? "slow_test_files/mh_ucmh" : "slow_test_files/mn_ucmh");
+
+        std::auto_ptr<MnScanner> mn;
+        std::auto_ptr<Math::MetropolisHastings> mh;
 
 #ifdef COSMO_PLANCK_15
         PlanckLikelihood like(true, true, true, true, true, false, false, true, 500);
-        MnScanner mn(10, like, 500, root);
         const int nPar = 10;
 #else
         PlanckLikelihood like(true, true, false, true, false, true, 500);
-        MnScanner mn(23, like, 500, root);
         const int nPar = 23;
 #endif
+
+        if(useMH)
+            mh.reset(new Math::MetropolisHastings(nPar, like, root));
+        else
+            mn.reset(new MnScanner(nPar, like, 500, root));
 
         const double kPivot = 0.05;
 
@@ -187,42 +207,87 @@ int main(int argc, char *argv[])
 
         like.setModelCosmoParams(&modelParams);
 
-        mn.setParam(0, "ombh2", 0.02, 0.025);
-        mn.setParam(1, "omch2", 0.1, 0.2);
-        mn.setParam(2, "h", 0.55, 0.85);
-        mn.setParam(3, "tau", 0.02, 0.20);
-        //mn.setParam(4, "v_1", -10, -1);
-        mn.setParam(4, "v_1", 0, 0.1);
-        mn.setParam(5, "v_2", -0.1, 0.1);
-        mn.setParam(6, "v_3", -0.1, 0.1);
-        mn.setParam(7, "v_4", -0.1, 0.1);
-        mn.setParam(8, "v_5", -12, -7);
+        int nChains;
+        unsigned long burnin;
+        unsigned int thin;
+
+        if(useMH)
+        {
+            mh->setParam(0, "ombh2", 0.005, 0.1, 0.022, 0.0003, 0.00005);
+            mh->setParam(1, "omch2", 0.001, 0.99, 0.12, 0.003, 0.0005);
+            mh->setParam(2, "h", 0.2, 1.0, 0.7, 0.02, 0.002);
+            mh->setParam(3, "tau", 0.01, 0.8, 0.1, 0.01, 0.002);
+            mh->setParam(4, "v_1", 0, 0.1, 0.01, 0.01, 0.005);
+            mh->setParam(5, "v_2", -0.1, 0.1, 0, 0.01, 0.005);
+            mh->setParam(6, "v_3", -0.1, 0.1, 0, 0.01, 0.005);
+            mh->setParam(7, "v_4", -0.1, 0.1, 0, 0.01, 0.005);
+            mh->setParam(8, "v_5", -12, -7, -8, 1, 0.2);
 
 #ifdef COSMO_PLANCK_15
-        mn.setParamGauss(9, "A_planck", 1.0, 0.0025);
+            mh->setParamGauss(9, "A_planck", 1.0, 0.0025, 1.0, 0.001, 0.0002);
 #else
-        mn.setParam(9, "A_ps_100", 0, 360);
-        mn.setParam(10, "A_ps_143", 0, 270);
-        mn.setParam(11, "A_ps_217", 0, 450);
-        mn.setParam(12, "A_cib_143", 0, 20);
-        mn.setParam(13, "A_cib_217", 0, 80);
-        mn.setParam(14, "A_sz", 0, 10);
-        mn.setParam(15, "r_ps", 0.0, 1.0);
-        mn.setParam(16, "r_cib", 0.0, 1.0);
-        mn.setParam(17, "n_Dl_cib", -2, 2);
-        mn.setParam(18, "cal_100", 0.98, 1.02);
-        mn.setParam(19, "cal_127", 0.95, 1.05);
-        mn.setParam(20, "xi_sz_cib", 0, 1);
-        mn.setParam(21, "A_ksz", 0, 10);
-        mn.setParam(22, "Bm_1_1", -20, 20);
+            mh->setParam(9, "A_ps_100", 0, 360, 100, 100, 20);
+            mh->setParam(10, "A_ps_143", 0, 270, 50, 20, 2);
+            mh->setParam(11, "A_ps_217", 0, 450, 100, 30, 4);
+            mh->setParam(12, "A_cib_143", 0, 20, 10, 10, 1);
+            mh->setParam(13, "A_cib_217", 0, 80, 30, 15, 1);
+            mh->setParam(14, "A_sz", 0, 10, 5, 5, 1);
+            mh->setParam(15, "r_ps", 0.0, 1.0, 0.9, 0.2, 0.02);
+            mh->setParam(16, "r_cib", 0.0, 1.0, 0.4, 0.4, 0.05);
+            mh->setParam(17, "n_Dl_cib", -2, 2, 0.5, 0.2, 0.02);
+            mh->setParam(18, "cal_100", 0.98, 1.02, 1.0, 0.0008, 0.0001);
+            mh->setParam(19, "cal_127", 0.95, 1.05, 1.0, 0.003, 0.0002);
+            mh->setParam(20, "xi_sz_cib", 0, 1, 0.5, 0.6, 0.05);
+            mh->setParam(21, "A_ksz", 0, 10, 5, 6, 0.5);
+            mh->setParam(22, "Bm_1_1", -20, 20, 0.5, 1.0, 0.1);
 #endif
 
-        mn.run(true);
+            nChains = mh->run(100000, 1, burnin, Math::MetropolisHastings::GELMAN_RUBIN, 0.01, true);
+            burnin = 1000;
+            thin = 2;
+        }
+        else
+        {
+            mn->setParam(0, "ombh2", 0.02, 0.025);
+            mn->setParam(1, "omch2", 0.1, 0.2);
+            mn->setParam(2, "h", 0.55, 0.85);
+            mn->setParam(3, "tau", 0.02, 0.20);
+            mn->setParam(4, "v_1", 0, 0.1);
+            mn->setParam(5, "v_2", -0.1, 0.1);
+            mn->setParam(6, "v_3", -0.1, 0.1);
+            mn->setParam(7, "v_4", -0.1, 0.1);
+            mn->setParam(8, "v_5", -12, -7);
+
+#ifdef COSMO_PLANCK_15
+            mn->setParamGauss(9, "A_planck", 1.0, 0.0025);
+#else
+            mn->setParam(9, "A_ps_100", 0, 360);
+            mn->setParam(10, "A_ps_143", 0, 270);
+            mn->setParam(11, "A_ps_217", 0, 450);
+            mn->setParam(12, "A_cib_143", 0, 20);
+            mn->setParam(13, "A_cib_217", 0, 80);
+            mn->setParam(14, "A_sz", 0, 10);
+            mn->setParam(15, "r_ps", 0.0, 1.0);
+            mn->setParam(16, "r_cib", 0.0, 1.0);
+            mn->setParam(17, "n_Dl_cib", -2, 2);
+            mn->setParam(18, "cal_100", 0.98, 1.02);
+            mn->setParam(19, "cal_127", 0.95, 1.05);
+            mn->setParam(20, "xi_sz_cib", 0, 1);
+            mn->setParam(21, "A_ksz", 0, 10);
+            mn->setParam(22, "Bm_1_1", -20, 20);
+#endif
+
+            mn->run(true);
+
+            nChains = 1;
+            burnin = 0;
+            thin = 1;
+        }
         
         if(!CosmoMPI::create().isMaster())
             return 0;
 
-        MarkovChain chain("slow_test_files/mn_ucmh.txt");
+        MarkovChain chain(nChains, root.c_str(), burnin, thin);
 
         std::vector<MarkovChain::Element*> container;
         chain.getRange(container, 1.0, 0.0);
@@ -230,7 +295,7 @@ int main(int argc, char *argv[])
         std::ofstream outParamLimits("slow_test_files/mn_ucmh_param_limits.txt");
         for(int i = 0; i < nPar; ++i)
         {
-            std::string paramName = mn.getParamName(i);
+            std::string paramName = (useMH ? mh->getParamName(i) : mn->getParamName(i));
 
             std::stringstream fileName;
             fileName << "slow_test_files/mn_ucmh_" << paramName << ".txt";
