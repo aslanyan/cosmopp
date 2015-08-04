@@ -1,4 +1,5 @@
 #include <macros.hpp>
+#include <exception_handler.hpp>
 #include <markov_chain.hpp>
 
 int main(int argc, char *argv[])
