@@ -613,7 +613,7 @@ MetropolisHastings::run(unsigned long maxChainLength, int writeResumeInformation
                 p /= externalProposal_->calculate(&(currentOld[0]), n_, &(block[0]), i);
             }
 
-            if(notAcceptedCount > 2 * n_)
+            if(notAcceptedCount > 4 * n_)
             {
                 output_screen("WARNING! Haven't moved for " << notAcceptedCount << " iterations because the likelihood difference is too large!" << std::endl);
                 output_screen("\tcurrent like = " << currentLike_ << std::endl);
