@@ -242,9 +242,9 @@ int main(int argc, char *argv[])
             mh->setParam(22, "Bm_1_1", -20, 20, 0.5, 1.0, 0.1);
 #endif
 
-            nChains = mh->run(100000, 1, burnin, Math::MetropolisHastings::GELMAN_RUBIN, 0.01, true);
             burnin = 1000;
             thin = 2;
+            nChains = mh->run(100000, 1, burnin, Math::MetropolisHastings::GELMAN_RUBIN, 0.01, true);
         }
         else
         {
