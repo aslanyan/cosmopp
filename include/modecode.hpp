@@ -21,7 +21,7 @@ public:
 
     static void addKValue(double k, double sMin = 0, double sMax = 1, double tMin = 0, double tMax = 1);
 
-    static bool calculate(const std::vector<double>& vParams);
+    static bool calculate(const std::vector<double>& vParams, double *badLike = NULL);
 
     static int getNumVParams() { return nVPar_; }
 
@@ -60,7 +60,7 @@ public:
     }
 
     void setNPivot(double NPivot) { ModeCode::setNPivot(NPivot); }
-    bool setVParams(const std::vector<double>& vParams) { return ModeCode::calculate(vParams); }
+    bool setVParams(const std::vector<double>& vParams, double *badLike) { return ModeCode::calculate(vParams, badLike); }
 
     virtual const Math::RealFunction& powerSpectrum() const { return ModeCode::getScalarPs(); }
     virtual const Math::RealFunction& powerSpectrumTensor() const { return ModeCode::getTensorPs(); }
@@ -78,7 +78,7 @@ public:
             v[5 + i] = vParams_[i];
     }
 
-    virtual bool setAllParameters(const std::vector<double>& v)
+    virtual bool setAllParameters(const std::vector<double>& v, double *badLike)
     {
         check(v.size() == 5 + ModeCode::getNumVParams(), "");
 
@@ -94,7 +94,7 @@ public:
         for(int i = 0; i < vParams_.size(); ++i)
             vParams_[i] = v[5 + i];
 
-        return setVParams(vParams_);
+        return setVParams(vParams_, badLike);
     }
 
 private:

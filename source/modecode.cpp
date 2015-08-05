@@ -1,3 +1,5 @@
+#include <cmath>
+
 #include <macros.hpp>
 #include <modecode.hpp>
 
@@ -110,14 +112,14 @@ ModeCode::initialize(int potentialChoice, double kPivot, double NPivot, bool ins
     vParams_ = &modpkparams_mp_vparams_;
 #endif
 
-    const double deltaK = (kMax - kMin) / nPoints;
+    const double deltaLogK = (std::log(kMax) - std::log(kMin)) / nPoints;
 
     scalarPs_.clear();
     tensorPs_.clear();
 
     for(int i = 0; i <= nPoints; ++i)
     {
-        const double k = (i == nPoints ? kMax : kMin + i * deltaK);
+        const double k = (i == nPoints ? kMax : std::exp(std::log(kMin) + i * deltaLogK));
         scalarPs_[k] = 0;
         tensorPs_[k] = 0;
         scalarLower_[k] = 1e-10;
@@ -168,6 +170,12 @@ ModeCode::addKValue(double k, double sMin, double sMax, double tMin, double tMax
 {
     check(k > 0, "");
     check(scalarPs_.find(k) == scalarPs_.end(), "already exists");
+    check(sMax >= sMin, "");
+    check(sMin >= 0, "");
+    check(sMax > 0, "");
+    check(tMax >= tMin, "");
+    check(tMin >= 0, "");
+    check(tMax > 0, "");
     scalarPs_[k] = 0;
     tensorPs_[k] = 0;
     scalarLower_[k] = sMin;
@@ -177,12 +185,21 @@ ModeCode::addKValue(double k, double sMin, double sMax, double tMin, double tMax
 }
 
 bool
-ModeCode::calculate(const std::vector<double>& vParams)
+ModeCode::calculate(const std::vector<double>& vParams, double *badLike)
 {
     check(vParams.size() <= 10, "too many params");
 
+    double bad1 = 0;
     for(int i = 0; i < vParams.size(); ++i)
+    {
         vParams_[i] = vParams[i];
+        bad1 += vParams[i] * vParams[i];
+    }
+    
+    if(bad1 > 0)
+        while(bad1 < 1) bad1 *= 10;
+
+    check(bad1 >= 0, "");
 
 #ifdef MODECODE_GFORT
     __access_modpk_MOD_potinit();
@@ -192,11 +209,19 @@ ModeCode::calculate(const std::vector<double>& vParams)
 
 #ifdef MODECODE_GFORT
     if(__camb_interface_MOD_pk_bad != 0)
+    {
+        if(badLike) *badLike = 1e10 * bad1;
         return false;
+    }
 #else
     if(camb_interface_mp_pk_bad_ != 0)
+    {
+        if(badLike) *badLike = 1e10 * bad1;
         return false;
+    }
 #endif
+
+    double bad = 0;
 
     Math::TableFunction<double, double>::iterator it = scalarPs_.begin(), it1 = tensorPs_.begin();
     for(; it != scalarPs_.end(); ++it)
@@ -212,21 +237,54 @@ ModeCode::calculate(const std::vector<double>& vParams)
         const double sMin = scalarLower_[k], sMax = scalarUpper_[k], tMin = tensorLower_[k], tMax = tensorUpper_[k];
 #ifdef MODECODE_GFORT
         if(__camb_interface_MOD_pk_bad != 0)
+        {
+            if(badLike) *badLike = 1e10 * bad1;
             return false;
+        }
         __access_modpk_MOD_evolve(&k, &s, &t);
-        if(__camb_interface_MOD_pk_bad != 0 || s <= sMin || s >= sMax || t <= tMin || t >= tMax)
+        if(__camb_interface_MOD_pk_bad != 0)
+        {
+            if(badLike) *badLike = 1e10 * bad1;
             return false;
+        }
+        if(s < sMin)
+            bad += (sMin - s) / sMin;
+        if(s > sMax)
+            bad += (s - sMax) / sMax;
+        if(t < tMin)
+            bad += (tMin - t) / tMin; 
+        if(t > tMax)
+            bad += (t - tMax) / tMax;
 #else
         if(camb_interface_mp_pk_bad_ != 0)
+        {
+            if(badLike) *badLike = 1e10 * bad1;
             return false;
+        }
         access_modpk_mp_evolve_(&k, &s, &t);
-        if(camb_interface_mp_pk_bad_ != 0 || s <= sMin || s >= sMax || t <= tMin || t >= tMax)
+        if(camb_interface_mp_pk_bad_ != 0)
+        {
+            if(badLike) *badLike = 1e10 * bad1;
             return false;
+        }
+        if(s < sMin)
+            bad += (sMin - s) / sMin;
+        if(s > sMax)
+            bad += (s - sMax) / sMax;
+        if(t < tMin)
+            bad += (tMin - t) / tMin; 
+        if(t > tMax)
+            bad += (t - tMax) / tMax;
 #endif
         (*it).second = s;
         (*it1).second = t;
         ++it1;
     }
 
-    return true;
+    check(bad >= 0, "");
+
+    if(badLike)
+        *badLike = bad * 1e10;
+
+    return (bad == 0);
 }

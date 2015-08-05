@@ -38,5 +38,5 @@ TestModeCode::runSubTest(unsigned int i, double& res, double& expected, std::str
     res = (i == 0 ? ModeCode::getScalarPs().evaluate(0.05) : ModeCode::getTensorPs().evaluate(0.05));
 
     // obtained by running modecode by itself.
-    expected = (i == 0 ? 5.70997e-09 :7.77754e-10); 
+    expected = (i == 0 ? 5.71038e-09 :7.77782e-10); 
 }
