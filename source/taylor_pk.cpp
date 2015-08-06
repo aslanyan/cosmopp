@@ -23,10 +23,10 @@ TaylorPk::TaylorPk(double kPivot, double kMin, double kMax, int kPerDecade)
     for(int i = 0; i <= nPoints; ++i)
     {
         const double k = (i == nPoints ? kMax : std::exp(std::log(kMin) + i * deltaLogK));
-        scalarLower_[k] = 1e-10;
-        scalarUpper_[k] = 1e-8;
+        scalarLower_[k] = 0;
+        scalarUpper_[k] = 1e-6;
         tensorLower_[k] = 0;
-        tensorUpper_[k] = 1e-8;
+        tensorUpper_[k] = 1e-6;
     }
     
     pr_ = new precision;
