@@ -254,7 +254,8 @@ int main(int argc, char *argv[])
             mn->setParam(3, "tau", 0.02, 0.20);
             mn->setParam(4, "v_1", 0, 0.025);
             mn->setParam(5, "v_2", -0.1, 0.1);
-            mn->setParam(6, "v_3", -0.1, 0.1);
+            //mn->setParam(6, "v_3", -0.1, 0.1);
+            mn->setParamFixed(6, "v_3", 0.0);
             //mn->setParam(7, "v_4", -0.1, 0.1);
             mn->setParamFixed(7, "v_4", 0.0);
             mn->setParam(8, "v_5", -12, -7);
