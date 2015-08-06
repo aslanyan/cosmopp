@@ -217,7 +217,7 @@ int main(int argc, char *argv[])
             mh->setParam(1, "omch2", 0.1, 0.2, 0.12, 0.003, 0.001);
             mh->setParam(2, "h", 0.55, 0.85, 0.68, 0.02, 0.005);
             mh->setParam(3, "tau", 0.02, 0.2, 0.1, 0.02, 0.01);
-            mh->setParam(4, "v_1", 0, 0.1, 0.01, 0.005, 0.005);
+            mh->setParam(4, "v_1", 0, 0.03, 0.01, 0.005, 0.005);
             mh->setParam(5, "v_2", -0.1, 0.1, 0, 0.02, 0.02);
             mh->setParam(6, "v_3", -0.1, 0.1, 0, 0.01, 0.01);
             mh->setParam(7, "v_4", -0.1, 0.1, 0, 0.01, 0.01);
@@ -252,7 +252,7 @@ int main(int argc, char *argv[])
             mn->setParam(1, "omch2", 0.1, 0.2);
             mn->setParam(2, "h", 0.55, 0.85);
             mn->setParam(3, "tau", 0.02, 0.20);
-            mn->setParam(4, "v_1", 0, 0.1);
+            mn->setParam(4, "v_1", 0, 0.025);
             mn->setParam(5, "v_2", -0.1, 0.1);
             mn->setParam(6, "v_3", -0.1, 0.1);
             mn->setParam(7, "v_4", -0.1, 0.1);
