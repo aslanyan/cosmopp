@@ -244,7 +244,7 @@ int main(int argc, char *argv[])
 
             burnin = 1000;
             thin = 2;
-            nChains = mh->run(100000, 1, burnin, Math::MetropolisHastings::GELMAN_RUBIN, 0.01, true);
+            nChains = mh->run(100000, 1, burnin, Math::MetropolisHastings::GELMAN_RUBIN, 0.01, false);
         }
         else
         {
