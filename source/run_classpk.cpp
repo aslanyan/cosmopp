@@ -23,10 +23,11 @@ int main(int argc, char *argv[])
 
         const double kMin = 5e-6, kMax = 1.2;
         const double kPerDecade = 10;
-        const double kPivot = 0.002;
+        const double kPivot = 0.05;
 
         TaylorPk tpk(kPivot, kMin, kMax, kPerDecade);
 
+        /*
         tpk.addKValue(10, 0, 1e10, 0, 1e10);
         tpk.addKValue(1e2, 0, 1e10, 0, 1e10);
         tpk.addKValue(1e3, 0, 1e10, 0, 1e10);
@@ -36,6 +37,7 @@ int main(int argc, char *argv[])
         tpk.addKValue(1e7, 0, 1e10, 0, 1e10);
         tpk.addKValue(1e8, 0, 1e10, 0, 1e10);
         tpk.addKValue(1e9, 0, 1e10, 0, 1e10);
+        */
 
         if(tpk.calculate(v))
         {
