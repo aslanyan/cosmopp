@@ -44,8 +44,9 @@ public:
 
     int getNx(int i) const { check(i >= 0 && i < d_, ""); return nx_[i]; }
     int getNx0Starting() const { return nx0Starting_; }
-    int getXMax(int i) const { check(i >= 0 && i < d_, ""); return xMax_[i]; }
-    int getDeltaX(int i) const { check(i >= 0 && i < d_, ""); return deltaX_[i]; }
+    double getXMin(int i) const { check(i >= 0 && i < d_, ""); return xMin_[i]; }
+    double getXMax(int i) const { check(i >= 0 && i < d_, ""); return xMax_[i]; }
+    double getDeltaX(int i) const { check(i >= 0 && i < d_, ""); return deltaX_[i]; }
 
     const std::vector<double>& getField(const std::vector<int>& ind) const { return grid_[index(&(ind[0]))]; }
 
