@@ -104,16 +104,23 @@ public:
         output_screen_clean1(std::endl);
         //output_log(std::endl);
         
+        /*
         if(v[4] < 0.002)
         {
             output_log(v[4] << ' ' << v[5] << ' ' << v[6] << ' ' << v[7] << ' ' << v[8] << std::endl);
         }
+        */
 
         setBaseParams(v[0], v[1], v[2], v[3]);
 
         check(useClass_ || vParams_.size() == ModeCode::getNumVParams(), "");
         for(int i = 0; i < vParams_.size(); ++i)
             vParams_[i] = v[4 + i];
+
+        check(vParams_[0] != 0, "");
+
+        // last param is log_10(V0 / eps), need to convert to log_10(V0)
+        vParams_[4] += std::log(vParams_[0]) / std::log(10.0);
 
         const bool res = setVParams(vParams_, badLike);
         if(!useClass_)
@@ -223,11 +230,12 @@ int main(int argc, char *argv[])
             mh->setParam(1, "omch2", 0.1, 0.2, 0.12, 0.003, 0.001);
             mh->setParam(2, "h", 0.55, 0.85, 0.68, 0.02, 0.005);
             mh->setParam(3, "tau", 0.02, 0.2, 0.1, 0.02, 0.01);
-            mh->setParam(4, "v_1", 0, 0.025, 0.01, 0.005, 0.005);
+            mh->setParam(4, "v_1", 0, 0.1, 0.01, 0.005, 0.005);
             mh->setParam(5, "v_2", -0.1, 0.1, 0, 0.02, 0.02);
             mh->setParam(6, "v_3", -0.1, 0.1, 0, 0.01, 0.01);
             mh->setParam(7, "v_4", -0.1, 0.1, 0, 0.01, 0.01);
-            mh->setParam(8, "v_5", -10, -8, -9, 0.5, 0.1);
+            //mh->setParam(8, "v_5", -10, -8, -9, 0.5, 0.1);
+            mh->setParam(8, "v_5", -10, -4, -6, 0.5, 0.1);
 
 #ifdef COSMO_PLANCK_15
             mh->setParamGauss(9, "A_planck", 1.0, 0.0025, 1.0, 0.002, 0.002);
@@ -258,13 +266,13 @@ int main(int argc, char *argv[])
             mn->setParam(1, "omch2", 0.1, 0.2);
             mn->setParam(2, "h", 0.55, 0.85);
             mn->setParam(3, "tau", 0.02, 0.20);
-            mn->setParam(4, "v_1", 0, 0.025);
+            mn->setParam(4, "v_1", 0, 0.1);
             mn->setParam(5, "v_2", -0.1, 0.1);
-            //mn->setParam(6, "v_3", -0.1, 0.1);
-            mn->setParamFixed(6, "v_3", 0.0);
-            //mn->setParam(7, "v_4", -0.1, 0.1);
-            mn->setParamFixed(7, "v_4", 0.0);
-            mn->setParam(8, "v_5", -10, -7);
+            mn->setParam(6, "v_3", -0.1, 0.1);
+            //mn->setParamFixed(6, "v_3", 0.0);
+            mn->setParam(7, "v_4", -0.1, 0.1);
+            //mn->setParamFixed(7, "v_4", 0.0);
+            mn->setParam(8, "v_5", -10, -4);
 
 #ifdef COSMO_PLANCK_15
             mn->setParamGauss(9, "A_planck", 1.0, 0.0025);
