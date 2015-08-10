@@ -122,10 +122,10 @@ ModeCode::initialize(int potentialChoice, double kPivot, double NPivot, bool ins
         const double k = (i == nPoints ? kMax : std::exp(std::log(kMin) + i * deltaLogK));
         scalarPs_[k] = 0;
         tensorPs_[k] = 0;
-        scalarLower_[k] = 1e-10;
-        scalarUpper_[k] = 1e-8;
+        scalarLower_[k] = 0;
+        scalarUpper_[k] = 1e-6;
         tensorLower_[k] = 0;
-        tensorUpper_[k] = 1e-8;
+        tensorUpper_[k] = 1e-6;
     }
 
     switch(potentialChoice)

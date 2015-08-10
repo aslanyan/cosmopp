@@ -103,6 +103,11 @@ public:
         }
         output_screen_clean1(std::endl);
         //output_log(std::endl);
+        
+        if(v[0] < 0.002)
+        {
+            output_log(v[0] << ' ' << v[1] << ' ' << v[2] << ' ' << v[3] << ' ' << v[4] << std::endl);
+        }
 
         setBaseParams(v[0], v[1], v[2], v[3]);
 
@@ -190,7 +195,8 @@ int main(int argc, char *argv[])
         //model 2
         const bool slowRollEnd = false;
         const bool eternalInflOK = true;
-        TaylorParamsUCMH modelParams(0.02, 0.1, 0.7, 0.1, kPivot, 55, 12, slowRollEnd, eternalInflOK, 5e-6, 1.2, 500, useClass);
+        //TaylorParamsUCMH modelParams(0.02, 0.1, 0.7, 0.1, kPivot, 55, 12, slowRollEnd, eternalInflOK, 5e-6, 1.2, 500, useClass);
+        TaylorParamsUCMH modelParams(0.02, 0.1, 0.7, 0.1, kPivot, 55, 12, slowRollEnd, eternalInflOK, 5e-6, 0.7, 500, useClass);
 
         if(ucmhLim)
         {
@@ -221,7 +227,7 @@ int main(int argc, char *argv[])
             mh->setParam(5, "v_2", -0.1, 0.1, 0, 0.02, 0.02);
             mh->setParam(6, "v_3", -0.1, 0.1, 0, 0.01, 0.01);
             mh->setParam(7, "v_4", -0.1, 0.1, 0, 0.01, 0.01);
-            mh->setParam(8, "v_5", -12, -8, -9, 0.5, 0.1);
+            mh->setParam(8, "v_5", -10, -8, -9, 0.5, 0.1);
 
 #ifdef COSMO_PLANCK_15
             mh->setParamGauss(9, "A_planck", 1.0, 0.0025, 1.0, 0.002, 0.002);
@@ -258,7 +264,7 @@ int main(int argc, char *argv[])
             mn->setParamFixed(6, "v_3", 0.0);
             //mn->setParam(7, "v_4", -0.1, 0.1);
             mn->setParamFixed(7, "v_4", 0.0);
-            mn->setParam(8, "v_5", -12, -7);
+            mn->setParam(8, "v_5", -10, -7);
 
 #ifdef COSMO_PLANCK_15
             mn->setParamGauss(9, "A_planck", 1.0, 0.0025);
