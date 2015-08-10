@@ -104,9 +104,9 @@ public:
         output_screen_clean1(std::endl);
         //output_log(std::endl);
         
-        if(v[0] < 0.002)
+        if(v[4] < 0.002)
         {
-            output_log(v[0] << ' ' << v[1] << ' ' << v[2] << ' ' << v[3] << ' ' << v[4] << std::endl);
+            output_log(v[4] << ' ' << v[5] << ' ' << v[6] << ' ' << v[7] << ' ' << v[8] << std::endl);
         }
 
         setBaseParams(v[0], v[1], v[2], v[3]);
