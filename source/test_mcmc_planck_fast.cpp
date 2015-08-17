@@ -27,22 +27,26 @@ TestMCMCPlanckFast::runSubTest(unsigned int i, double& res, double& expected, st
 {
     check(i >= 0 && i < 1, "invalid index " << i);
     
-#ifdef COSMO_PLANCK_15
-    output_screen("Planck 15 fast likelihood mcmc test currently not implemented!" << std::endl);
-    res = 1;
-    expected = 1;
-    subTestName = "not_implemented";
-#else
     using namespace Math;
+
+    std::string root = "slow_test_files/mcmc_planck_fast_test";
 
     const double pivot = 0.05;
     LambdaCDMParams par(0.022, 0.12, 0.7, 0.1, 1.0, std::exp(3.0) / 1e10, pivot);
 
+#ifdef COSMO_PLANCK_15
+    //PlanckLikeFast planckLike(&par, true, true, true, false, true, false, false, false, 5, 0.4, 10000);
+    PlanckLikeFast planckLike(&par, true, true, true, false, false, false, false, false, 5, 0.4, 10000);
+    const int nPar = 22;
+#else
     PlanckLikeFast planckLike(&par, true, true, false, true, false, false, 5, 0.4, 10000);
+    const int nPar = 20;
+#endif
+
+    MetropolisHastings mh(nPar, planckLike, root, std::time(0), true);
+
     std::string errorLogRoot = "slow_test_files/mcmc_planck_fast_error_log";
     planckLike.logError(errorLogRoot.c_str());
-    std::string root = "slow_test_files/mcmc_planck_fast_test";
-    MetropolisHastings mh(20, planckLike, root, std::time(0), true);
 
     mh.setParam(0, "ombh2", 0.005, 0.1, 0.022, 0.0003, 0.00005);
     mh.setParam(1, "omch2", 0.001, 0.99, 0.12, 0.003, 0.0005);
@@ -51,6 +55,25 @@ TestMCMCPlanckFast::runSubTest(unsigned int i, double& res, double& expected, st
     mh.setParam(4, "ns", 0.9, 1.1, 1.0, 0.01, 0.002);
     mh.setParam(5, "As", 2.7, 4.0, 3.0, 0.1, 0.002);
 
+#ifdef COSMO_PLANCK_15
+    mh.setParamGauss(6, "A_planck", 1.0, 0.0025, 1.0, 0.001, 0.0002);
+
+    mh.setParam(7, "A_cib_217", 0, 200, 60, 5, 5);
+    mh.setParam(8, "cib_index", -1.301, -1.299, -1.3, 0.00001, 0.00001);
+    mh.setParam(9, "xi_sz_cib", 0, 1, 0.5, 0.3, 0.3);
+    mh.setParam(10, "A_sz", 0, 10, 5, 2, 2);
+    mh.setParam(11, "ps_A_100_100", 0, 400, 250, 30, 30);
+    mh.setParam(12, "ps_A_143_143", 0, 400, 50, 10, 10);
+    mh.setParam(13, "ps_A_143_217", 0, 400, 40, 10, 10);
+    mh.setParam(14, "ps_A_217_217", 0, 400, 100, 10, 10);
+    mh.setParam(15, "k_sz", 0, 10, 3, 2.5, 2.5);
+    mh.setParamGauss(16, "gal545_A_100", 7, 2, 7.5, 2, 2);
+    mh.setParamGauss(17, "gal545_A_143", 9, 2, 9, 2, 2);
+    mh.setParamGauss(18, "gal545_A_143_217", 21, 8.5, 17, 4, 4);
+    mh.setParamGauss(19, "gal545_A_217", 80, 20, 80, 7, 7);
+    mh.setParamGauss(20, "calib_100T", 0.999, 0.001, 0.998, 0.001);
+    mh.setParamGauss(21, "calib_217T", 0.995, 0.002, 0.996, 0.001);
+#else
     mh.setParam(6, "A_ps_100", 0, 360, 100, 100, 20);
     mh.setParam(7, "A_ps_143", 0, 270, 50, 20, 2);
     mh.setParam(8, "A_ps_217", 0, 450, 100, 30, 4);
@@ -65,6 +88,7 @@ TestMCMCPlanckFast::runSubTest(unsigned int i, double& res, double& expected, st
     mh.setParam(17, "xi_sz_cib", 0, 1, 0.5, 0.6, 0.05);
     mh.setParam(18, "A_ksz", 0, 10, 5, 6, 0.5);
     mh.setParam(19, "Bm_1_1", -20, 20, 0.5, 1.0, 0.1);
+#endif
 
     Timer timer("MCMC PLANCK FAST");
 
@@ -86,13 +110,16 @@ TestMCMCPlanckFast::runSubTest(unsigned int i, double& res, double& expected, st
 
     const int nPoints = 1000;
 
-    //const double expectedMedian[6] = {0.02217, 0.1186, 0.679, 0.089, 0.9635, 3.085};
-    //const double expectedSigma[6] = {0.00033, 0.0031, 0.015, 0.032, 0.0094, 0.057};
+#ifdef COSMO_PLANCK_15
+    const double expectedMedian[6] = {0.02222, 0.1197, 0.6731, 0.078, 0.9655, 3.089};
+    const double expectedSigma[6] = {0.00023, 0.0022, 0.0096, 0.019, 0.0062, 0.036};
+#else
     const double expectedMedian[6] = {0.02205, 0.1199, 0.673, 0.089, 0.9603, 3.089};
     const double expectedSigma[6] = {0.00028, 0.0027, 0.012, 0.013, 0.0073, 0.025};
+#endif
 
     std::ofstream outParamLimits("slow_test_files/mcmc_planck_fast_param_limits.txt");
-    for(int i = 0; i < 20; ++i)
+    for(int i = 0; i < nPar; ++i)
     {
         const std::string& paramName = mh.getParamName(i);
         std::stringstream fileName;
@@ -124,6 +151,5 @@ TestMCMCPlanckFast::runSubTest(unsigned int i, double& res, double& expected, st
         }
     }
     outParamLimits.close();
-#endif
 }
 

@@ -696,15 +696,15 @@ PlanckLikelihood::calculate(double* params, int nPar)
 
     setAPlanck(params[nModel]);
 
-    if(highT_)
+    if(highT_ && !highLikeLite_)
     {
         check(highExtra_.size() == (highP_ ? 32 : 15), "");
         for(int i = 0; i < highExtra_.size(); ++i)
             highExtra_[i] = params[nModel + 1 + i];
-    }
 
-    if(highP_)
-        setAPol(params[nModel + 33]);
+        if(highP_)
+            setAPol(params[nModel + 33]);
+    }
 
     //timer.end();
     if(success)
