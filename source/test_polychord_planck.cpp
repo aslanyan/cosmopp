@@ -31,10 +31,10 @@ TestPolyChordPlanck::runSubTest(unsigned int i, double& res, double& expected, s
     std::string root = "slow_test_files/polychord_planck_test";
 #ifdef COSMO_PLANCK_15
     PlanckLikelihood planckLike(true, true, true, false, true, false, false, false, 5);
-    PolyChord pc(7, planckLike, 300, root, 4);
+    PolyChord pc(7, planckLike, 100, root, 1);
 #else
     PlanckLikelihood planckLike(true, true, false, true, false, false, 5);
-    PolyChord pc(7, planckLike, 300, root, 4);
+    PolyChord pc(7, planckLike, 100, root, 1);
 #endif
 
     pc.setParam(0, "ombh2", 0.02, 0.025, 1);
@@ -60,7 +60,7 @@ TestPolyChordPlanck::runSubTest(unsigned int i, double& res, double& expected, s
     pc.setParam(16, "cal_127", 0.95, 1.05, 3);
     pc.setParam(17, "xi_sz_cib", 0, 1, 3);
     pc.setParam(18, "A_ksz", 0, 10, 3);
-    pc.setParam(19, "Bm_1_1", -20, 20);
+    pc.setParam(19, "Bm_1_1", -20, 20, 3);
 #endif
 
     const std::vector<double> fracs{0.85, 0.1, 0.05};

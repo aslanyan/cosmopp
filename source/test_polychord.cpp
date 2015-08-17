@@ -71,8 +71,7 @@ TestPolyChordFast::runSubTest(unsigned int i, double& res, double& expected, std
     pc1.setParam(1, "y", yMin, yMax, (i == 0 ? 2 : 1));
     if(i == 0)
     {
-        std::vector<double> frac(2, 0.5);
-        frac[1] = 0.5;
+        std::vector<double> frac{0.5, 0.5};
         pc1.setParameterHierarchy(frac);
     }
     pc1.run(false);

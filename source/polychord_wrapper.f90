@@ -121,13 +121,13 @@
                                 physical_indices(1) = i
                                 if (prior_types(i) == 1) then
                                         call add_parameter(params,'p',&
-                        'p',speeds(i),uniform_type,i,[prior_mins(i),prior_maxs(i)])
+                        'p',speeds(i),uniform_type,1,[prior_mins(i),prior_maxs(i)])
                                 else if (prior_types(i) == 2) then
                                         call add_parameter(params,'p',&
-                        'p',speeds(i),log_uniform_type,i,[prior_mins(i),prior_maxs(i)])
+                        'p',speeds(i),log_uniform_type,2,[prior_mins(i),prior_maxs(i)])
                                 else if (prior_types(i) == 3) then
                                         call add_parameter(params,'p',&
-                        'p',speeds(i),gaussian_type,i,[prior_mins(i),prior_maxs(i)])
+                        'p',speeds(i),gaussian_type,3,[prior_mins(i),prior_maxs(i)])
                                 else
                                         print*,'INVALID PRIOR TYPE ',i
                                         stop 1

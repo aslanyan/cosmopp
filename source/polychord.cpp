@@ -88,6 +88,9 @@ PolyChord::logLike(double *theta)
     //output_screen1("polychord c++ likelihood call" << std::endl);
     int j = 0;
 
+    std::stringstream str;
+    str << "Polychord likelihood point:";
+
     for(int i = 0; i < n_; ++i)
     {
         if(isFixed_[i])
@@ -101,7 +104,9 @@ PolyChord::logLike(double *theta)
             ++j;
 
         }
+        str << '\t' << paramsCurrent_[i];
     }
+    output_log(str.str() << std::endl);
 
     return -like_.calculate(&(paramsCurrent_[0]), n_) / 2.0;
 }
