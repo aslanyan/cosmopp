@@ -15,7 +15,7 @@
 
 bool PolyChord::running_ = false;
 
-PolyChord::PolyChord(int nPar, Math::LikelihoodFunction& like, int nLive, std::string fileRoot, int nRepeats) : n_(nPar), like_(like), nLive_(nLive), paramsStarting_(nPar, 0), paramNames_(nPar), paramsBest_(nPar, 0), paramsMean_(nPar, 0), paramsStd_(nPar, 0), paramsCurrent_(nPar, 0), priorTypes_(nPar, 1), priorMins_(nPar, 0), priorMaxs_(nPar, 1), speeds_(nPar, 1), paramsFixed_(nPar, 0), isFixed_(nPar, false), fileRoot_(fileRoot), nRepeats_(nRepeats), fracs_(1, 1.0)
+PolyChord::PolyChord(int nPar, Math::LikelihoodFunction& like, int nLive, std::string fileRoot, int nRepeats) : n_(nPar), like_(like), nLive_(nLive), paramsStarting_(nPar, 0), paramNames_(nPar), paramsBest_(nPar, 0), paramsMean_(nPar, 0), paramsStd_(nPar, 0), paramsCurrent_(nPar, 0), priorTypes_(nPar, 1), priorBlocks_(nPar, 1), priorMins_(nPar, 0), priorMaxs_(nPar, 1), speeds_(nPar, 1), paramsFixed_(nPar, 0), isFixed_(nPar, false), fileRoot_(fileRoot), nRepeats_(nRepeats), fracs_(1, 1.0)
 {
 }
 
@@ -34,6 +34,29 @@ PolyChord::setParam(int i, const std::string& name, double min, double max, int 
 
     paramNames_[i] = name;
     priorTypes_[i] = 1;
+    priorBlocks_[i] = 1;
+    priorMins_[i] = min;
+    priorMaxs_[i] = max;
+    speeds_[i] = speed;
+    isFixed_[i] = false;
+}
+
+void
+PolyChord::setParamLogUniform(int i, const std::string& name, double min, double max, int speed)
+{
+    check(i >= 0 && i < n_, "invalid index " << i);
+    check(max >= min, "");
+    check(speed >= 1 && speed < 100, "invalid speed");
+
+    if(min == max)
+    {
+        setParamFixed(i, name, min);
+        return;
+    }
+
+    paramNames_[i] = name;
+    priorTypes_[i] = 2;
+    priorBlocks_[i] = 2;
     priorMins_[i] = min;
     priorMaxs_[i] = max;
     speeds_[i] = speed;
@@ -64,8 +87,32 @@ PolyChord::setParamGauss(int i, const std::string& name, double mean, double sig
 
     paramNames_[i] = name;
     priorTypes_[i] = 3;
+    priorBlocks_[i] = 3;
     priorMins_[i] = mean;
     priorMaxs_[i] = sigma;
+    speeds_[i] = speed;
+    isFixed_[i] = false;
+}
+
+void
+PolyChord::setParamSortedUniform(int i, const std::string& name, double min, double max, int block, int speed)
+{
+    check(i >= 0 && i < n_, "invalid index " << i);
+    check(block >= 0, "invalid block " << block << ", must be non-negative");
+    check(max >= min, "");
+    check(speed >= 1 && speed < 100, "invalid speed");
+
+    if(min == max)
+    {
+        setParamFixed(i, name, min);
+        return;
+    }
+
+    paramNames_[i] = name;
+    priorTypes_[i] = 4;
+    priorBlocks_[i] = 4 + block;
+    priorMins_[i] = min;
+    priorMaxs_[i] = max;
     speeds_[i] = speed;
     isFixed_[i] = false;
 }
@@ -88,8 +135,8 @@ PolyChord::logLike(double *theta)
     //output_screen1("polychord c++ likelihood call" << std::endl);
     int j = 0;
 
-    std::stringstream str;
-    str << "Polychord likelihood point:";
+    //std::stringstream str;
+    //str << "Polychord likelihood point:";
 
     for(int i = 0; i < n_; ++i)
     {
@@ -104,9 +151,9 @@ PolyChord::logLike(double *theta)
             ++j;
 
         }
-        str << '\t' << paramsCurrent_[i];
+        //str << '\t' << paramsCurrent_[i];
     }
-    output_log(str.str() << std::endl);
+    //output_log(str.str() << std::endl);
 
     return -like_.calculate(&(paramsCurrent_[0]), n_) / 2.0;
 }
@@ -186,6 +233,7 @@ PolyChord::run(bool res)
     const bool writeLive = true;
 
     std::vector<int> priorTypes;
+    std::vector<int> priorBlocks;
     std::vector<double> priorMins, priorMaxs;
     std::vector<int> speeds;
 
@@ -197,6 +245,7 @@ PolyChord::run(bool res)
         if(!isFixed_[i])
         {
             priorTypes.push_back(priorTypes_[i]);
+            priorBlocks.push_back(priorBlocks_[i]);
             priorMins.push_back(priorMins_[i]);
             priorMaxs.push_back(priorMaxs_[i]);
             speeds.push_back(speeds_[i]);
@@ -221,7 +270,7 @@ PolyChord::run(bool res)
     double logZ, errorZ, nDead, nLike, logZPlusLogP;
 
 	// calling PolyChord
-    poly::run(nDims, nDerived, nLive_, numRepeats, doClustering, nCluster, feedback, calculatePost, sigmaPost, thinPost, &(priorTypes[0]), &(priorMins[0]), &(priorMaxs[0]), &(speeds[0]), baseDir.c_str(), root.c_str(), res, res, updateResume, writeLive, myLogLike, &logZ, &errorZ, &nDead, &nLike, &logZPlusLogP, nGrades, &(gradeDims[0]), &(fracs_[0]));
+    poly::run(nDims, nDerived, nLive_, numRepeats, doClustering, nCluster, feedback, calculatePost, sigmaPost, thinPost, &(priorTypes[0]), &(priorMins[0]), &(priorMaxs[0]), &(speeds[0]), &(priorBlocks[0]), baseDir.c_str(), root.c_str(), res, res, updateResume, writeLive, myLogLike, &logZ, &errorZ, &nDead, &nLike, &logZPlusLogP, nGrades, &(gradeDims[0]), &(fracs_[0]));
 
     running_ = false;
 

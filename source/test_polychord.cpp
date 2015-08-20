@@ -1,5 +1,6 @@
 #include <fstream>
 #include <sstream>
+#include <memory>
 
 #include <test_polychord.hpp>
 #include <polychord.hpp>
@@ -15,7 +16,7 @@ TestPolyChordFast::name() const
 unsigned int
 TestPolyChordFast::numberOfSubtests() const
 {
-    return 2;
+    return 3;
 }
 
 namespace
@@ -47,6 +48,53 @@ private:
     const double x0_, y0_, sigmaX_, sigmaY_;
 };
 
+class SimpleLikelihood : public Math::LikelihoodFunction
+{
+public:
+    virtual double calculate(double* params, int nParams)
+    {
+        const double x = params[0];
+        return x * x;
+    }
+};
+
+void runBigPolychordTest(unsigned int i, double& res, double& expected)
+{
+    SimpleLikelihood like;
+    std::stringstream root1str;
+    root1str << "test_files/polychord_fast_test_" << i;
+    std::string root1 = root1str.str();
+    PolyChord pc(6, like, 100, root1);
+
+    pc.setParam(0, "x", -1, 1, 1);
+    pc.setParamLogUniform(1, "y", 1, 100, 1);
+    pc.setParamSortedUniform(2, "s1", 0, 1, 0, 1);
+    pc.setParamSortedUniform(3, "s2", 0, 1, 0, 2);
+    pc.setParamSortedUniform(4, "s3", 0, 1, 0, 2);
+    pc.setParamGauss(5, "z", 0, 1, 2);
+    std::vector<double> frac(2, 0.5);
+    pc.setParameterHierarchy(frac);
+
+    pc.run(false);
+
+    std::stringstream chainName;
+    chainName << root1 << ".txt";
+    MarkovChain chain(chainName.str().c_str());
+
+    res = 1;
+    expected = 1;
+
+    // TBD add some actual tests
+
+    for(int i = 0; i < 6; ++i)
+    {
+        std::auto_ptr<Posterior1D> p(chain.posterior(i));
+        std::stringstream fileName;
+        fileName << root1 << pc.getParamName(i) << ".txt";
+        p->writeIntoFile(fileName.str().c_str());
+    }
+}
+
 } // namespace
 
 
@@ -54,6 +102,13 @@ void
 TestPolyChordFast::runSubTest(unsigned int i, double& res, double& expected, std::string& subTestName)
 {
     check(i >= 0 && i < numberOfSubtests(), "invalid index " << i);
+
+    if(i == 2)
+    {
+        runBigPolychordTest(i, res, expected);
+        subTestName = "large_test";
+        return;
+    }
     
     using namespace Math;
 
@@ -61,7 +116,7 @@ TestPolyChordFast::runSubTest(unsigned int i, double& res, double& expected, std
     std::stringstream root1str;
     root1str << "test_files/polychord_fast_test_" << i;
     std::string root1 = root1str.str();
-    PolyChord pc1(2, l1, 300, root1);
+    PolyChord pc1(2, l1, 100, root1);
 
     const double xMin = -20, xMax = 20, yMin = -20, yMax = 20;
     if(i == 0)
