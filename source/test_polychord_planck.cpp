@@ -38,7 +38,7 @@ TestPolyChordPlanck::runSubTest(unsigned int i, double& res, double& expected, s
     const int nPar = 20;
     PlanckLikelihood planckLike(true, true, false, true, false, false, 5);
 #endif
-    PolyChord pc(nPar, planckLike, 100, root, 4);
+    PolyChord pc(nPar, planckLike, 300, root, 6);
 
     pc.setParam(0, "ombh2", 0.02, 0.025, 1);
     pc.setParam(1, "omch2", 0.1, 0.2, 1);
