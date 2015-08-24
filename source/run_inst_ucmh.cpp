@@ -196,12 +196,12 @@ int main(int argc, char *argv[])
         const double kPivot = 0.05;
 
         //model 1
-        //const bool slowRollEnd = true;
-        //const bool eternalInflOK = false;
+        const bool slowRollEnd = true;
+        const bool eternalInflOK = false;
 
         //model 2
-        const bool slowRollEnd = false;
-        const bool eternalInflOK = true;
+        //const bool slowRollEnd = false;
+        //const bool eternalInflOK = true;
         TaylorParamsUCMH modelParams(0.02, 0.1, 0.7, 0.1, kPivot, 55, 12, slowRollEnd, eternalInflOK, 5e-6, 1.2, 500, useClass);
         //TaylorParamsUCMH modelParams(0.02, 0.1, 0.7, 0.1, kPivot, 55, 12, slowRollEnd, eternalInflOK, 5e-6, 0.7, 500, useClass);
 
