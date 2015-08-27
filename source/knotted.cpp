@@ -18,7 +18,7 @@ class SplineWithDegenerateNeutrinosParams : public LambdaCDMParams
 {
 public:
     // the ns, as, and pivot values for the base class should not be used and are set to arbitrary values
-    SplineWithDegenerateNeutrinosParams(bool isLinear, double omBH2, double omCH2, double h, double tau, const std::vector<double>& kVals, const std::vector<double>& amplitudes,  double nEff, int nMassive, double sumMNu, bool varyNEff, bool varySumMNu) : LambdaCDMParams(omBH2, omCH2, h, tau, 1.0, 2e-9, 0.05), isLinear_(isLinear), nEff_(nEff), nMassive_(nMassive), sumMNu_(sumMNu), kVals_(kVals), amplitudes_(amplitudes), lcdmParams_(6), varyNEff_(varyNEff), varySumMNu_(varySumMNu_)
+    SplineWithDegenerateNeutrinosParams(bool isLinear, double omBH2, double omCH2, double h, double tau, const std::vector<double>& kVals, const std::vector<double>& amplitudes,  double nEff, int nMassive, double sumMNu, bool varyNEff, bool varySumMNu) : LambdaCDMParams(omBH2, omCH2, h, tau, 1.0, 2e-9, 0.05), isLinear_(isLinear), nEff_(nEff), nMassive_(nMassive), sumMNu_(sumMNu), kVals_(kVals), amplitudes_(amplitudes), lcdmParams_(6), varyNEff_(varyNEff), varySumMNu_(varySumMNu)
     {
         check(nEff > 0, "invalid nEff = " << nEff);
         check(sumMNu >= 0, "invalid sumMNu = " << sumMNu);
@@ -116,7 +116,8 @@ public:
         lcdmParams_[4] = 1.0; // arbitrary ns, doesn't matter
         lcdmParams_[5] = 2e-9; // arbitrary as, doesn't matter
 
-        LambdaCDMParams::setAllParameters(lcdmParams_, badLike);
+        if(!LambdaCDMParams::setAllParameters(lcdmParams_, badLike))
+            return false;
 
         if(varyNEff_)
             nEff_ = *(it++);
@@ -137,6 +138,8 @@ public:
         }
 
         resetPS();
+
+        return true;
     }
 
 private:
