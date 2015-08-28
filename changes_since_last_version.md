@@ -1,4 +1,3 @@
-*Last version: 3.0*
+*Last version: 3.1*
 
 ## Changes:
-* Planck 2015 likelihood interface included

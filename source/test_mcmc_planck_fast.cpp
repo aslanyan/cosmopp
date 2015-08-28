@@ -35,12 +35,15 @@ TestMCMCPlanckFast::runSubTest(unsigned int i, double& res, double& expected, st
     LambdaCDMParams par(0.022, 0.12, 0.7, 0.1, 1.0, std::exp(3.0) / 1e10, pivot);
 
 #ifdef COSMO_PLANCK_15
-    PlanckLikeFast planckLike(&par, true, true, true, false, true, false, false, false, 5, 0.4, 10000);
-    MetropolisHastings mh(7, planckLike, root, std::time(0), true);
+    //PlanckLikeFast planckLike(&par, true, true, true, false, true, false, false, false, 5, 0.4, 10000);
+    PlanckLikeFast planckLike(&par, true, true, true, false, false, false, false, false, 5, 0.4, 10000);
+    const int nPar = 22;
 #else
     PlanckLikeFast planckLike(&par, true, true, false, true, false, false, 5, 0.4, 10000);
-    MetropolisHastings mh(20, planckLike, root, std::time(0), true);
+    const int nPar = 20;
 #endif
+
+    MetropolisHastings mh(nPar, planckLike, root, std::time(0), true);
 
     std::string errorLogRoot = "slow_test_files/mcmc_planck_fast_error_log";
     planckLike.logError(errorLogRoot.c_str());
@@ -54,6 +57,22 @@ TestMCMCPlanckFast::runSubTest(unsigned int i, double& res, double& expected, st
 
 #ifdef COSMO_PLANCK_15
     mh.setParamGauss(6, "A_planck", 1.0, 0.0025, 1.0, 0.001, 0.0002);
+
+    mh.setParam(7, "A_cib_217", 0, 200, 60, 5, 5);
+    mh.setParam(8, "cib_index", -1.301, -1.299, -1.3, 0.00001, 0.00001);
+    mh.setParam(9, "xi_sz_cib", 0, 1, 0.5, 0.3, 0.3);
+    mh.setParam(10, "A_sz", 0, 10, 5, 2, 2);
+    mh.setParam(11, "ps_A_100_100", 0, 400, 250, 30, 30);
+    mh.setParam(12, "ps_A_143_143", 0, 400, 50, 10, 10);
+    mh.setParam(13, "ps_A_143_217", 0, 400, 40, 10, 10);
+    mh.setParam(14, "ps_A_217_217", 0, 400, 100, 10, 10);
+    mh.setParam(15, "k_sz", 0, 10, 3, 2.5, 2.5);
+    mh.setParamGauss(16, "gal545_A_100", 7, 2, 7.5, 2, 2);
+    mh.setParamGauss(17, "gal545_A_143", 9, 2, 9, 2, 2);
+    mh.setParamGauss(18, "gal545_A_143_217", 21, 8.5, 17, 4, 4);
+    mh.setParamGauss(19, "gal545_A_217", 80, 20, 80, 7, 7);
+    mh.setParamGauss(20, "calib_100T", 0.999, 0.001, 0.998, 0.001);
+    mh.setParamGauss(21, "calib_217T", 0.995, 0.002, 0.996, 0.001);
 #else
     mh.setParam(6, "A_ps_100", 0, 360, 100, 100, 20);
     mh.setParam(7, "A_ps_143", 0, 270, 50, 20, 2);
@@ -94,11 +113,9 @@ TestMCMCPlanckFast::runSubTest(unsigned int i, double& res, double& expected, st
 #ifdef COSMO_PLANCK_15
     const double expectedMedian[6] = {0.02222, 0.1197, 0.6731, 0.078, 0.9655, 3.089};
     const double expectedSigma[6] = {0.00023, 0.0022, 0.0096, 0.019, 0.0062, 0.036};
-    const int nPar = 7;
 #else
     const double expectedMedian[6] = {0.02205, 0.1199, 0.673, 0.089, 0.9603, 3.089};
     const double expectedSigma[6] = {0.00028, 0.0027, 0.012, 0.013, 0.0073, 0.025};
-    const int nPar = 20;
 #endif
 
     std::ofstream outParamLimits("slow_test_files/mcmc_planck_fast_param_limits.txt");

@@ -30,12 +30,15 @@ TestPolyChordPlanck::runSubTest(unsigned int i, double& res, double& expected, s
 
     std::string root = "slow_test_files/polychord_planck_test";
 #ifdef COSMO_PLANCK_15
-    PlanckLikelihood planckLike(true, true, true, false, true, false, false, false, 5);
-    PolyChord pc(7, planckLike, 300, root, 4);
+    //const int nPar = 7;
+    const int nPar = 22;
+    //PlanckLikelihood planckLike(true, true, true, false, true, false, false, false, 5);
+    PlanckLikelihood planckLike(true, true, true, false, false, false, false, false, 5);
 #else
+    const int nPar = 20;
     PlanckLikelihood planckLike(true, true, false, true, false, false, 5);
-    PolyChord pc(7, planckLike, 300, root, 4);
 #endif
+    PolyChord pc(nPar, planckLike, 300, root, 6);
 
     pc.setParam(0, "ombh2", 0.02, 0.025, 1);
     pc.setParam(1, "omch2", 0.1, 0.2, 1);
@@ -46,6 +49,22 @@ TestPolyChordPlanck::runSubTest(unsigned int i, double& res, double& expected, s
 
 #ifdef COSMO_PLANCK_15
     pc.setParamGauss(6, "A_planck", 1, 0.0025, 3);
+
+    pc.setParam(7, "A_cib_217", 0, 200, 3);
+    pc.setParamFixed(8, "cib_index", -1.3);
+    pc.setParam(9, "xi_sz_cib", 0, 1, 3);
+    pc.setParam(10, "A_sz", 0, 10, 3);
+    pc.setParam(11, "ps_A_100_100", 0, 400, 3);
+    pc.setParam(12, "ps_A_143_143", 0, 400, 3);
+    pc.setParam(13, "ps_A_143_217", 0, 400, 3);
+    pc.setParam(14, "ps_A_217_217", 0, 400, 3);
+    pc.setParam(15, "k_sz", 0, 10, 3);
+    pc.setParamGauss(16, "gal545_A_100", 7, 2, 3);
+    pc.setParamGauss(17, "gal545_A_143", 9, 2, 3);
+    pc.setParamGauss(18, "gal545_A_143_217", 21, 8.5, 3);
+    pc.setParamGauss(19, "gal545_A_217", 80, 20, 3);
+    pc.setParamGauss(20, "calib_100T", 0.999, 0.001, 3);
+    pc.setParamGauss(21, "calib_217T", 0.995, 0.002, 3);
 #else
     pc.setParam(6, "A_ps_100", 0, 360, 3);
     pc.setParam(7, "A_ps_143", 0, 270, 3);
@@ -60,10 +79,10 @@ TestPolyChordPlanck::runSubTest(unsigned int i, double& res, double& expected, s
     pc.setParam(16, "cal_127", 0.95, 1.05, 3);
     pc.setParam(17, "xi_sz_cib", 0, 1, 3);
     pc.setParam(18, "A_ksz", 0, 10, 3);
-    pc.setParam(19, "Bm_1_1", -20, 20);
+    pc.setParam(19, "Bm_1_1", -20, 20, 3);
 #endif
 
-    const std::vector<double> fracs{0.85, 0.1, 0.05};
+    const std::vector<double> fracs{0.7, 0.15, 0.15};
     pc.setParameterHierarchy(fracs);
 
     const double pivot = 0.05;
@@ -85,13 +104,11 @@ TestPolyChordPlanck::runSubTest(unsigned int i, double& res, double& expected, s
 #ifdef COSMO_PLANCK_15
     const double expectedMedian[6] = {0.02222, 0.1197, 0.6731, 0.078, 0.9655, 3.089};
     const double expectedSigma[6] = {0.00023, 0.0022, 0.0096, 0.019, 0.0062, 0.036};
-    const int nPar = 7;
 #else
     const double expectedMedian[6] = {0.02205, 0.1199, 0.673, 0.089, 0.9603, 3.089};
     const double expectedSigma[6] = {0.00028, 0.0027, 0.012, 0.013, 0.0073, 0.025};
-    const int nPar = 20;
 #endif
-    for(int i = 0; i < nPar; ++i)
+    for(int i = 0; i < 6; ++i)
     {
         const std::string& paramName = pc.getParamName(i);
         std::stringstream fileName;
