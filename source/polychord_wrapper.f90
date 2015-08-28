@@ -31,7 +31,7 @@
               subroutine polycwraprun(ndims, nderived, nlive, num_repeats, &
                 do_clustering, ncluster, feedback, calculate_post, &
                 sigma_post, thin_post, prior_types, prior_mins, &
-                prior_maxs, speeds, base_dir, file_root, &
+                prior_maxs, speeds, blocks, base_dir, file_root, &
                 read_resume, write_resume, update_resume, write_live, &
                 loglike, logz, errorz, ndead, nlike, &
                 logzpluslogp, num_grades, grade_dims, grade_fracs) bind(c)
@@ -63,6 +63,7 @@
                       real(c_double), dimension(1), intent(in) :: prior_mins
                       real(c_double), dimension(1), intent(in) :: prior_maxs
                       integer(c_int), dimension(1), intent(in) :: speeds
+                      integer(c_int), dimension(1), intent(in) :: blocks
                       character(kind=c_char,len=1), dimension(1), intent(in) :: base_dir
                       character(kind=c_char,len=1), dimension(1), intent(in) :: file_root
                       logical(c_bool), intent(in), value :: read_resume
@@ -121,13 +122,16 @@
                                 physical_indices(1) = i
                                 if (prior_types(i) == 1) then
                                         call add_parameter(params,'p',&
-                        'p',speeds(i),uniform_type,i,[prior_mins(i),prior_maxs(i)])
+                        'p',speeds(i),uniform_type,blocks(i),[prior_mins(i),prior_maxs(i)])
                                 else if (prior_types(i) == 2) then
                                         call add_parameter(params,'p',&
-                        'p',speeds(i),log_uniform_type,i,[prior_mins(i),prior_maxs(i)])
+                        'p',speeds(i),log_uniform_type,blocks(i),[prior_mins(i),prior_maxs(i)])
                                 else if (prior_types(i) == 3) then
                                         call add_parameter(params,'p',&
-                        'p',speeds(i),gaussian_type,i,[prior_mins(i),prior_maxs(i)])
+                        'p',speeds(i),gaussian_type,blocks(i),[prior_mins(i),prior_maxs(i)])
+                                else if (prior_types(i) == 4) then
+                                        call add_parameter(params,'p',&
+                        'p',speeds(i),sorted_uniform_type,blocks(i),[prior_mins(i),prior_maxs(i)])
                                 else
                                         print*,'INVALID PRIOR TYPE ',i
                                         stop 1

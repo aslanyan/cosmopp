@@ -28,6 +28,14 @@ public:
     /// \param speed The speed grade of the parameter. Should be 1 or higher. Default value is 1.
     void setParam(int i, const std::string& name, double min, double max, int speed = 1);
 
+    /// Define a given parameter to have a log uniform prior. One of the parameter setting functions must be called for each parameter before the run.
+    /// \param i The index of the parameter, 0 <= i < number of parameters.
+    /// \param name The name of the parameter.
+    /// \param min The minimum value of the parameter (the lower bound for the prior).
+    /// \param max The maximum value of the parameter (the upper bound for the prior).
+    /// \param speed The speed grade of the parameter. Should be 1 or higher. Default value is 1.
+    void setParamLogUniform(int i, const std::string& name, double min, double max, int speed = 1);
+
     /// Define a given parameter to have a gaussian prior. One of the parameter setting functions must be called for each parameter before the run.
     /// \param i The index of the parameter, 0 <= i < number of parameters.
     /// \param name The name of the parameter.
@@ -35,6 +43,18 @@ public:
     /// \param sigma The sigma of the prior
     /// \param speed The speed grade of the parameter. Should be 1 or higher. Default value is 1.
     void setParamGauss(int i, const std::string& name, double mean, double sigma, int speed = 1);
+
+    /// Define a given parameter to have a sorted uniform prior.
+    /// This means that this parameter is a part of a group of parameters which have a joint prior.
+    /// They are distributed uniformly but with the constraint that they are sorted. A parameter with a smaller index will always be smaller than a parameter with a larger index.
+    /// One of the parameter setting functions must be called for each parameter before the run.
+    /// \param i The index of the parameter, 0 <= i < number of parameters.
+    /// \param name The name of the parameter.
+    /// \param min The minimum value of the parameter (the lower bound for the prior).
+    /// \param max The maximum value of the parameter (the upper bound for the prior).
+    /// \param block This is an index that determines the block of parameters with the sorted uniform prior. All the parameters to be a part of the same group of sorted parameters must have the same block. The block index must be non-negative.
+    /// \param speed The speed grade of the parameter. Should be 1 or higher. Default value is 1.
+    void setParamSortedUniform(int i, const std::string& name, double min, double max, int block, int speed = 1);
 
     /// Define a given parameter to be fixed to a given value.
     /// \param i The index of the parameter, 0 <= i < number of parameters.
@@ -63,6 +83,7 @@ private:
     std::vector<double> paramsStarting_, paramsMean_, paramsStd_, paramsBest_, paramsCurrent_;
     std::vector<std::string> paramNames_;
     std::vector<int> priorTypes_;
+    std::vector<int> priorBlocks_;
     std::vector<double> priorMins_, priorMaxs_;
     std::vector<int> speeds_;
     std::vector<double> paramsFixed_;
