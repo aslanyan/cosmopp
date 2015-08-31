@@ -21,7 +21,15 @@ int main(int argc, char *argv[])
         std::vector<double> v(5);
         args >> v[0] >> v[1] >> v[2] >> v[3] >> v[4];
         const double NPivot = 70;
-        ModeCode::initialize(12, 0.05, NPivot, false, false, false, true, 5e-6, 1.2, 500);
+
+        //model 1
+        const bool slowRollEnd = true;
+        const bool eternalInflOK = false;
+
+        //model 2
+        //const bool slowRollEnd = false;
+        //const bool eternalInflOK = true;
+        ModeCode::initialize(12, 0.05, NPivot, false, false, slowRollEnd, eternalInflOK, 5e-6, 1.2, 500);
 
         ModeCode::addKValue(10, 0, 1e10, 0, 1e10);
         ModeCode::addKValue(1e2, 0, 1e10, 0, 1e10);

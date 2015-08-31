@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 2.8.10)
 
-set(LIB_FILES macros.cpp test_framework.cpp whole_matrix.cpp scale_factor.cpp markov_chain.cpp matrix_impl.cpp kd_tree.cpp)
+set(LIB_FILES macros.cpp test_framework.cpp whole_matrix.cpp scale_factor.cpp markov_chain.cpp matrix_impl.cpp kd_tree.cpp ucmh_likelihood.cpp)
 
 set(TEST_FILES test_unit_conversions.cpp test_int_operations.cpp test_integral.cpp test_conjugate_gradient.cpp test_polynomial.cpp test_legendre.cpp test_spherical_harmonics.cpp test_matrix.cpp test_wigner_3j.cpp test_table_function.cpp test_cubic_spline.cpp test_three_rotation.cpp test_kd_tree.cpp)
 
@@ -134,11 +134,12 @@ if(CFITSIO_DIR)
 endif(CFITSIO_DIR)
 install(TARGETS cosmo_test DESTINATION bin)
 
-if(CLASS_DIR AND PLANCK_DIR AND MULTINEST_DIR AND MODECODE_DIR)
+if(CLASS_DIR AND PLANCK_DIR AND MULTINEST_DIR AND MODECODE_DIR AND POLYCHORD_DIR)
     add_executable(run_inst_ucmh run_inst_ucmh.cpp)
     target_link_libraries(run_inst_ucmh cosmopp)
     if(MPI_FOUND)
         target_link_libraries(run_inst_ucmh ${MPI_CXX_LIBRARIES})
+        target_link_libraries(run_inst_ucmh ${MPI_Fortran_LIBRARIES})
     endif(MPI_FOUND)
     if(LAPACK_LIB_FLAGS)
         target_link_libraries(run_inst_ucmh ${LAPACK_LIB_FLAGS})
@@ -149,6 +150,7 @@ if(CLASS_DIR AND PLANCK_DIR AND MULTINEST_DIR AND MODECODE_DIR)
 	target_link_libraries(run_inst_ucmh ${CLASSLIB})
 	target_link_libraries(run_inst_ucmh ${PLANCKLIB})
 	target_link_libraries(run_inst_ucmh ${MULTINESTLIB})
+    target_link_libraries(run_inst_ucmh ${POLYCHORDLIB})
 	target_link_libraries(run_inst_ucmh ${MODECODELIB})
 
     add_executable(run_modecode_ucmh run_modecode_ucmh.cpp)
@@ -213,7 +215,7 @@ if(CLASS_DIR AND PLANCK_DIR AND MULTINEST_DIR AND MODECODE_DIR)
         target_link_libraries(ucmh_mn_test ${CFITSIOLIB})
     endif(CFITSIO_DIR)
     target_link_libraries(ucmh_mn_test ${MULTINESTLIB})
-endif(CLASS_DIR AND PLANCK_DIR AND MULTINEST_DIR AND MODECODE_DIR)
+endif(CLASS_DIR AND PLANCK_DIR AND MULTINEST_DIR AND MODECODE_DIR AND POLYCHORD_DIR)
 
 if(CLASS_DIR AND PLANCK_DIR AND POLYCHORD_DIR AND MODECODE_DIR)
     add_executable(pc_inst_ucmh pc_inst_ucmh.cpp)

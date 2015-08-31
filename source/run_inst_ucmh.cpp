@@ -9,11 +9,13 @@
 #include <macros.hpp>
 #include <planck_like.hpp>
 #include <mn_scanner.hpp>
+#include <polychord.hpp>
 #include <mcmc.hpp>
 #include <markov_chain.hpp>
 #include <numerics.hpp>
 #include <modecode.hpp>
 #include <taylor_pk.hpp>
+#include <ucmh_likelihood.hpp>
 #include <progress_meter.hpp>
 
 namespace
@@ -137,6 +139,37 @@ private:
     std::vector<double> vParams_;
 };
 
+class CombinedLikelihood : public Math::LikelihoodFunction
+{
+public:
+    CombinedLikelihood(PlanckLikelihood& planck, CosmologicalParams *params, bool newUCMH = false) : planck_(planck), params_(params)
+    {
+        if(newUCMH)
+        {
+            gamma_.reset(new UCMHLikelihood("data/ucmh_gamma_1000.txt"));
+            pulsar_.reset(new UCMHLikelihood("data/ucmh_pulsar_1000.txt"));
+        }
+    }
+
+    virtual double calculate(double* params, int nParams)
+    {
+        double l = planck_.calculate(params, nParams);
+        if(l <= 1e8)
+        {
+            if(gamma_)
+                l += gamma_->calculate(params_->powerSpectrum());
+            if(pulsar_)
+                l += pulsar_->calculate(params_->powerSpectrum());
+        }
+        return l;
+    }
+private:
+    PlanckLikelihood& planck_;
+    CosmologicalParams *params_;
+    std::unique_ptr<UCMHLikelihood> gamma_;
+    std::unique_ptr<UCMHLikelihood> pulsar_;
+};
+
 } // namespace
 
 int main(int argc, char *argv[])
@@ -145,6 +178,9 @@ int main(int argc, char *argv[])
         bool ucmhLim = false;
         bool useClass = false;
         bool useMH = false;
+        bool usePoly = false;
+        bool newUCMH = false;
+
         for(int i = 1; i < argc; ++i)
         {
             if(std::string(argv[i]) == std::string("ucmh"))
@@ -155,7 +191,16 @@ int main(int argc, char *argv[])
 
             if(std::string(argv[i]) == std::string("mh"))
                 useMH = true;
+
+            if(std::string(argv[i]) == std::string("poly"))
+                usePoly = true;
+
+            if(std::string(argv[i]) == std::string("new_ucmh"))
+                newUCMH = true;
         }
+
+        if(newUCMH)
+            ucmhLim = false;
 
         if(useClass)
         {
@@ -170,28 +215,43 @@ int main(int argc, char *argv[])
         {
             output_screen("Using Metropolis-Hastings sampler." << std::endl);
         }
-        else
+        else if(usePoly)
         {
-            output_screen("Using MultiNest sampler. To use Metropolis-Hastings instead specify \"mh\" as an argument." << std::endl);
+            output_screen("Using Polychord sampler." << std::endl);
+        }
+        {
+            output_screen("Using MultiNest sampler. To use Polychord instead specify \"poly\" as an argument. To use Metropolis-Hastings instead specify \"mh\" as an argument." << std::endl);
         }
 
-        std::string root = (useMH ? "slow_test_files/mh_ucmh" : "slow_test_files/mn_ucmh");
+        if(newUCMH)
+        {
+            output_screen("Using the new UCMH limits." << std::endl);
+        }
+        else
+        {
+            output_screen("Not using the new UCMH limits. To use those specify \"new_ucmh\" as an argument." << std::endl);
+        }
 
-        std::auto_ptr<MnScanner> mn;
-        std::auto_ptr<Math::MetropolisHastings> mh;
-
-#ifdef COSMO_PLANCK_15
-        PlanckLikelihood like(true, true, true, true, true, false, false, true, 500);
-        const int nPar = 10;
-#else
-        PlanckLikelihood like(true, true, false, true, false, true, 500);
-        const int nPar = 23;
-#endif
+        std::string root;
 
         if(useMH)
-            mh.reset(new Math::MetropolisHastings(nPar, like, root));
+            root = "slow_test_files/mh_ucmh";
+        else if(usePoly)
+            root = "slow_test_files/pc_ucmh";
         else
-            mn.reset(new MnScanner(nPar, like, 500, root));
+            root = "slow_test_files/mn_ucmh";
+
+        std::unique_ptr<MnScanner> mn;
+        std::unique_ptr<Math::MetropolisHastings> mh;
+        std::unique_ptr<PolyChord> pc;
+
+#ifdef COSMO_PLANCK_15
+        PlanckLikelihood planck(true, true, true, true, true, false, false, true, 500);
+        const int nPar = 10;
+#else
+        PlanckLikelihood planck(true, true, false, true, false, true, 500);
+        const int nPar = 23;
+#endif
 
         const double kPivot = 0.05;
 
@@ -216,9 +276,26 @@ int main(int argc, char *argv[])
         else
         {
             output_screen("No UCMH limits! To add these limits specify \"ucmh\" as an argument." << std::endl);
+            if(newUCMH)
+            {
+                modelParams.addKValue(10, 0, 1.0, 0, 1e10);
+                modelParams.addKValue(1e3, 0, 1.0, 0, 1e10);
+                modelParams.addKValue(1e6, 0, 1.0, 0, 1e10);
+                modelParams.addKValue(1e9, 0, 1.0, 0, 1e10);
+            }
         }
 
-        like.setModelCosmoParams(&modelParams);
+        planck.setModelCosmoParams(&modelParams);
+
+        CombinedLikelihood like(planck, &modelParams, newUCMH);
+
+        if(useMH)
+            mh.reset(new Math::MetropolisHastings(nPar, like, root));
+        else if(usePoly)
+            pc.reset(new PolyChord(nPar, like, 500, root, 8));
+        else
+            mn.reset(new MnScanner(nPar, like, 500, root));
+
 
         int nChains;
         unsigned long burnin;
@@ -259,6 +336,47 @@ int main(int argc, char *argv[])
             burnin = 1000;
             thin = 2;
             nChains = mh->run(100000, 1, burnin, Math::MetropolisHastings::GELMAN_RUBIN, 0.01, false);
+        }
+        else if(usePoly)
+        {
+            pc->setParam(0, "ombh2", 0.02, 0.025, 1);
+            pc->setParam(1, "omch2", 0.1, 0.2, 1);
+            pc->setParam(2, "h", 0.55, 0.85, 1);
+            pc->setParam(3, "tau", 0.02, 0.20, 1);
+            pc->setParam(4, "v_1", 0, 0.1, 2);
+            pc->setParam(5, "v_2", -0.1, 0.1, 2);
+            pc->setParam(6, "v_3", -0.1, 0.1, 2);
+            //pc->setParamFixed(6, "v_3", 0.0, 2);
+            pc->setParam(7, "v_4", -0.1, 0.1, 2);
+            //pc->setParamFixed(7, "v_4", 0.0, 2);
+            pc->setParam(8, "v_5", -10, -4, 2);
+
+#ifdef COSMO_PLANCK_15
+            pc->setParamGauss(9, "A_planck", 1.0, 0.0025, 3);
+#else
+            pc->setParam(9, "A_ps_100", 0, 360, 3);
+            pc->setParam(10, "A_ps_143", 0, 270, 3);
+            pc->setParam(11, "A_ps_217", 0, 450, 3);
+            pc->setParam(12, "A_cib_143", 0, 20, 3);
+            pc->setParam(13, "A_cib_217", 0, 80, 3);
+            pc->setParam(14, "A_sz", 0, 10, 3);
+            pc->setParam(15, "r_ps", 0.0, 1.0, 3);
+            pc->setParam(16, "r_cib", 0.0, 1.0, 3);
+            pc->setParam(17, "n_Dl_cib", -2, 2, 3);
+            pc->setParam(18, "cal_100", 0.98, 1.02, 3);
+            pc->setParam(19, "cal_127", 0.95, 1.05, 3);
+            pc->setParam(20, "xi_sz_cib", 0, 1, 3);
+            pc->setParam(21, "A_ksz", 0, 10, 3);
+            pc->setParam(22, "Bm_1_1", -20, 20, 3);
+#endif
+            std::vector<double> fracs{0.5, 0.4, 0.1};
+            pc->setParameterHierarchy(fracs);
+
+            pc->run(true);
+
+            nChains = 1;
+            burnin = 0;
+            thin = 1;
         }
         else
         {
