@@ -142,11 +142,13 @@ private:
 class CombinedLikelihood : public Math::LikelihoodFunction
 {
 public:
-    CombinedLikelihood(PlanckLikelihood& planck, CosmologicalParams *params, bool newUCMH = false) : planck_(planck), params_(params)
+    CombinedLikelihood(PlanckLikelihood& planck, CosmologicalParams *params, bool newUCMH, bool noGamma) : planck_(planck), params_(params)
     {
         if(newUCMH)
         {
-            gamma_.reset(new UCMHLikelihood("data/ucmh_gamma_1000.txt"));
+            if(!noGamma)
+                gamma_.reset(new UCMHLikelihood("data/ucmh_gamma_1000.txt"));
+
             pulsar_.reset(new UCMHLikelihood("data/ucmh_pulsar_1000.txt"));
         }
     }
@@ -180,6 +182,7 @@ int main(int argc, char *argv[])
         bool useMH = false;
         bool usePoly = false;
         bool newUCMH = false;
+        bool noGamma = false;
 
         for(int i = 1; i < argc; ++i)
         {
@@ -197,6 +200,9 @@ int main(int argc, char *argv[])
 
             if(std::string(argv[i]) == std::string("new_ucmh"))
                 newUCMH = true;
+
+            if(std::string(argv[i]) == std::string("no_gamma"))
+                noGamma = true;
         }
 
         if(newUCMH)
@@ -226,6 +232,14 @@ int main(int argc, char *argv[])
         if(newUCMH)
         {
             output_screen("Using the new UCMH limits." << std::endl);
+            if(noGamma)
+            {
+                output_screen("The gamma-ray ucmh limits will NOT be included." << std::endl);
+            }
+            else
+            {
+                output_screen("The gamma-ray ucmh limits are included. To not include those specify \"no_gamma\" as an argument." << std::endl);
+            }
         }
         else
         {
@@ -287,7 +301,7 @@ int main(int argc, char *argv[])
 
         planck.setModelCosmoParams(&modelParams);
 
-        CombinedLikelihood like(planck, &modelParams, newUCMH);
+        CombinedLikelihood like(planck, &modelParams, newUCMH, noGamma);
 
         if(useMH)
             mh.reset(new Math::MetropolisHastings(nPar, like, root));
