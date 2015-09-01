@@ -135,21 +135,43 @@ public:
 
 private:
     const bool useClass_;
-    std::auto_ptr<TaylorPk> taylor_;
+    std::unique_ptr<TaylorPk> taylor_;
     std::vector<double> vParams_;
 };
 
 class CombinedLikelihood : public Math::LikelihoodFunction
 {
 public:
-    CombinedLikelihood(PlanckLikelihood& planck, CosmologicalParams *params, bool newUCMH, bool noGamma) : planck_(planck), params_(params)
+    CombinedLikelihood(PlanckLikelihood& planck, CosmologicalParams *params, bool newUCMH, bool noGamma, bool use200, bool useWeak) : planck_(planck), params_(params)
     {
         if(newUCMH)
         {
-            if(!noGamma)
-                gamma_.reset(new UCMHLikelihood("data/ucmh_gamma_1000.txt"));
+            std::stringstream gammaFileName, pulsarFileName;
+            gammaFileName << "data/ucmh_gamma_";
+            pulsarFileName << "data/ucmh_pulsar_";
 
-            pulsar_.reset(new UCMHLikelihood("data/ucmh_pulsar_1000.txt"));
+            if(useWeak)
+            {
+                gammaFileName << "weak";
+                pulsarFileName << "weak";
+            }
+            else if(use200)
+            {
+                gammaFileName << "200";
+                pulsarFileName << "200";
+            }
+            else
+            {
+                gammaFileName << "1000";
+                pulsarFileName << "1000";
+            }
+
+            gammaFileName << ".txt";
+            pulsarFileName << ".txt";
+            if(!noGamma)
+                gamma_.reset(new UCMHLikelihood(gammaFileName.str().c_str()));
+
+            pulsar_.reset(new UCMHLikelihood(pulsarFileName.str().c_str()));
         }
     }
 
@@ -183,6 +205,8 @@ int main(int argc, char *argv[])
         bool usePoly = false;
         bool newUCMH = false;
         bool noGamma = false;
+        bool use200 = false;
+        bool useWeak = false;
 
         for(int i = 1; i < argc; ++i)
         {
@@ -203,6 +227,12 @@ int main(int argc, char *argv[])
 
             if(std::string(argv[i]) == std::string("no_gamma"))
                 noGamma = true;
+
+            if(std::string(argv[i]) == std::string("ucmh_200"))
+                use200 = true;
+
+            if(std::string(argv[i]) == std::string("ucmh_weak"))
+                useWeak = true;
         }
 
         if(newUCMH)
@@ -239,6 +269,19 @@ int main(int argc, char *argv[])
             else
             {
                 output_screen("The gamma-ray ucmh limits are included. To not include those specify \"no_gamma\" as an argument." << std::endl);
+            }
+
+            if(useWeak)
+            {
+                output_screen("The weak ucmh limits will be used." << std::endl);
+            }
+            else if(use200)
+            {
+                output_screen("z_c = 200 ucmh limits will be used. To use the weak ones specify \"ucmh_weak\" as an argument instead of \"ucmh_200\"." << std::endl);
+            }
+            else
+            {
+                output_screen("z_c = 1000 ucmh limits will be used. To use the z_c = 200 instead specify \"ucmh_200\" as an argument. If you want the weak ucmh limits instead specify \"ucmh_weak\" as an argument." << std::endl);
             }
         }
         else
@@ -301,7 +344,7 @@ int main(int argc, char *argv[])
 
         planck.setModelCosmoParams(&modelParams);
 
-        CombinedLikelihood like(planck, &modelParams, newUCMH, noGamma);
+        CombinedLikelihood like(planck, &modelParams, newUCMH, noGamma, use200, useWeak);
 
         if(useMH)
             mh.reset(new Math::MetropolisHastings(nPar, like, root));
@@ -447,7 +490,7 @@ int main(int argc, char *argv[])
 
             std::stringstream fileName;
             fileName << "slow_test_files/mn_ucmh_" << paramName << ".txt";
-            std::auto_ptr<Posterior1D> p(chain.posterior(i));
+            std::unique_ptr<Posterior1D> p(chain.posterior(i));
             p->writeIntoFile(fileName.str().c_str());
 
             const double median = p->median();
