@@ -351,7 +351,7 @@ int main(int argc, char *argv[])
                 modelParams.addKValue(10, 0, 1.0, 0, 1e10);
                 modelParams.addKValue(1e3, 0, 1.0, 0, 1e10);
                 modelParams.addKValue(1e6, 0, 1.0, 0, 1e10);
-                modelParams.addKValue(1e9, 0, 1.0, 0, 1e10);
+                modelParams.addKValue(1e9, 0, 1e-2, 0, 1e10);
             }
         }
 
