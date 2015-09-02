@@ -10,7 +10,7 @@
 class UCMHLikelihood
 {
 public:
-    UCMHLikelihood(const char* fileName);
+    UCMHLikelihood(const char* fileName, bool lateKineticDecoupling = false);
     ~UCMHLikelihood() {}
 
     double calculate(const Math::RealFunction& ps) const;

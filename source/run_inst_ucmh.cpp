@@ -142,7 +142,7 @@ private:
 class CombinedLikelihood : public Math::LikelihoodFunction
 {
 public:
-    CombinedLikelihood(PlanckLikelihood& planck, CosmologicalParams *params, bool newUCMH, bool noGamma, bool use200, bool useWeak) : planck_(planck), params_(params)
+    CombinedLikelihood(PlanckLikelihood& planck, CosmologicalParams *params, bool newUCMH, bool noGamma, bool use200, bool useWeak, bool lateDec) : planck_(planck), params_(params)
     {
         if(newUCMH)
         {
@@ -152,8 +152,8 @@ public:
 
             if(useWeak)
             {
-                gammaFileName << "weak";
-                pulsarFileName << "weak";
+                gammaFileName << "weakened";
+                pulsarFileName << "weakened";
             }
             else if(use200)
             {
@@ -169,9 +169,9 @@ public:
             gammaFileName << ".txt";
             pulsarFileName << ".txt";
             if(!noGamma)
-                gamma_.reset(new UCMHLikelihood(gammaFileName.str().c_str()));
+                gamma_.reset(new UCMHLikelihood(gammaFileName.str().c_str(), lateDec));
 
-            pulsar_.reset(new UCMHLikelihood(pulsarFileName.str().c_str()));
+            pulsar_.reset(new UCMHLikelihood(pulsarFileName.str().c_str(), lateDec));
         }
     }
 
@@ -207,6 +207,7 @@ int main(int argc, char *argv[])
         bool noGamma = false;
         bool use200 = false;
         bool useWeak = false;
+        bool lateDecoupling = false;
 
         for(int i = 1; i < argc; ++i)
         {
@@ -233,6 +234,9 @@ int main(int argc, char *argv[])
 
             if(std::string(argv[i]) == std::string("ucmh_weak"))
                 useWeak = true;
+
+            if(std::string(argv[i]) == std::string("ucmh_late_dec"))
+                lateDecoupling = true;
         }
 
         if(newUCMH)
@@ -282,6 +286,15 @@ int main(int argc, char *argv[])
             else
             {
                 output_screen("z_c = 1000 ucmh limits will be used. To use the z_c = 200 instead specify \"ucmh_200\" as an argument. If you want the weak ucmh limits instead specify \"ucmh_weak\" as an argument." << std::endl);
+            }
+
+            if(lateDecoupling)
+            {
+                output_screen("Using LATE kinetic decoupling for ucmh." << std::endl);
+            }
+            else
+            {
+                output_screen("Using EARLY kinetic decoupling for ucmh. To use late decoupling instead specify \"ucmh_late_dec\" as an argument." << std::endl);
             }
         }
         else
@@ -344,7 +357,7 @@ int main(int argc, char *argv[])
 
         planck.setModelCosmoParams(&modelParams);
 
-        CombinedLikelihood like(planck, &modelParams, newUCMH, noGamma, use200, useWeak);
+        CombinedLikelihood like(planck, &modelParams, newUCMH, noGamma, use200, useWeak, lateDecoupling);
 
         if(useMH)
             mh.reset(new Math::MetropolisHastings(nPar, like, root));

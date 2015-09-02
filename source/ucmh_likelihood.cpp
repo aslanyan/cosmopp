@@ -9,7 +9,7 @@
 #include <numerics.hpp>
 #include <ucmh_likelihood.hpp>
 
-UCMHLikelihood::UCMHLikelihood(const char* fileName) : pkMax_(1.0), likeMax_(1e10)
+UCMHLikelihood::UCMHLikelihood(const char* fileName, bool lateKineticDecoupling) : pkMax_(1.0), likeMax_(1e10)
 {
     output_screen("Initializing the UCMH likelihoods from the file: " << fileName << "..." << std::endl);
 
@@ -65,6 +65,9 @@ UCMHLikelihood::UCMHLikelihood(const char* fileName) : pkMax_(1.0), likeMax_(1e1
             exc.set(exceptionStr.str());
             throw exc;
         }
+
+        if(lateKineticDecoupling && k > 750)
+            continue;
 
         double pkMin = 10 * pkMax_;
 
