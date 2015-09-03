@@ -298,7 +298,7 @@ int main(int argc, char *argv[])
 #endif
         check(paramIndex == nPar, "");
 
-        const std::vector<double> fracs{0.5, 0.4, 0.1};
+        const std::vector<double> fracs{0.7, 0.25, 0.05};
         pc.setParameterHierarchy(fracs);
 
         pc.run(true);
