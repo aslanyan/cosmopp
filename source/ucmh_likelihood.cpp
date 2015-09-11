@@ -97,6 +97,11 @@ UCMHLikelihood::UCMHLikelihood(const char* fileName, bool lateKineticDecoupling)
         likes_[k][pkMax_] = likeMax_;
     }
 
+    readIntegralFactor();
+    sigma0_ = calculateSigma(1.0);
+
+    output_screen("Sigma_0 = " << sigma0_ << std::endl);
+
     output_screen("OK" << std::endl);
 }
 
@@ -104,12 +109,16 @@ double
 UCMHLikelihood::calculate(const Math::RealFunction& ps) const
 {
     double likeMax = 0;
+    double factorMax = 0;
     for(auto it = likes_.cbegin(); it != likes_.cend(); ++it)
     {
         const double k = it->first;
         const LikelihoodType& like = it->second;
 
-        const double pk = ps.evaluate(k);
+        const double sigma = calculateSigma(k, &ps);
+        const double f = sigma / sigma0_;
+
+        const double pk = ps.evaluate(k) / f;
         double l;
         if(pk > pkMax_)
             l = likeMax_;
@@ -123,7 +132,10 @@ UCMHLikelihood::calculate(const Math::RealFunction& ps) const
         }
 
         if(l > likeMax)
+        {
             likeMax = l;
+            factorMax = f;
+        }
     }
 
     return likeMax;
@@ -213,5 +225,73 @@ UCMHLikelihood::createClToLike()
     }
 
     check(Math::areEqual(cl, 1.0, 1e-4), "");
+}
+
+void
+UCMHLikelihood::readIntegralFactor()
+{
+    std::string fileName = "data/ucmh_int_factor.txt";
+
+    std::ifstream in(fileName.c_str());
+    StandardException exc;
+    if(!in)
+    {
+        std::stringstream exceptionStr;
+        exceptionStr << "Cannot read from the file " << fileName << ".";
+        exc.set(exceptionStr.str());
+        throw exc;
+    }
+
+    integralFactor_.clear();
+    while(!in.eof())
+    {
+        std::string s;
+        std::getline(in, s);
+        if(s == "")
+            break;
+
+        std::stringstream str(s);
+        double x, f;
+        str >> x >> f;
+        if(x <= 0 || x > 100 || f < 0 || f > 100)
+        {
+            std::stringstream exceptionStr;
+            exceptionStr << "Invalid input line: " << s << std::endl;
+            exc.set(exceptionStr.str());
+            in.close();
+            integralFactor_.clear();
+            throw exc;
+        }
+
+        integralFactor_[x] = f;
+    }
+
+    in.close();
+}
+
+double
+UCMHLikelihood::calculateSigma(double k, const Math::RealFunction *ps) const
+{
+    double xPrev = 0;
+    double yPrev = 0;
+    double res = 0;
+    for(auto it = integralFactor_.cbegin(); it != integralFactor_.cend(); ++it)
+    {
+        const double x = it->first;
+        const double f = it->second;
+        double p = 1;
+        if(ps)
+            p = ps->evaluate(k * x);
+        const double y = f * p;
+
+        res += (x - xPrev) * (y + yPrev) / 2;
+        xPrev = x;
+        yPrev = y;
+    }
+
+    if(ps)
+        res /= ps->evaluate(k);
+
+    return res;
 }
 
