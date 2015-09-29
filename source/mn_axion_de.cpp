@@ -4,6 +4,7 @@
 
 #include <cosmological_params.hpp>
 #include <math_constants.hpp>
+#include <exception_handler.hpp>
 #include <mn_scanner.hpp>
 #include <macros.hpp>
 #include <planck_like.hpp>
