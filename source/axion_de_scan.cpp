@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
         mh.setParam(3, "tau", 0.01, 0.8, 0.1, 0.01, 0.002);
         mh.setParam(4, "ns", 0.9, 1.1, 1.0, 0.01, 0.002);
         mh.setParam(5, "As", 2.7, 4.0, 3.0, 0.1, 0.002);
-        mh.setParam(6, "nf", 1.0, nfMean * nfMean, nfMean, nfMean / 5, nfMean / 10);
+        mh.setParam(6, "nf", 1.0, nfMean * nfMean, nfMean, nfMean / 5, nfMean / 25);
         mh.setParamGauss(7, "A_planck", 1.0, 0.0025, 1.0, 0.001, 0.0002);
 
         AxionDEPriorPhenom prior(nfMean);
