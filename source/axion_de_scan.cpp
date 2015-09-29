@@ -185,7 +185,7 @@ int main(int argc, char *argv[])
 
         Timer timer("MCMC PLANCK AXION DE");
 
-        const unsigned long burnin = 2000;
+        const unsigned long burnin = 1000;
         timer.start();
         const int nChains = mh.run(50000, 1, burnin, MetropolisHastings::GELMAN_RUBIN, 0.01, true);
         const unsigned long time = timer.end();
