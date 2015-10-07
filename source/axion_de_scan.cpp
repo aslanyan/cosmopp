@@ -191,7 +191,7 @@ int main(int argc, char *argv[])
         const unsigned long time = timer.end();
         output_screen("MCMC Planck Axion DE took " << time / 1000000 << " seconds." << std::endl);
 
-        if(CosmoMPI::create().isMaster())
+        if(!CosmoMPI::create().isMaster())
             return 0;
         
         const unsigned int thin = 2;

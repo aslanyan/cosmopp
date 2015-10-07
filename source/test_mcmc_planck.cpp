@@ -30,7 +30,9 @@ TestMCMCPlanck::runSubTest(unsigned int i, double& res, double& expected, std::s
 
     std::string root = "slow_test_files/mcmc_planck_test";
 #ifdef COSMO_PLANCK_15
-    PlanckLikelihood planckLike(true, true, true, false, true, false, false, false, 5);
+    // temporarily changed, to be changed back
+    //PlanckLikelihood planckLike(true, true, true, false, true, false, false, false, 5);
+    PlanckLikelihood planckLike(true, true, true, true, true, false, false, false, 5);
     MetropolisHastings mh(7, planckLike, root);
 #else
     PlanckLikelihood planckLike(true, true, false, true, false, false, 5);
