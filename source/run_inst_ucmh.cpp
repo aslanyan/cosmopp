@@ -7,6 +7,7 @@
 #include <memory>
 
 #include <macros.hpp>
+#include <exception_handler.hpp>
 #include <planck_like.hpp>
 #include <mn_scanner.hpp>
 #include <polychord.hpp>
@@ -325,13 +326,15 @@ int main(int argc, char *argv[])
 
         const double kPivot = 0.05;
 
+        const bool pbhLimits = true; // can be changed
+
         //model 1
-        const bool slowRollEnd = true;
-        const bool eternalInflOK = false;
+        //const bool slowRollEnd = true;
+        //const bool eternalInflOK = false;
 
         //model 2
-        //const bool slowRollEnd = false;
-        //const bool eternalInflOK = true;
+        const bool slowRollEnd = false;
+        const bool eternalInflOK = true;
         TaylorParamsUCMH modelParams(0.02, 0.1, 0.7, 0.1, kPivot, 55, 12, slowRollEnd, eternalInflOK, 5e-6, 1.2, 500, useClass);
         //TaylorParamsUCMH modelParams(0.02, 0.1, 0.7, 0.1, kPivot, 55, 12, slowRollEnd, eternalInflOK, 5e-6, 0.7, 500, useClass);
 
@@ -348,10 +351,44 @@ int main(int argc, char *argv[])
             output_screen("No UCMH limits! To add these limits specify \"ucmh\" as an argument." << std::endl);
             if(newUCMH)
             {
+                /*
                 modelParams.addKValue(10, 0, 1.0, 0, 1e10);
                 modelParams.addKValue(1e3, 0, 1.0, 0, 1e10);
                 modelParams.addKValue(1e6, 0, 1.0, 0, 1e10);
                 modelParams.addKValue(1e9, 0, 1e-2, 0, 1e10);
+                */
+            }
+        }
+
+        if(pbhLimits)
+        {
+            std::ifstream inPBH("data/PBH_limits.dat");
+            if(!inPBH)
+            {
+                StandardException exc;
+                std::string exceptionStr = "Cannot read the file data/PBH_limits.dat";
+                exc.set(exceptionStr);
+                throw exc;
+            }
+            while(true)
+            {
+                std::string s;
+                std::getline(inPBH, s);
+                if(s == "")
+                    break;
+                if(s[0] == '#')
+                    continue;
+
+                std::stringstream str(s);
+                double k, lim;
+                str >> k >> lim;
+                lim = std::pow(10.0, lim);
+
+                if(useClass && k > 1e9)
+                    continue;
+
+                //output_screen("PBH limit:\t" << k << '\t' << lim << std::endl);
+                modelParams.addKValue(k, 0, lim, 0, 1e10);
             }
         }
 
