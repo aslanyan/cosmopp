@@ -36,6 +36,7 @@ int main(int argc, char *argv[])
         }
 
         const double kPiv = 0.05;
+        const double kPivR = 0.002;
         const double kMin = 5e-6;
         const double kMax = 1.2;
         const int kPerDecade = 500;
@@ -47,7 +48,7 @@ int main(int argc, char *argv[])
 
         ModeCode::initialize(12, kPiv, 55, false, false, false, true, kMin, kMax, 500);
 
-        std::vector<double> v(15);
+        std::vector<double> v(16);
 
         int line = 0;
 
@@ -115,6 +116,7 @@ int main(int argc, char *argv[])
             {
                 //const Math::TableFunction<double, double>& ps = taylor.getScalarPs();
                 const Math::TableFunction<double, double>& ps = ModeCode::getScalarPs();
+                const Math::TableFunction<double, double>& psTensor = ModeCode::getTensorPs();
 
                 /*
                 std::ofstream out_ps("ps_class.txt");
@@ -136,9 +138,12 @@ int main(int argc, char *argv[])
                 const double run = (pkNext - 2 * pk + pkPrev) / (deltaLogK1 * deltaLogK1);
                 const double runRun = (pkNext2 - 2 * pkNext + 2 * pkPrev - pkPrev2) / (2 * deltaLogK1 * deltaLogK1 * deltaLogK1);
 
+                const double r = psTensor.evaluate(kPivR) / ps.evaluate(kPivR);
+
                 v[12] = ns;
                 v[13] = run;
                 v[14] = runRun;
+                v[15] = r;
                 auto it = v.cbegin();
                 out << *(it++);
                 for(; it != v.cend(); ++it)
