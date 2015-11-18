@@ -151,8 +151,9 @@
                       settings%posteriors = logical(calculate_post)
                       settings%cluster_posteriors = .false.
                       settings%feedback = feedback
-                      settings%update_resume = update_resume
-                      settings%update_posterior = 1000
+                      settings%update_files = update_resume
+                      !settings%update_resume = update_resume
+                      !settings%update_posterior = 1000
                       settings%boost_posterior = sigma_post
                       allocate(settings%grade_frac(num_grades))
                       allocate(settings%grade_dims(num_grades))
