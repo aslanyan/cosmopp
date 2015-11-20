@@ -88,7 +88,7 @@ void runBigPolychordTest(unsigned int i, double& res, double& expected)
 
     for(int i = 0; i < 6; ++i)
     {
-        std::auto_ptr<Posterior1D> p(chain.posterior(i));
+        std::unique_ptr<Posterior1D> p(chain.posterior(i));
         std::stringstream fileName;
         fileName << root1 << pc.getParamName(i) << ".txt";
         p->writeIntoFile(fileName.str().c_str());
