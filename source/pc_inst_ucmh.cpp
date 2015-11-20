@@ -167,7 +167,7 @@ int main(int argc, char *argv[])
 
             std::stringstream fileName;
             fileName << "slow_test_files/pc_ucmh_" << paramName << ".txt";
-            std::auto_ptr<Posterior1D> p(chain.posterior(i));
+            std::unique_ptr<Posterior1D> p(chain.posterior(i));
             p->writeIntoFile(fileName.str().c_str());
 
             const double median = p->median();

@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
         //if(useFast)
             //root << "_fast";
 
-        std::auto_ptr<PlanckLikelihood> planckLike;
+        std::unique_ptr<PlanckLikelihood> planckLike;
         /*
         if(useFast)
         {
