@@ -1,8 +1,8 @@
 cmake_minimum_required (VERSION 2.8.10)
 
-set(LIB_FILES macros.cpp test_framework.cpp whole_matrix.cpp scale_factor.cpp markov_chain.cpp matrix_impl.cpp kd_tree.cpp)
+set(LIB_FILES macros.cpp test_framework.cpp whole_matrix.cpp scale_factor.cpp markov_chain.cpp matrix_impl.cpp kd_tree.cpp pde.cpp field_solver.cpp)
 
-set(TEST_FILES test_unit_conversions.cpp test_int_operations.cpp test_integral.cpp test_conjugate_gradient.cpp test_polynomial.cpp test_legendre.cpp test_spherical_harmonics.cpp test_matrix.cpp test_wigner_3j.cpp test_table_function.cpp test_cubic_spline.cpp test_three_rotation.cpp test_kd_tree.cpp)
+set(TEST_FILES test_unit_conversions.cpp test_int_operations.cpp test_integral.cpp test_conjugate_gradient.cpp test_polynomial.cpp test_legendre.cpp test_spherical_harmonics.cpp test_matrix.cpp test_wigner_3j.cpp test_table_function.cpp test_cubic_spline.cpp test_three_rotation.cpp test_kd_tree.cpp test_pde.cpp)
 
 if(LAPACK_LIB_FLAGS)
 	set(LIB_FILES ${LIB_FILES} mcmc.cpp)
@@ -116,6 +116,7 @@ add_test(NAME table_function COMMAND cosmo_test table_function WORKING_DIRECTORY
 add_test(NAME cubic_spline COMMAND cosmo_test cubic_spline WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
 add_test(NAME three_rotation COMMAND cosmo_test three_rotation WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
 add_test(NAME kd_tree COMMAND cosmo_test kd_tree WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+add_test(NAME pde COMMAND cosmo_test pde WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
 if(LAPACK_LIB_FLAGS)
 	add_test(NAME mcmc_fast COMMAND cosmo_test mcmc_fast WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
 	add_test(NAME fast_approximator COMMAND cosmo_test fast_approximator WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
