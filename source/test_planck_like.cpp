@@ -43,7 +43,7 @@ TestPlanckLike::runSubTest(unsigned int i, double& res, double& expected, std::s
     LCDMWithTensorParams paramsLCDMTens(omBH2, omCH2, h, tau, ns, as, pivot, r, nt, pivot); 
 
 #ifdef COSMO_PLANCK_15
-    std::auto_ptr<PlanckLikelihood> like;
+    std::unique_ptr<PlanckLikelihood> like;
     switch(i)
     {
     case 0:
