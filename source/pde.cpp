@@ -519,7 +519,7 @@ InitialValPDESolver::propagate(double t)
     check(t >= t_, "cannot propagate back in time");
     check(deltaT_ > 0, "");
 
-    std::auto_ptr<ProgressMeter> meter;
+    std::unique_ptr<ProgressMeter> meter;
 
     if(processId_ == 0)
     {

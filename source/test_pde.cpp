@@ -209,7 +209,7 @@ TestPDE::runSubTest(unsigned int i, double& res, double& expected, std::string& 
         //return;
     }
 
-    std::auto_ptr<Math::InitialValPDEInterface> pde;
+    std::unique_ptr<Math::InitialValPDEInterface> pde;
 
     // set subTestName and pde
     switch(i)
@@ -245,7 +245,7 @@ TestPDE::runSubTest(unsigned int i, double& res, double& expected, std::string& 
 
     Math::InitialValPDESolver solver(&(*pde));
 
-    std::vector<std::auto_ptr<Math::RealFunctionMultiDim> > initialFuncs(pde->funcDim());
+    std::vector<std::unique_ptr<Math::RealFunctionMultiDim> > initialFuncs(pde->funcDim());
     std::vector<Math::RealFunctionMultiDim*> initial(pde->funcDim());
 
     std::vector<double> xMin(pde->spaceDim()), xMax(pde->spaceDim());
