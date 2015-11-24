@@ -326,7 +326,7 @@ int main(int argc, char *argv[])
 
         const double kPivot = 0.05;
 
-        const bool pbhLimits = true; // can be changed
+        const bool pbhLimits = false; // can be changed
 
         //model 1
         //const bool slowRollEnd = true;
@@ -401,7 +401,7 @@ int main(int argc, char *argv[])
         else if(usePoly)
             pc.reset(new PolyChord(nPar, like, 500, root, 8));
         else
-            mn.reset(new MnScanner(nPar, like, 2000, root));
+            mn.reset(new MnScanner(nPar, like, 1000, root));
 
 
         int nChains;
