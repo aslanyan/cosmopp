@@ -143,7 +143,7 @@ private:
 class CombinedLikelihood : public Math::LikelihoodFunction
 {
 public:
-    CombinedLikelihood(PlanckLikelihood& planck, CosmologicalParams *params, bool newUCMH, bool noGamma, bool use200, bool useWeak, bool lateDec) : planck_(planck), params_(params)
+    CombinedLikelihood(PlanckLikelihood& planck, CosmologicalParams *params, bool newUCMH, bool noGamma, bool use200, bool use500, bool useWeak, bool lateDec) : planck_(planck), params_(params)
     {
         if(newUCMH)
         {
@@ -155,6 +155,11 @@ public:
             {
                 gammaFileName << "weakened";
                 pulsarFileName << "weakened";
+            }
+            else if(use500)
+            {
+                gammaFileName << "500";
+                pulsarFileName << "500";
             }
             else if(use200)
             {
@@ -222,6 +227,7 @@ int main(int argc, char *argv[])
         bool newUCMH = false;
         bool noGamma = false;
         bool use200 = false;
+        bool use500 = false;
         bool useWeak = false;
         bool lateDecoupling = false;
 
@@ -249,6 +255,9 @@ int main(int argc, char *argv[])
 
             if(std::string(argv[i]) == std::string("ucmh_200"))
                 use200 = true;
+
+            if(std::string(argv[i]) == std::string("ucmh_500"))
+                use500 = true;
 
             if(std::string(argv[i]) == std::string("ucmh_weak"))
                 useWeak = true;
@@ -299,6 +308,10 @@ int main(int argc, char *argv[])
             if(useWeak)
             {
                 output_screen("The weak ucmh limits will be used." << std::endl);
+            }
+            else if(use500)
+            {
+                output_screen("z_c = 500 ucmh limits will be used. To use the weak ones specify \"ucmh_weak\" as an argument instead of \"ucmh_500\"." << std::endl);
             }
             else if(use200)
             {
@@ -429,7 +442,7 @@ int main(int argc, char *argv[])
 
         planck.setModelCosmoParams(&modelParams);
 
-        CombinedLikelihood like(planck, &modelParams, newUCMH, noGamma, use200, useWeak, lateDecoupling);
+        CombinedLikelihood like(planck, &modelParams, newUCMH, noGamma, use200, use500, useWeak, lateDecoupling);
 
         if(useMH)
             mh.reset(new Math::MetropolisHastings(nPar, like, root));
