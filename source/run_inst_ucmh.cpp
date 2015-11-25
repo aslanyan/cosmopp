@@ -182,9 +182,24 @@ public:
         if(l <= 1e8)
         {
             if(gamma_)
-                l += gamma_->calculate(params_->powerSpectrum());
+            {
+                const double gammaLike = gamma_->calculate(params_->powerSpectrum());
+                if(gammaLike != 0)
+                {
+                    output_screen("NONZERO GAMMA LIKE: " << gammaLike << std::endl);
+                    l += gammaLike;
+                }
+
+            }
             if(pulsar_)
-                l += pulsar_->calculate(params_->powerSpectrum());
+            {
+                const double pulsarLike = pulsar_->calculate(params_->powerSpectrum());
+                if(pulsarLike != 0)
+                {
+                    output_screen("NONZERO PULSAR LIKE: " << pulsarLike << std::endl);
+                    l += pulsarLike;
+                }
+            }
         }
         return l;
     }
@@ -209,6 +224,8 @@ int main(int argc, char *argv[])
         bool use200 = false;
         bool useWeak = false;
         bool lateDecoupling = false;
+
+        bool pbhLimits = false;
 
         for(int i = 1; i < argc; ++i)
         {
@@ -238,6 +255,9 @@ int main(int argc, char *argv[])
 
             if(std::string(argv[i]) == std::string("ucmh_late_dec"))
                 lateDecoupling = true;
+
+            if(std::string(argv[i]) == std::string("pbh"))
+                pbhLimits = true;
         }
 
         if(newUCMH)
@@ -326,8 +346,6 @@ int main(int argc, char *argv[])
 
         const double kPivot = 0.05;
 
-        const bool pbhLimits = false; // can be changed
-
         //model 1
         //const bool slowRollEnd = true;
         //const bool eternalInflOK = false;
@@ -391,6 +409,22 @@ int main(int argc, char *argv[])
                 modelParams.addKValue(k, 0, lim, 0, 1e10);
             }
         }
+        else if(newUCMH)
+        {
+            modelParams.addKValue(1e3, 0, 1e10, 0, 1e10);
+            modelParams.addKValue(3e3, 0, 1e10, 0, 1e10);
+            modelParams.addKValue(1e4, 0, 1e10, 0, 1e10);
+            modelParams.addKValue(3e4, 0, 1e10, 0, 1e10);
+            modelParams.addKValue(1e5, 0, 1e10, 0, 1e10);
+            modelParams.addKValue(3e5, 0, 1e10, 0, 1e10);
+            modelParams.addKValue(1e6, 0, 1e10, 0, 1e10);
+            modelParams.addKValue(3e6, 0, 1e10, 0, 1e10);
+            modelParams.addKValue(1e7, 0, 1e10, 0, 1e10);
+            modelParams.addKValue(3e7, 0, 1e10, 0, 1e10);
+            modelParams.addKValue(1e8, 0, 1e10, 0, 1e10);
+            modelParams.addKValue(3e8, 0, 1e10, 0, 1e10);
+            modelParams.addKValue(1e9, 0, 1e10, 0, 1e10);
+        }
 
         planck.setModelCosmoParams(&modelParams);
 
@@ -401,7 +435,7 @@ int main(int argc, char *argv[])
         else if(usePoly)
             pc.reset(new PolyChord(nPar, like, 500, root, 8));
         else
-            mn.reset(new MnScanner(nPar, like, 1000, root));
+            mn.reset(new MnScanner(nPar, like, (pbhLimits ? 2000 : 500), root));
 
 
         int nChains;
