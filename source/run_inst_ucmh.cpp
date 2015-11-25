@@ -380,6 +380,7 @@ int main(int argc, char *argv[])
 
         if(pbhLimits)
         {
+            output_screen("Including PBH limits from the file data/PBH_limits.dat" << std::endl);
             std::ifstream inPBH("data/PBH_limits.dat");
             if(!inPBH)
             {
