@@ -138,6 +138,7 @@ if(CLASS_DIR AND PLANCK_DIR AND POLYCHORD_DIR AND MULTINEST_DIR)
 	target_link_libraries(knotted ${MPI_Fortran_LIBRARIES})
     endif(MPI_FOUND)
 target_link_libraries(knotted ${PLANCKLIB})
+target_link_libraries(knotted -dynamic)
 endif(CLASS_DIR AND PLANCK_DIR AND POLYCHORD_DIR AND MULTINEST_DIR)
 
 add_test(NAME unit_conversions COMMAND cosmo_test unit_conversions WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
