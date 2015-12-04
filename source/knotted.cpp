@@ -7,6 +7,7 @@
 #include <macros.hpp>
 #include <exception_handler.hpp>
 #include <polychord.hpp>
+#include <mn_scanner.hpp>
 #include <planck_like.hpp>
 #include <power_spectrum.hpp>
 #include <cosmological_params.hpp>
@@ -131,6 +132,21 @@ public:
             kVals_[i] = std::exp(*(it++));
         }
 
+        // check if the k values are in order
+        double outOfOrder = 0;
+        for(int i = 1; i < kVals_.size(); ++i)
+        {
+            if(kVals_[i] < kVals_[i - 1])
+                outOfOrder += kVals_[i - 1] - kVals_[i];
+        }
+
+        if(outOfOrder > 0)
+        {
+            if(badLike)
+                *badLike = outOfOrder * 1e10;
+            return false;
+        }
+
         for(int i = 0; i < amplitudes_.size(); ++i)
         {
             check(it < v.end(), "");
@@ -195,6 +211,7 @@ int main(int argc, char *argv[])
 
         bool varyNEff = false;
         bool varySumMNu = false;
+        bool useMultinest = false;
 
         for(int i = 3; i < argc; ++i)
         {
@@ -202,6 +219,9 @@ int main(int argc, char *argv[])
                 varyNEff = true;
             if(std::string(argv[i]) == "sum_mnu")
                 varySumMNu = true;
+
+            if(std::string(argv[i]) == "multinest")
+                useMultinest = true;
         }
 
         int nPar = 4 + 2 * (nKnots + 2) - 2;
@@ -224,6 +244,15 @@ int main(int argc, char *argv[])
         else
         {
             output_screen("sum_mnu not being varied. To vary it give \"sum_mnu\" as an extra argument." << std::endl);
+        }
+
+        if(useMultinest)
+        {
+            output_screen("Using the MultiNest sampler! To use Polychord instead do not give \"multinest\" as an extra argument." << std::endl);
+        }
+        else
+        {
+            output_screen("Using the Polychord sampler! To use MultiNest instead give \"multinest\" as an extra argument." << std::endl);
         }
 
         // for A_planck
@@ -256,6 +285,10 @@ int main(int argc, char *argv[])
 
         std::stringstream root;
         root << "knotted_";
+        if(useMultinest)
+            root << "mn_";
+        else
+            root << "pc_";
         if(isLinear)
             root << "linear_";
         else
@@ -265,43 +298,84 @@ int main(int argc, char *argv[])
             root << "_neff";
         if(varySumMNu)
             root << "_summnu";
-        PolyChord pc(nPar, planckLike, 300, root.str(), 3 * (4 + (varyNEff ? 1 : 0) + (varySumMNu ? 1 : 0)));
 
-        int paramIndex = 0;
-
-        pc.setParam(paramIndex++, "ombh2", 0.02, 0.025, 1);
-        pc.setParam(paramIndex++, "omch2", 0.1, 0.2, 1);
-        pc.setParam(paramIndex++, "h", 0.55, 0.85, 1);
-        pc.setParam(paramIndex++, "tau", 0.02, 0.20, 1);
-        if(varyNEff)
-            pc.setParam(paramIndex++, "n_eff", 2.0, 5.0, 1);
-        if(varySumMNu)
-            pc.setParam(paramIndex++, "sum_mnu", 0.001, 3.0, 1);
-
-        for(int i = 1; i < kVals.size() - 1; ++i)
+        if(useMultinest)
         {
-            std::stringstream paramName;
-            paramName << "k_" << i;
-            pc.setParamSortedUniform(paramIndex++, paramName.str(), std::log(kMin), std::log(kMax), 0, 2);
-        }
+            MnScanner mn(nPar, planckLike, 300, root.str());
 
-        for(int i = 0; i < amplitudes.size(); ++i)
-        {
-            std::stringstream paramName;
-            paramName << "a_" << i;
-            pc.setParam(paramIndex++, paramName.str(), aMin, aMax, 2);
-        }
+            int paramIndex = 0;
+
+            mn.setParam(paramIndex++, "ombh2", 0.02, 0.025);
+            mn.setParam(paramIndex++, "omch2", 0.1, 0.2);
+            mn.setParam(paramIndex++, "h", 0.55, 0.85);
+            mn.setParam(paramIndex++, "tau", 0.02, 0.20);
+            if(varyNEff)
+                mn.setParam(paramIndex++, "n_eff", 2.0, 5.0);
+            if(varySumMNu)
+                mn.setParam(paramIndex++, "sum_mnu", 0.001, 3.0);
+
+            for(int i = 1; i < kVals.size() - 1; ++i)
+            {
+                std::stringstream paramName;
+                paramName << "k_" << i;
+                mn.setParam(paramIndex++, paramName.str(), std::log(kMin), std::log(kMax));
+            }
+
+            for(int i = 0; i < amplitudes.size(); ++i)
+            {
+                std::stringstream paramName;
+                paramName << "a_" << i;
+                mn.setParam(paramIndex++, paramName.str(), aMin, aMax);
+            }
 #ifdef COSMO_PLANCK_15
-        pc.setParamGauss(paramIndex++, "A_planck", 1, 0.0025, 3);
+            mn.setParamGauss(paramIndex++, "A_planck", 1, 0.0025);
 #else
-        ERROR NOT IMPLEMENTED;
+            ERROR NOT IMPLEMENTED;
 #endif
-        check(paramIndex == nPar, "");
+            check(paramIndex == nPar, "");
 
-        const std::vector<double> fracs{0.7, 0.25, 0.05};
-        pc.setParameterHierarchy(fracs);
+            mn.run(true);
+        }
+        else
+        {
+            PolyChord pc(nPar, planckLike, 300, root.str(), 3 * (4 + (varyNEff ? 1 : 0) + (varySumMNu ? 1 : 0)));
 
-        pc.run(true);
+            int paramIndex = 0;
+
+            pc.setParam(paramIndex++, "ombh2", 0.02, 0.025, 1);
+            pc.setParam(paramIndex++, "omch2", 0.1, 0.2, 1);
+            pc.setParam(paramIndex++, "h", 0.55, 0.85, 1);
+            pc.setParam(paramIndex++, "tau", 0.02, 0.20, 1);
+            if(varyNEff)
+                pc.setParam(paramIndex++, "n_eff", 2.0, 5.0, 1);
+            if(varySumMNu)
+                pc.setParam(paramIndex++, "sum_mnu", 0.001, 3.0, 1);
+
+            for(int i = 1; i < kVals.size() - 1; ++i)
+            {
+                std::stringstream paramName;
+                paramName << "k_" << i;
+                pc.setParamSortedUniform(paramIndex++, paramName.str(), std::log(kMin), std::log(kMax), 0, 2);
+            }
+
+            for(int i = 0; i < amplitudes.size(); ++i)
+            {
+                std::stringstream paramName;
+                paramName << "a_" << i;
+                pc.setParam(paramIndex++, paramName.str(), aMin, aMax, 2);
+            }
+#ifdef COSMO_PLANCK_15
+            pc.setParamGauss(paramIndex++, "A_planck", 1, 0.0025, 3);
+#else
+            ERROR NOT IMPLEMENTED;
+#endif
+            check(paramIndex == nPar, "");
+
+            const std::vector<double> fracs{0.7, 0.25, 0.05};
+            pc.setParameterHierarchy(fracs);
+
+            pc.run(true);
+        }
     } catch (std::exception& e)
     {
         output_screen("EXCEPTION CAUGHT!!! " << std::endl << e.what() << std::endl);
