@@ -19,7 +19,7 @@ int main(int argc, char *argv[])
 
         output_screen("68\% confidence limits:" << std::endl);
 
-        for(int i = 0; i < 9; ++i)
+        for(int i = 0; i < 10; ++i)
         {
             if(i == 4 || i == 5)
                 continue;
@@ -47,6 +47,9 @@ int main(int argc, char *argv[])
             case 8:
                 paramName = "alpha_s_prime";
                 break;
+            case 9:
+                paramName = "r";
+                break;
             default:
                 check(false, "");
                 break;
@@ -54,9 +57,14 @@ int main(int argc, char *argv[])
 
             std::unique_ptr<Posterior1D> p(chain.posterior(i + 4, Posterior1D::GAUSSIAN_SMOOTHING));
 
+            if(i == 0 || i == 9)
+            {
+                const double upper = p->get2SigmaUpper();
+                output_screen(paramName << " < " << upper << std::endl);
+            }
             const double median = p->median();
             double lower, upper;
-            p->get1SigmaTwoSided(lower, upper);
+            p->get2SigmaTwoSided(lower, upper);
             const double sigma = (upper - lower) / 2.0;
             output_screen(paramName << " = " << median << " + " << upper - median << " - " << median - lower << std::endl);
         }
