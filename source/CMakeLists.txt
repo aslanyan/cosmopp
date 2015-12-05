@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 2.8.10)
 
-set(LIB_FILES macros.cpp test_framework.cpp whole_matrix.cpp scale_factor.cpp markov_chain.cpp matrix_impl.cpp kd_tree.cpp ucmh_likelihood.cpp)
+set(LIB_FILES macros.cpp cosmo_mpi.cpp test_framework.cpp whole_matrix.cpp scale_factor.cpp markov_chain.cpp matrix_impl.cpp kd_tree.cpp ucmh_likelihood.cpp)
 
 set(TEST_FILES test_unit_conversions.cpp test_int_operations.cpp test_integral.cpp test_conjugate_gradient.cpp test_polynomial.cpp test_legendre.cpp test_spherical_harmonics.cpp test_matrix.cpp test_wigner_3j.cpp test_table_function.cpp test_cubic_spline.cpp test_three_rotation.cpp test_kd_tree.cpp)
 

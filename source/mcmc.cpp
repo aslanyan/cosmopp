@@ -1,3 +1,7 @@
+#ifdef COSMO_MPI
+#include <mpi.h>
+#endif
+
 #include <cosmo_mpi.hpp>
 
 #include <macros.hpp>
