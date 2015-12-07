@@ -20,6 +20,11 @@ public:
     void barrier() const;
     int getCommTag();
 
+    enum DataType { DOUBLE = 0, INT, LONG, DATA_TYPE_MAX };
+
+    int send(int dest, const void *buf, int count, DataType type, int tag);
+    int recv(int source, void *buf, int count, DataType type, int tag);
+
 private:
     int commTag_;
 };
