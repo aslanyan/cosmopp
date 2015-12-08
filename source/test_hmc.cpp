@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
 
         using namespace Math;
 
-        const int n = 1000;
+        const int n = 5;
         std::vector<double> mean(n, 0);
         std::vector<double> sigma(n, 5);
 
