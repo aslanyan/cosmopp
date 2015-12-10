@@ -14,9 +14,11 @@
 #include <chealpix.h>
 #include <healpix_base.h>
 
+/*
 #include <fitshandle.h>
 #include <healpix_map.h>
 #include <healpix_map_fitsio.h>
+*/
 
 #ifdef COSMO_OMP
 #include <omp.h>
@@ -97,14 +99,16 @@ MaskApodizer::apodize(ApodizationType type, double angle, Healpix_Map<double>& r
     check(type >= COSINE_APODIZATION && type < APODIZATION_TYPE_MAX, "invalid apodization type");
     check(angle > 0, "invalid angle = " << angle);
 
+    /*
     const int edgeNSide = std::min(128, mask_.Nside());
     //const int edgeNSide = mask_.Nside();
 
-    Healpix_Map<double> edgeMap;
+    //Healpix_Map<double> edgeMap;
     edgeMap.SetNside(edgeNSide, NEST);
 
     for(int i = 0; i < edgeMap.Npix(); ++i)
         edgeMap[i] = 0;
+    */
 
     result.SetNside(mask_.Nside(), mask_.Scheme());
     result.Import(mask_);
@@ -164,8 +168,8 @@ MaskApodizer::apodize(ApodizationType type, double angle, Healpix_Map<double>& r
         if(isOnEdge)
         {
             edge.push_back(Math::ThreeVectorDouble(std::sin(theta) * std::cos(phi), std::sin(theta) * std::sin(phi), std::cos(theta)));
-            ang2pix_nest(edgeNSide, theta, phi, &index);
-            edgeMap[index] = 1;
+            //ang2pix_nest(edgeNSide, theta, phi, &index);
+            //edgeMap[index] = 1;
             //edgeMap[i] = 1;
         }
         meter.advance();
@@ -174,9 +178,11 @@ MaskApodizer::apodize(ApodizationType type, double angle, Healpix_Map<double>& r
 
     output_screen("Found " << edge.size() << " edge pixels." << std::endl);
 
+    /*
     fitshandle outh;
     outh.create("edge.fits");
     write_Healpix_map_to_fits(outh, edgeMap, PLANCK_FLOAT64);
+    */
 
     output_screen("Apodizing mask..." << std::endl);
     ProgressMeter meter1(nPix);
