@@ -96,7 +96,7 @@ CosmoMPI::getCommTag()
 }
 
 int
-CosmoMPI::send(int dest, const void *buf, int count, DataType type, int tag)
+CosmoMPI::send(int dest, void *buf, int count, DataType type, int tag)
 {
     check(dest >= 0 && dest < numProcesses(), "invalid destination " << dest);
     check(dest != processId(), "cannot send to myself");
