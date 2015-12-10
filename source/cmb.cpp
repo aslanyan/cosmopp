@@ -432,11 +432,11 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
             pt_->has_pk_matter = true;
             pt_->has_density_transfers = true;
             sp_->z_max_pk = zMaxPk;
-            //pt_->k_max_for_pk = kMax_;
-            //nl_->method = nl_halofit;
-            //pr_->halofit_dz = 0.1;
-            //pr_->halofit_min_k_nonlinear = 0.0035;
-            //pr_->halofit_sigma_precision = 0.05;
+            pt_->k_max_for_pk = 0.8 * kMax_; // seems like k_max becomes a bit larger than k_max_for_pk, don't know why. so by setting k_max_for_pk a bit smaller than kMax_ we can get k_max similar to kMax_
+            nl_->method = nl_halofit;
+            pr_->halofit_dz = 0.1;
+            pr_->halofit_min_k_nonlinear = 0.0035;
+            pr_->halofit_sigma_precision = 0.05;
         }
 
         pt_->has_scalars = true;
@@ -586,16 +586,15 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
             throw exc;
         }
 
-        const double decades = std::log(kMax_ / kMin_) / std::log(10.0);
+        const double decades = std::log(pt_->k_max / pt_->k_min) / std::log(10.0);
         check(decades > 0, "");
         const int nPoints = int(decades * kPerDecade_);
         check(nPoints > 0, "");
-        const double kDelta = (std::log(kMax_) - std::log(kMin_)) / nPoints;
+        const double kDelta = (std::log(pt_->k_max) - std::log(pt_->k_min)) / nPoints;
 
         for(int i = -2; i <= nPoints + 2; ++i)
         {
-            //const double k = (i == nPoints ? kMax_ : (i == 0 ? kMin_ : std::exp(std::log(kMin_) + i * kDelta)));
-            const double k = std::exp(std::log(kMin_) + i * kDelta);
+            const double k = std::exp(std::log(pt_->k_min) + i * kDelta);
             outPk << k << ' ' << params.powerSpectrum().evaluate(k);
             
             if(includeTensors_)
