@@ -143,7 +143,7 @@ public:
         if(outOfOrder > 0)
         {
             if(badLike)
-                *badLike = outOfOrder * 1e10;
+                *badLike = outOfOrder * 1e20;
             return false;
         }
 
@@ -154,6 +154,33 @@ public:
         }
 
         resetPS();
+
+        // check if ps is crazy
+        double badPs = 0;
+        const double lkMin = std::log(kVals_[0]);
+        const double lkMax = std::log(kVals_.back());
+        const int nK = 1000;
+        const double deltaLK = (lkMax - lkMin) / nK;
+        const double psMin = 1e-12, psMax = 1e-7;
+        for(int i = 0; i <= nK; ++i)
+        {
+            double k = std::exp(lkMin + i * deltaLK);
+            if(i == 0)
+                k = kVals_[0];
+            if(i == nK)
+                k = kVals_.back();
+            const double p = ps_->evaluate(k);
+            if(p < psMin)
+                badPs += (psMin - p);
+            if(p > psMax)
+                badPs += (p - psMax);
+        }
+        if(badPs != 0)
+        {
+            if(badLike)
+                *badLike = badPs * 1e20;
+            return false;
+        }
 
         return true;
     }
