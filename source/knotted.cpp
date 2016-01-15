@@ -239,6 +239,7 @@ int main(int argc, char *argv[])
         bool varyNEff = false;
         bool varySumMNu = false;
         bool useMultinest = false;
+        int nMassive = 0;
 
         for(int i = 3; i < argc; ++i)
         {
@@ -266,6 +267,7 @@ int main(int argc, char *argv[])
         if(varySumMNu)
         {
             ++nPar;
+            nMassive = 1;
             output_screen("Varying sum_mnu!" << std::endl);
         }
         else
@@ -301,7 +303,7 @@ int main(int argc, char *argv[])
         for(int i = 1; i < kVals.size() - 1; ++i)
             kVals[i] = std::exp(std::log(kMin) + i * deltaLogK);
 
-        SplineWithDegenerateNeutrinosParams params(isLinear, 0.022, 0.12, 0.7, 0.1, kVals, amplitudes, 3.046, 0, 0, varyNEff, varySumMNu);
+        SplineWithDegenerateNeutrinosParams params(isLinear, 0.022, 0.12, 0.7, 0.1, kVals, amplitudes, 3.046, nMassive, 0, varyNEff, varySumMNu);
 
 #ifdef COSMO_PLANCK_15
         PlanckLikelihood planckLike(true, true, true, false, true, false, false, false, 100);
