@@ -166,3 +166,56 @@ CosmoMPI::recv(int source, void *buf, int count, DataType type, int tag)
 #endif
 }
 
+int
+CosmoMPI::reduce(void *send, void *recv, int count, DataType type, ReduceOp op)
+{
+    check(type >= 0 && type < DATA_TYPE_MAX, "");
+    check(op >= 0 && op < REDUCE_OP_MAX, "");
+
+#ifdef COSMO_MPI
+    MPI_Datatype mpiType;
+    switch(type)
+    {
+    case DOUBLE:
+        mpiType = MPI_DOUBLE;
+        break;
+    case INT:
+        mpiType = MPI_INT;
+        break;
+    case LONG:
+        mpiType = MPI_LONG;
+        break;
+    default:
+        check(false, "");
+        break;
+    }
+
+    MPI_Op mpiOp;
+    switch(op)
+    {
+        case SUM:
+            mpiOp = MPI_SUM;
+            break;
+        case MAX:
+            mpiOp = MPI_MAX;
+            break;
+        case MIN:
+            mpiOp = MPI_MIN;
+            break;
+        case PROD:
+            mpiOp = MPI_PROD;
+            break;
+        default:
+            check(false, "");
+            break;
+    }
+
+    const int res = MPI_Reduce(send, recv, count, mpiType, mpiOp, 0, MPI_COMM_WORLD);
+    check(res == MPI_SUCCESS, "reduce failed");
+    return res;
+#else
+    check(false, "");
+    return 0;
+#endif
+}
+
