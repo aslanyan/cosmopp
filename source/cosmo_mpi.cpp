@@ -95,6 +95,58 @@ CosmoMPI::getCommTag()
     return commTag_;
 }
 
+#ifdef COSMO_MPI
+namespace
+{
+
+MPI_Datatype typeToMPIType(CosmoMPI::DataType type)
+{
+    MPI_Datatype mpiType;
+    switch(type)
+    {
+    case CosmoMPI::DOUBLE:
+        mpiType = MPI_DOUBLE;
+        break;
+    case CosmoMPI::INT:
+        mpiType = MPI_INT;
+        break;
+    case CosmoMPI::LONG:
+        mpiType = MPI_LONG;
+        break;
+    default:
+        check(false, "");
+        break;
+    }
+    return mpiType;
+}
+
+MPI_Op opToMPIOp(CosmoMPI::ReduceOp op)
+{
+    MPI_Op mpiOp;
+    switch(op)
+    {
+        case CosmoMPI::SUM:
+            mpiOp = MPI_SUM;
+            break;
+        case CosmoMPI::MAX:
+            mpiOp = MPI_MAX;
+            break;
+        case CosmoMPI::MIN:
+            mpiOp = MPI_MIN;
+            break;
+        case CosmoMPI::PROD:
+            mpiOp = MPI_PROD;
+            break;
+        default:
+            check(false, "");
+            break;
+    }
+    return mpiOp;
+}
+
+} // namespace
+#endif
+
 int
 CosmoMPI::send(int dest, void *buf, int count, DataType type, int tag)
 {
@@ -104,23 +156,7 @@ CosmoMPI::send(int dest, void *buf, int count, DataType type, int tag)
     check(type >= 0 && type < DATA_TYPE_MAX, "");
 
 #ifdef COSMO_MPI
-    MPI_Datatype mpiType;
-    switch(type)
-    {
-    case DOUBLE:
-        mpiType = MPI_DOUBLE;
-        break;
-    case INT:
-        mpiType = MPI_INT;
-        break;
-    case LONG:
-        mpiType = MPI_LONG;
-        break;
-    default:
-        check(false, "");
-        break;
-    }
-
+    const MPI_Datatype mpiType = typeToMPIType(type);
     const int res = MPI_Send(buf, count, mpiType, dest, tag, MPI_COMM_WORLD);
     check(res == MPI_SUCCESS, "send failed");
     return res;
@@ -139,23 +175,7 @@ CosmoMPI::recv(int source, void *buf, int count, DataType type, int tag)
     check(type >= 0 && type < DATA_TYPE_MAX, "");
 
 #ifdef COSMO_MPI
-    MPI_Datatype mpiType;
-    switch(type)
-    {
-    case DOUBLE:
-        mpiType = MPI_DOUBLE;
-        break;
-    case INT:
-        mpiType = MPI_INT;
-        break;
-    case LONG:
-        mpiType = MPI_LONG;
-        break;
-    default:
-        check(false, "");
-        break;
-    }
-
+    const MPI_Datatype mpiType = typeToMPIType(type);
     MPI_Status s;
     const int res = MPI_Recv(buf, count, mpiType, source, tag, MPI_COMM_WORLD, &s);
     check(res == MPI_SUCCESS, "receive failed");
@@ -173,48 +193,28 @@ CosmoMPI::reduce(void *send, void *recv, int count, DataType type, ReduceOp op)
     check(op >= 0 && op < REDUCE_OP_MAX, "");
 
 #ifdef COSMO_MPI
-    MPI_Datatype mpiType;
-    switch(type)
-    {
-    case DOUBLE:
-        mpiType = MPI_DOUBLE;
-        break;
-    case INT:
-        mpiType = MPI_INT;
-        break;
-    case LONG:
-        mpiType = MPI_LONG;
-        break;
-    default:
-        check(false, "");
-        break;
-    }
-
-    MPI_Op mpiOp;
-    switch(op)
-    {
-        case SUM:
-            mpiOp = MPI_SUM;
-            break;
-        case MAX:
-            mpiOp = MPI_MAX;
-            break;
-        case MIN:
-            mpiOp = MPI_MIN;
-            break;
-        case PROD:
-            mpiOp = MPI_PROD;
-            break;
-        default:
-            check(false, "");
-            break;
-    }
-
+    const MPI_Datatype mpiType = typeToMPIType(type);
+    const MPI_Op mpiOp = opToMPIOp(op);
     const int res = MPI_Reduce(send, recv, count, mpiType, mpiOp, 0, MPI_COMM_WORLD);
     check(res == MPI_SUCCESS, "reduce failed");
     return res;
 #else
     check(false, "");
+    return 0;
+#endif
+}
+
+int
+CosmoMPI::bcast(void *data, int count, DataType type)
+{
+    check(type >= 0 && type < DATA_TYPE_MAX, "");
+
+#ifdef COSMO_MPI
+    const MPI_Datatype mpiType = typeToMPIType(type);
+    const int res = MPI_Bcast(data, count, mpiType, 0, MPI_COMM_WORLD);
+    check(res == MPI_SUCCESS, "bcast failed");
+    return res;
+#else
     return 0;
 #endif
 }
