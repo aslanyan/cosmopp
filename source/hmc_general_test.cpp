@@ -76,24 +76,14 @@ public:
             myLike += delta * delta / (sigma_ * sigma_);
         }
 
-        if(CosmoMPI::create().isMaster())
-        {
-            double otherLike;
-            for(int i = 1; i < CosmoMPI::create().numProcesses(); ++i)
-            {
-                CosmoMPI::create().recv(i, &otherLike, 1, CosmoMPI::DOUBLE, likeTag_ + i);
-                myLike += otherLike;
-            }
+        double totalLike = 0;
+#ifdef COSMO_MPI
+        CosmoMPI::create().reduce(&myLike, &totalLike, 1, CosmoMPI::DOUBLE, CosmoMPI::SUM);
+#else
+        totalLike = myLike;
+#endif
 
-            return myLike;
-        }
-        else
-        {
-            const int i = CosmoMPI::create().processId();
-            check(i != 0, "");
-            CosmoMPI::create().send(0, &myLike, 1, CosmoMPI::DOUBLE, likeTag_ + i);
-            return 0;
-        }
+        return totalLike;
     }
 
     void likeDerivatives(std::vector<double> *d) const // partial(-2ln(like))/partial(x[i])
@@ -110,6 +100,11 @@ public:
         for(int i = 0; i < nPar_; ++i)
             out_ << '\t' << x[i];
         out_ << std::endl;
+    }
+
+    bool stop() const
+    {
+        return false;
     }
 
 private:
@@ -136,7 +131,7 @@ int main(int argc, char *argv[])
         const int n = 5;
         const int mean = 0;
         const int sigma = 5;
-        const int mass = 1;
+        const double mass = 1;
         const int starting = 1;
 
         const std::string root = "hmc_general_test";

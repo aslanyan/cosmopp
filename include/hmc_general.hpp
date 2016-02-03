@@ -23,6 +23,7 @@ public:
     double like() const; // -2ln(like);
     void likeDerivatives(std::vector<double> *d) const; // partial(-2ln(like))/partial(x[i]);
     void output(const std::vector<double>& x, double like);
+    bool stop() const;
 };
 */
 
@@ -32,7 +33,7 @@ class HMCGeneral
 public:
     HMCGeneral(HMCTraits *traits, double tauMax, int nMax, int seed = 0);
     ~HMCGeneral();
-    void run(int iters);
+    void run(int maxIters);
 
 private:
     void generateP();
@@ -106,9 +107,9 @@ HMCGeneral<HMCTraits>::~HMCGeneral()
 }
 
 template<typename HMCTraits>
-void HMCGeneral<HMCTraits>::run(int iters)
+void HMCGeneral<HMCTraits>::run(int maxIters)
 {
-    check(iters > 0, "");
+    check(maxIters > 0, "");
 
     traits_->getStarting(&x_);
     check(x_.size() == nPar_, "");
@@ -122,7 +123,7 @@ void HMCGeneral<HMCTraits>::run(int iters)
     
     int total = 0, accepted = 0;
 
-    for(int iter = 0; iter < iters; ++iter)
+    for(int iter = 0; iter < maxIters; ++iter)
     {
         // x_ should be the current point here, traits_ is set to x_, and currentLike is the likelihood for x_
 
@@ -213,6 +214,9 @@ void HMCGeneral<HMCTraits>::run(int iters)
         CosmoMPI::create().barrier();
 
         traits_->output(x_, currentLike);
+
+        if(traits_->stop())
+            break;
     }
 
     if(CosmoMPI::create().isMaster())
@@ -243,23 +247,14 @@ double HMCGeneral<HMCTraits>::calculatePLike() const
     for(int i = 0; i < nPar_; ++i)
         res += p_[i] * p_[i] / mass_[i];
 
-    if(CosmoMPI::create().isMaster())
-    {
-        for(int i = 1; i < CosmoMPI::create().numProcesses(); ++i)
-        {
-            double otherRes;
-            CosmoMPI::create().recv(i, &otherRes, 1, CosmoMPI::DOUBLE, pLikeTag_ + i);
-            res += otherRes;
-        }
-        return res;
-    }
-    else
-    {
-        const int i = CosmoMPI::create().processId();
-        check(i != 0, "");
-        CosmoMPI::create().send(0, &res, 1, CosmoMPI::DOUBLE, pLikeTag_ + i);
-        return 0;
-    }
+    double totalRes = 0;
+#ifdef COSMO_MPI
+    CosmoMPI::create().reduce(&res, &totalRes, 1, CosmoMPI::DOUBLE, CosmoMPI::SUM);
+#else
+    totalRes = res;
+#endif
+
+    return totalRes;
 }
 
 template<typename HMCTraits>
