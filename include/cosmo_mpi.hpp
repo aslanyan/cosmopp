@@ -27,6 +27,7 @@ public:
     int recv(int source, void *buf, int count, DataType type, int tag);
 
     int reduce(void *send, void *recv, int count, DataType type, ReduceOp op);
+    int bcast(void *data, int count, DataType type);
 
 private:
     int commTag_;
