@@ -63,18 +63,7 @@ public:
 #else
         totalSum = sum;
 #endif
-
-        if(CosmoMPI::create().isMaster())
-        {
-            for(int k = 1; k < CosmoMPI::create().numProcesses(); ++k)
-                CosmoMPI::create().send(k, &totalSum, 1, CosmoMPI::DOUBLE, sumTag_ + k);
-        }
-        else
-        {
-            const int k = CosmoMPI::create().processId();
-            check(k != 0, "");
-            CosmoMPI::create().recv(0, &totalSum, 1, CosmoMPI::DOUBLE, sumTag_ + k);
-        }
+        CosmoMPI::create().bcast(&totalSum, 1, CosmoMPI::DOUBLE);
 
         for(int i = 0; i < n_; ++i)
             res->at(i) = (x[i] - double(i + processId * n_)) * totalSum / (2 * (i + processId * n_ + 1) * (i + processId * n_ + 1));

@@ -72,8 +72,6 @@ LBFGS::minimize(std::vector<double> *x, double epsilon, double gNormTol, int max
 
     while(true)
     {
-        mpi_.barrier();
-
         q = g;
 
         const int m = std::min(m_, iter); // use this many previous things
@@ -82,24 +80,12 @@ LBFGS::minimize(std::vector<double> *x, double epsilon, double gNormTol, int max
             double dotProduct = 0;
             for(int j = 0; j < n_; ++j)
                 dotProduct += s[i][j] * q[j];
-            double totalDotProduct = 0;
+            double totalDotProduct = dotProduct;
 #ifdef COSMO_MPI
             mpi_.reduce(&dotProduct, &totalDotProduct, 1, CosmoMPI::DOUBLE, CosmoMPI::SUM);
-#else
-            totalDotProduct = dotProduct;
 #endif
-            if(mpi_.isMaster())
-            {
-                alpha[i] = rho[i] * totalDotProduct;
-                for(int k = 1; k < mpi_.numProcesses(); ++k)
-                    mpi_.send(k, &(alpha[i]), 1, CosmoMPI::DOUBLE, alphaTag_ + k);
-            }
-            else
-            {
-                const int k = mpi_.processId();
-                check(k != 0, "");
-                mpi_.recv(0, &(alpha[i]), 1, CosmoMPI::DOUBLE, alphaTag_ + k);
-            }
+            alpha[i] = rho[i] * totalDotProduct;
+            mpi_.bcast(&(alpha[i]), 1, CosmoMPI::DOUBLE);
 
             for(int j = 0; j < n_; ++j)
                 q[j] -= alpha[i] * y[i][j];
@@ -113,25 +99,12 @@ LBFGS::minimize(std::vector<double> *x, double epsilon, double gNormTol, int max
             double dotProduct = 0;
             for(int j = 0; j < n_; ++j)
                 dotProduct += y[i][j] * z[j];
-            double totalDotProduct = 0;
+            double totalDotProduct = dotProduct;
 #ifdef COSMO_MPI
             mpi_.reduce(&dotProduct, &totalDotProduct, 1, CosmoMPI::DOUBLE, CosmoMPI::SUM);
-#else
-            totalDotProduct = dotProduct;
 #endif
-            double beta;
-            if(mpi_.isMaster())
-            {
-                beta = rho[i] * totalDotProduct;
-                for(int k = 1; k < mpi_.numProcesses(); ++k)
-                    mpi_.send(k, &beta, 1, CosmoMPI::DOUBLE, betaTag_ + k);
-            }
-            else
-            {
-                const int k = mpi_.processId();
-                check(k != 0, "");
-                mpi_.recv(0, &beta, 1, CosmoMPI::DOUBLE, betaTag_ + k);
-            }
+            double beta = rho[i] * totalDotProduct;
+            mpi_.bcast(&beta, 1, CosmoMPI::DOUBLE);
 
             for(int j = 0; j < n_; ++j)
                 z[j] += (alpha[i] - beta) * s[i][j];
@@ -142,11 +115,9 @@ LBFGS::minimize(std::vector<double> *x, double epsilon, double gNormTol, int max
         for(int i = 0; i < n_; ++i)
             zg += z[i] * g[i];
 
-        double totalZG = 0;
+        double totalZG = zg;
 #ifdef COSMO_MPI
             mpi_.reduce(&zg, &totalZG, 1, CosmoMPI::DOUBLE, CosmoMPI::SUM);
-#else
-            totalZG = zg;
 #endif
 
         int setZToG = 0;
@@ -158,17 +129,8 @@ LBFGS::minimize(std::vector<double> *x, double epsilon, double gNormTol, int max
                 setZToG = 1;
                 totalZG = gradNorm * gradNorm;
             }
-
-            for(int k = 1; k < mpi_.numProcesses(); ++k)
-                mpi_.send(k, &setZToG, 1, CosmoMPI::INT, z2gTag_ + k);
-
         }
-        else
-        {
-            const int k = mpi_.processId();
-            check(k != 0, "");
-            mpi_.recv(0, &setZToG, 1, CosmoMPI::INT, z2gTag_ + k);
-        }
+        mpi_.bcast(&setZToG, 1, CosmoMPI::INT);
 
         if(setZToG)
             z = g;
@@ -187,15 +149,8 @@ LBFGS::minimize(std::vector<double> *x, double epsilon, double gNormTol, int max
             {
                 if(val - newVal >= rate * c * totalZG || searchIter > 1000)
                     stop = 1;
-                for(int k = 1; k < mpi_.numProcesses(); ++k)
-                    mpi_.send(k, &stop, 1, CosmoMPI::INT, stopTag_ + k);
             }
-            else
-            {
-                const int k = mpi_.processId();
-                check(k != 0, "");
-                mpi_.recv(0, &stop, 1, CosmoMPI::INT, stopTag_ + k);
-            }
+            mpi_.bcast(&stop, 1, CosmoMPI::INT);
             if(stop)
                 break;
 
@@ -226,15 +181,8 @@ LBFGS::minimize(std::vector<double> *x, double epsilon, double gNormTol, int max
         {
             if(ratio < epsilon && iter >= minIter)
                 converged = 1;
-            for(int k = 1; k < mpi_.numProcesses(); ++k)
-                mpi_.send(k, &converged, 1, CosmoMPI::INT, convergedTag_ + k);
         }
-        else
-        {
-            const int k = mpi_.processId();
-            check(k != 0, "");
-            mpi_.recv(0, &converged, 1, CosmoMPI::INT, convergedTag_ + k);
-        }
+        mpi_.bcast(&converged, 1, CosmoMPI::INT);
 
         if(converged)
         {
@@ -250,15 +198,8 @@ LBFGS::minimize(std::vector<double> *x, double epsilon, double gNormTol, int max
         {
             if(gradNorm < gNormTol)
                 gradConverged = 1;
-            for(int k = 1; k < mpi_.numProcesses(); ++k)
-                mpi_.send(k, &gradConverged, 1, CosmoMPI::INT, gradConvergedTag_ + k);
         }
-        else
-        {
-            const int k = mpi_.processId();
-            check(k != 0, "");
-            mpi_.recv(0, &gradConverged, 1, CosmoMPI::INT, gradConvergedTag_ + k);
-        }
+        mpi_.bcast(&gradConverged, 1, CosmoMPI::INT);
 
         if(gradConverged)
         {
@@ -278,40 +219,33 @@ LBFGS::minimize(std::vector<double> *x, double epsilon, double gNormTol, int max
         }
 
         // set the 0 element
-        double ys = 0, yy = 0;
+        //double ys = 0, yy = 0;
+        double ys_yy[2] = {0, 0};
         for(int i = 0; i < n_; ++i)
         {
             s[0][i] = x->at(i) - xPrev[i];
             y[0][i] = g[i] - gPrev[i];
-            ys += s[0][i] * y[0][i];
-            yy += y[0][i] * y[0][i];
+            ys_yy[0] += s[0][i] * y[0][i];
+            ys_yy[1] += y[0][i] * y[0][i];
         }
-        double totalYS = 0, totalYY = 0;
+        //double totalYS = 0, totalYY = 0;
+        double total_ys_yy[2];
 #ifdef COSMO_MPI
-        mpi_.reduce(&ys, &totalYS, 1, CosmoMPI::DOUBLE, CosmoMPI::SUM);
-        mpi_.reduce(&yy, &totalYY, 1, CosmoMPI::DOUBLE, CosmoMPI::SUM);
+        //mpi_.reduce(&ys, &totalYS, 1, CosmoMPI::DOUBLE, CosmoMPI::SUM);
+        //mpi_.reduce(&yy, &totalYY, 1, CosmoMPI::DOUBLE, CosmoMPI::SUM);
+        mpi_.reduce(ys_yy, total_ys_yy, 2, CosmoMPI::DOUBLE, CosmoMPI::SUM);
 #else
-        totalYS = ys;
-        totalYY = yy;
+        //totalYS = ys;
+        //totalYY = yy;
+        total_ys_yy[0] = ys_yy[0];
+        total_ys_yy[1] = ys_yy[1];
 #endif
 
-        if(mpi_.isMaster())
-        {
-            for(int k = 1; k < mpi_.numProcesses(); ++k)
-            {
-                mpi_.send(k, &totalYS, 1, CosmoMPI::DOUBLE, ysTag_ + k);
-                mpi_.send(k, &totalYY, 1, CosmoMPI::DOUBLE, yyTag_ + k);
-            }
-        }
-        else
-        {
-            const int k = mpi_.processId();
-            check(k != 0, "");
-            mpi_.recv(0, &totalYS, 1, CosmoMPI::DOUBLE, ysTag_ + k);
-            mpi_.recv(0, &totalYY, 1, CosmoMPI::DOUBLE, yyTag_ + k);
-        }
+        //mpi_.bcast(&totalYS, 1, CosmoMPI::DOUBLE);
+        //mpi_.bcast(&totalYY, 1, CosmoMPI::DOUBLE);
+        mpi_.bcast(&total_ys_yy, 2, CosmoMPI::DOUBLE);
 
-        if(totalYS == 0 || totalYY == 0)
+        if(total_ys_yy[0] == 0 || total_ys_yy[1] == 0)
         {
             if(mpi_.isMaster())
             {
@@ -321,10 +255,10 @@ LBFGS::minimize(std::vector<double> *x, double epsilon, double gNormTol, int max
             break;
         }
 
-        rho[0] = 1 / totalYS;
+        rho[0] = 1 / total_ys_yy[0];
 
         // set H0k
-        H0k = totalYS / totalYY;
+        H0k = total_ys_yy[0] / total_ys_yy[1];
 
         for(int i = 0; i < n_; ++i)
         {
