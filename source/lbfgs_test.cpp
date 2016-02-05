@@ -121,12 +121,14 @@ int main(int argc, char *argv[])
         //lbfgs.minimize(&x, epsilon, 1000000, printIter);
         lbfgs.minimize(&x, epsilon, gradTol, 1000000);
 
+        /*
         output_screen("LBFGS is done! Minimum is (found then expected):" << std::endl);
         const int processId = CosmoMPI::create().processId();
         for(int i = 0; i < n; ++i)
         {
             output_screen('\t' << x[i] << '\t' << i + processId * n << std::endl);
         }
+        */
     } catch (std::exception& e)
     {
         output_screen("EXCEPTION CAUGHT!!! " << std::endl << e.what() << std::endl);

@@ -53,12 +53,14 @@ LBFGS::minimize(std::vector<double> *x, double epsilon, double gNormTol, int max
     std::vector<double> rho(m_, 0), alpha(m_, 0);
 
     int iter = 0;
+    int functionEval = 0;
 
     double val = f_.evaluate(*x);
     std::vector<double> g;
     grad_.evaluate(*x, &g);
     check(g.size() == n_, "");
     double gradNorm = norm(g);
+    ++functionEval;
 
     std::vector<double> xPrev(*x), gPrev(g);
     std::vector<double> q(n_);
@@ -110,7 +112,6 @@ LBFGS::minimize(std::vector<double> *x, double epsilon, double gNormTol, int max
                 z[j] += (alpha[i] - beta) * s[i][j];
         }
 
-        double rate = 1.0;
         double zg = 0;
         for(int i = 0; i < n_; ++i)
             zg += z[i] * g[i];
@@ -135,11 +136,12 @@ LBFGS::minimize(std::vector<double> *x, double epsilon, double gNormTol, int max
         if(setZToG)
             z = g;
 
-        const double tau = 0.5, c = 0.1;
-
+        const double tau = 0.5, c = 0.01;
+        double rate = 1.0;
         for(int i = 0; i < n_; ++i)
             searchX[i] = x->at(i) - rate * z[i];
         double newVal = f_.evaluate(searchX);
+        ++functionEval;
         int searchIter = 0;
         while(true)
         {
@@ -159,15 +161,18 @@ LBFGS::minimize(std::vector<double> *x, double epsilon, double gNormTol, int max
             for(int i = 0; i < n_; ++i)
                 searchX[i] = x->at(i) - rate * z[i];
             newVal = f_.evaluate(searchX);
+            ++functionEval;
             ++searchIter;
         }
 
         // now move
-        for(int i = 0; i < n_; ++i)
-            (*x)[i] -= rate * z[i];
-        grad_.evaluate(*x, &g);
+        //for(int i = 0; i < n_; ++i)
+            //(*x)[i] -= rate * z[i];
+        (*x) = searchX;
         const double oldVal = val;
-        val = f_.evaluate(*x);
+        //val = f_.evaluate(*x);
+        val = newVal;
+        grad_.evaluate(*x, &g);
         check(g.size() == n_, "");
         gradNorm = norm(g);
 
@@ -284,7 +289,7 @@ LBFGS::minimize(std::vector<double> *x, double epsilon, double gNormTol, int max
     if(mpi_.isMaster())
     {
         output_screen("LBFGS has converged after " << iter << " iterations. Successfully quitting." << std::endl);
-        output_screen("Iterations: " << iter << ", function value: " << val << ", gradient norm: " << gradNorm << std::endl);
+        output_screen("Iterations: " << iter << ", function evaluations: " << functionEval << ", function value: " << val << ", gradient norm: " << gradNorm << std::endl);
     }
     return val;
 }

@@ -122,6 +122,7 @@ void HMCGeneral<HMCTraits>::run(int maxIters)
     traits_->output(x_, currentLike);
     
     int total = 0, accepted = 0;
+    int gradEvals = 0;
 
     for(int iter = 0; iter < maxIters; ++iter)
     {
@@ -152,6 +153,7 @@ void HMCGeneral<HMCTraits>::run(int maxIters)
         check(n > 0 && n <= nMax_, "");
 
         traits_->likeDerivatives(&d_);
+        ++gradEvals;
         check(d_.size() == nPar_, "");
 
         generateP();
@@ -169,6 +171,7 @@ void HMCGeneral<HMCTraits>::run(int maxIters)
             traits_->set(x_);
             CosmoMPI::create().barrier();
             traits_->likeDerivatives(&d_);
+            ++gradEvals;
             for(int k = 0; k < nPar_; ++k)
                 p_[k] -= tau / 2 * d_[k] / 2; // divide by 2 because the derivative is of -2ln(like)
         }
@@ -221,7 +224,7 @@ void HMCGeneral<HMCTraits>::run(int maxIters)
 
     if(CosmoMPI::create().isMaster())
     {
-        output_screen("HMC Sampling finished! Total " << total << " iterations, acceptance rate: " << 100 * double(accepted) / total << '%' << std::endl);
+        output_screen("HMC Sampling finished! Total " << total << " iterations, grad evaluations: " << gradEvals <<", acceptance rate: " << 100 * double(accepted) / total << '%' << std::endl);
     }
 }
 
