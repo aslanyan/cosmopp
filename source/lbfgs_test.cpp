@@ -110,15 +110,14 @@ int main(int argc, char *argv[])
 
         LBFGSFunc f(n);
         LBFGSFuncGrad g(n);
-
-        LBFGS lbfgs(n, f, g, 10); 
-
         std::vector<double> x(n, 1000);
-
         const double epsilon = 1e-3;
         const double gradTol = 1e-3 * n * CosmoMPI::create().numProcesses();
 
-        //lbfgs.minimize(&x, epsilon, 1000000, printIter);
+        //LBFGS lbfgs(n, f, g, 10); 
+        //lbfgs.minimize(&x, epsilon, gradTol, 1000000);
+
+        LBFGS lbfgs(n, f, g, x, 10);
         lbfgs.minimize(&x, epsilon, gradTol, 1000000);
 
         /*

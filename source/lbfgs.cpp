@@ -14,6 +14,7 @@
 namespace Math
 {
 
+/*
 LBFGS::LBFGS(int n, const RealFunctionMultiDim& f, const RealFunctionMultiToMulti& grad, int m) : n_(n), f_(f), grad_(grad), m_(m), mpi_(CosmoMPI::create())
 {
     check(n_ > 0, "the function should have a positive number of parameters");
@@ -313,5 +314,60 @@ LBFGS::norm(const std::vector<double> &x) const
 
     return std::sqrt(totalRes);
 }
+
+*/
+
+void
+BasicLargeVector::copy(const BasicLargeVector& other, double c)
+{
+    check(v_.size() == other.v_.size(), "");
+    for(int i = 0; i < v_.size(); ++i)
+        v_[i] = c * other.v_[i];
+}
+
+void
+BasicLargeVector::setToZero()
+{
+    for(int i = 0; i < v_.size(); ++i)
+        v_[i] = 0;
+}
+
+double
+BasicLargeVector::norm() const
+{
+    return std::sqrt(dotProduct(*this));
+}
+
+double
+BasicLargeVector::dotProduct(const BasicLargeVector& other) const
+{
+    check(other.v_.size() == v_.size(), "");
+    double s = 0;
+    for(int i = 0; i < v_.size(); ++i)
+        s += v_[i] * other.v_[i];
+
+    double total = s;
+#ifdef COSMO_MPI
+    CosmoMPI::create().reduce(&s, &total, 1, CosmoMPI::DOUBLE, CosmoMPI::SUM);
+#endif
+    return total;
+}
+
+void
+BasicLargeVector::add(const BasicLargeVector& other, double c)
+{
+    check(other.v_.size() == v_.size(), "");
+    for(int i = 0; i < v_.size(); ++i)
+        v_[i] += c * other.v_[i];
+}
+
+void
+BasicLargeVector::swap(BasicLargeVector& other)
+{
+    check(other.v_.size() == v_.size(), "");
+    v_.swap(other.v_);
+}
+
+void (*LBFGS::cb_)(int, double, double, const std::vector<double>&) = NULL;
 
 } // namespace Math
