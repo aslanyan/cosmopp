@@ -368,6 +368,4 @@ BasicLargeVector::swap(BasicLargeVector& other)
     v_.swap(other.v_);
 }
 
-void (*LBFGS::cb_)(int, double, double, const std::vector<double>&) = NULL;
-
 } // namespace Math

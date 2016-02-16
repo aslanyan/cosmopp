@@ -92,6 +92,27 @@ private:
     const RealFunctionMultiToMulti& grad_;
 };
 
+class BasicLBFGSCallBack
+{
+public:
+    BasicLBFGSCallBack() : cb_(NULL)
+    {}
+
+    void set(void (*callback)(int, double, double, const std::vector<double>&, const std::vector<double>&))
+    {
+        cb_ = callback;
+    }
+
+    void operator()(int iter, double f, double gradNorm, const BasicLargeVector& v, const BasicLargeVector& g)
+    {
+        if(!cb_)
+            return;
+        cb_(iter, f, gradNorm, v.contents(), g.contents());
+    }
+private:
+    void (*cb_)(int, double, double, const std::vector<double>&, const std::vector<double>&);
+};
+
 class LBFGS
 {
 public:
@@ -108,21 +129,14 @@ public:
         lbfgs_->setStarting(*s_);
     }
 
-    double minimize(std::vector<double> *res, double epsilon = 1e-3, double gNormTol = 1e-5, int maxIter = 1000000, void (*callback)(int, double, double, const std::vector<double>&) = NULL)
+    double minimize(std::vector<double> *res, double epsilon = 1e-3, double gNormTol = 1e-5, int maxIter = 1000000, void (*callback)(int, double, double, const std::vector<double>&, const std::vector<double>&) = NULL)
     {
-        cb_ = callback;
-        const double val = lbfgs_->minimize(s_, epsilon, gNormTol, maxIter, myCallBack);
+        cb_.set(callback);
+        const double val = lbfgs_->minimize(s_, epsilon, gNormTol, maxIter, &cb_);
         (*res) = s_->contents();
         return val;
     }
 
-private:
-    static void myCallBack(int it, double f, double gn, const BasicLargeVector& v)
-    {
-        if(cb_)
-            cb_(it, f, gn, v.contents());
-    }
-    
 private:
     BasicLargeVectorFactory factory_;
     BasicLBFGSFunc f_;
@@ -130,8 +144,7 @@ private:
     BasicLargeVector *s_;
 
     std::unique_ptr<LBFGS_General<BasicLargeVector, BasicLargeVectorFactory, BasicLBFGSFunc> > lbfgs_;
-
-    static void (*cb_)(int, double, double, const std::vector<double>&);
+    BasicLBFGSCallBack cb_;
 };
 
 } // namespace Math

@@ -52,13 +52,31 @@ public:
 template <typename LargeVector, typename LargeVectorFactory, typename Function>
 class LBFGS_General
 {
+private:
+    struct DummyCallBack
+    {
+        void operator()(int i, double f, double gn, const LargeVector& x, const LargeVector& g)
+        {
+        }
+    };
 public:
     LBFGS_General(LargeVectorFactory *factory, Function *f, const LargeVector& starting, int m = 10);
     ~LBFGS_General(){}
 
     void setStarting(const LargeVector& starting);
 
-    double minimize(LargeVector *res, double epsilon = 1e-3, double gNormTol = 1e-5, int maxIter = 1000000, void (*callback)(int, double, double, const LargeVector&) = NULL);
+    // class Callback needs to have
+    // void operator()(int iter, double f, double gradNorm, const LargeVector& x, const LargeVector& grad);
+    template<typename CallBack>
+    double minimize(LargeVector *res, double epsilon = 1e-3, double gNormTol = 1e-5, int maxIter = 1000000, CallBack* callback = NULL);
+
+    double minimize(LargeVector *res, double epsilon = 1e-3, double gNormTol = 1e-5, int maxIter = 1000000)
+    {
+        DummyCallBack* cb = NULL; // this is a hack
+        minimize(res, epsilon, gNormTol, maxIter, cb);
+    }
+
+    void getGradient(LargeVector *g) { g->copy(*g_); }
 
 private:
     Function *f_;
@@ -132,8 +150,9 @@ LBFGS_General<LargeVector, LargeVectorFactory, Function>::setStarting(const Larg
 }
 
 template<typename LargeVector, typename LargeVectorFactory, typename Function>
+template<typename CallBack>
 double
-LBFGS_General<LargeVector, LargeVectorFactory, Function>::minimize(LargeVector *res, double epsilon, double gNormTol, int maxIter, void (*callback)(int, double, double, const LargeVector&))
+LBFGS_General<LargeVector, LargeVectorFactory, Function>::minimize(LargeVector *res, double epsilon, double gNormTol, int maxIter, CallBack* callback)
 {
     mpi_.barrier();
 
@@ -144,7 +163,7 @@ LBFGS_General<LargeVector, LargeVectorFactory, Function>::minimize(LargeVector *
     int functionEval = 0;
 
     if(callback)
-        callback(thisIter, val_, gradNorm_, *x_);
+        (*callback)(thisIter, val_, gradNorm_, *x_, *g_);
 
     while(true)
     {
@@ -299,7 +318,7 @@ LBFGS_General<LargeVector, LargeVectorFactory, Function>::minimize(LargeVector *
         ++thisIter;
 
         if(callback)
-            callback(thisIter, val_, gradNorm_, *x_);
+            (*callback)(thisIter, val_, gradNorm_, *x_, *g_);
 
         if(thisIter > maxIter)
         {
