@@ -122,7 +122,7 @@ TestFramework* createTest(const std::string& name)
         test = new TestThreeRotation;
 #ifdef COSMO_HEALPIX
     else if(name == "mask_apodizer")
-        test = new TestMaskApodizer(1e-3);
+        test = new TestMaskApodizer(1e-2);
 #endif
     else if(name == "kd_tree")
         test = new TestKDTree;
