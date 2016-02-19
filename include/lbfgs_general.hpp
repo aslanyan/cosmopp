@@ -202,7 +202,7 @@ LBFGS_General<LargeVector, LargeVectorFactory, Function>::minimize(LargeVector *
         if(setZToG)
             z_->copy(*g_);
 
-        const double tau = 0.1, c = 0.01;
+        const double tau = 0.25, c = 0.01;
         double rate = 1.0;
         searchX_->copy(*x_);
         searchX_->add(*z_, -rate);
@@ -216,13 +216,17 @@ LBFGS_General<LargeVector, LargeVectorFactory, Function>::minimize(LargeVector *
             int stop = 0;
             if(mpi_.isMaster())
             {
-                if(val_ - newVal >= rate * c * zg || searchIter > 1000)
+                if(val_ - newVal >= rate * c * zg || searchIter > 100)
                     stop = 1;
             }
             mpi_.bcast(&stop, 1, CosmoMPI::INT);
             if(stop)
                 break;
 
+            if(mpi_.isMaster())
+            {
+                output_screen("Taking a step of size:" << rate * z_->norm() << std::endl);
+            }
             rate *= tau;
             searchX_->copy(*x_);
             searchX_->add(*z_, -rate);
