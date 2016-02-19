@@ -3,6 +3,7 @@
 
 #include <vector>
 
+#include <macros.hpp>
 #include <function.hpp>
 
 namespace Math

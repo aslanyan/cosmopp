@@ -1,10 +1,9 @@
-#include <cosmo_mpi.hpp>
-
 #include <memory>
 
 #include <macros.hpp>
 #include <progress_meter.hpp>
 #include <field_solver.hpp>
+#include <cosmo_mpi.hpp>
 
 #ifdef COSMO_OMP
 #include <omp.h>
@@ -399,8 +398,8 @@ FieldSolver::sendLeft()
     const unsigned long leftStart = size;
     const int leftNeighbor = (processId_ + nProcesses_ - 1) % nProcesses_;
     saveBuffer(leftStart);
-    const int res = MPI_Send(&(buffer_[0]), buffer_.size(), MPI_DOUBLE, leftNeighbor, commTag_, MPI_COMM_WORLD);
-    check(res == MPI_SUCCESS, "send failed");
+    const int res = CosmoMPI::create().send(leftNeighbor, &(buffer_[0]), buffer_.size(), CosmoMPI::DOUBLE, commTag_);
+    check(res == 0, "send failed");
 }
 
 void
@@ -410,8 +409,8 @@ FieldSolver::sendRight()
     const unsigned long rightStart = nx_[0] * size;
     const int rightNeighbor = (processId_ + 1) % nProcesses_;
     saveBuffer(rightStart);
-    const int res = MPI_Send(&(buffer_[0]), buffer_.size(), MPI_DOUBLE, rightNeighbor, commTag_, MPI_COMM_WORLD);
-    check(res == MPI_SUCCESS, "send failed");
+    const int res = CosmoMPI::create().send(rightNeighbor, &(buffer_[0]), buffer_.size(), CosmoMPI::DOUBLE, commTag_);
+    check(res == 0, "send failed");
 }
 
 void
@@ -420,9 +419,8 @@ FieldSolver::receiveLeft()
     const unsigned long size = dimProd_[1];
     const unsigned long leftReceiveStart = 0;
     const int leftNeighbor = (processId_ + nProcesses_ - 1) % nProcesses_;
-    MPI_Status s;
-    const int res = MPI_Recv(&(buffer_[0]), buffer_.size(), MPI_DOUBLE, leftNeighbor, commTag_, MPI_COMM_WORLD, &s);
-    check(res == MPI_SUCCESS, "receive failed");
+    const int res = CosmoMPI::create().recv(leftNeighbor, &(buffer_[0]), buffer_.size(), CosmoMPI::DOUBLE, commTag_);
+    check(res == 0, "receive failed");
     retrieveBuffer(leftReceiveStart);
 }
 
@@ -432,9 +430,8 @@ FieldSolver::receiveRight()
     const unsigned long size = dimProd_[1];
     const unsigned long rightReceiveStart = (nx_[0] + 1) * size;
     const int rightNeighbor = (processId_ + 1) % nProcesses_;
-    MPI_Status s;
-    const int res = MPI_Recv(&(buffer_[0]), buffer_.size(), MPI_DOUBLE, rightNeighbor, commTag_, MPI_COMM_WORLD, &s);
-    check(res == MPI_SUCCESS, "receive failed");
+    const int res = CosmoMPI::create().recv(rightNeighbor, &(buffer_[0]), buffer_.size(), CosmoMPI::DOUBLE, commTag_);
+    check(res == 0, "receive failed");
     retrieveBuffer(rightReceiveStart);
 }
 
