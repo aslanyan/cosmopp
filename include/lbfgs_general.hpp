@@ -202,7 +202,7 @@ LBFGS_General<LargeVector, LargeVectorFactory, Function>::minimize(LargeVector *
         if(setZToG)
             z_->copy(*g_);
 
-        const double tau = 0.5, c = 0.01;
+        const double tau = 0.1, c = 0.01;
         double rate = 1.0;
         searchX_->copy(*x_);
         searchX_->add(*z_, -rate);
