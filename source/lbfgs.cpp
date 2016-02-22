@@ -349,6 +349,7 @@ BasicLargeVector::dotProduct(const BasicLargeVector& other) const
     double total = s;
 #ifdef COSMO_MPI
     CosmoMPI::create().reduce(&s, &total, 1, CosmoMPI::DOUBLE, CosmoMPI::SUM);
+    CosmoMPI::create().bcast(&total, 1, CosmoMPI::DOUBLE);
 #endif
     return total;
 }

@@ -18,9 +18,9 @@ public:
     void copy(const LargeVector& other, double c = 1.);
     // set all the elements to 0
     void setToZero();
-    // get the norm (for MPI, the master process should get the total norm)
+    // get the norm (for MPI, ALL the processes should get the norm)
     double norm() const;
-    // dot product with another vector (for MPI, the master process should get the total norm)
+    // dot product with another vector (for MPI, ALL the processes should get the dot product)
     double dotProduct(const LargeVector& other) const;
     // add another vector with a given coefficient (for MPI, the correct coefficient should be passed for EVERY process)
     void add(const LargeVector& other, double c = 1.);
@@ -44,6 +44,8 @@ class Function
 {
 public:
     void set(const LargeVector& x);
+
+    // for MPI, ALL the processes should get the function value
     double value();
     void derivative(LargeVector *res);
 }
@@ -174,7 +176,6 @@ LBFGS_General<LargeVector, LargeVectorFactory, Function>::minimize(LargeVector *
         {
             const double dotProduct = s_[i]->dotProduct(*q_);
             alpha_[i] = rho_[i] * dotProduct;
-            mpi_.bcast(&(alpha_[i]), 1, CosmoMPI::DOUBLE);
             q_->add(*(y_[i]), -alpha_[i]);
         }
         z_->copy(*q_, H0k_);
@@ -182,25 +183,19 @@ LBFGS_General<LargeVector, LargeVectorFactory, Function>::minimize(LargeVector *
         {
             const double dotProduct = y_[i]->dotProduct(*z_);
             double beta = rho_[i] * dotProduct;
-            mpi_.bcast(&beta, 1, CosmoMPI::DOUBLE);
             z_->add(*(s_[i]), alpha_[i] - beta);
         }
 
         double zg = z_->dotProduct(*g_);
-        int setZToG = 0;
-        if(mpi_.isMaster())
+        if(zg <= 0)
         {
-            if(zg <= 0)
+            if(mpi_.isMaster())
             {
                 output_screen("LBFGS iteration " << thisIter << ": Weird stuff! The descent direction is not a descent direction. Using conjugate gradient at this step!" << std::endl);
-                setZToG = 1;
-                zg = gradNorm_ * gradNorm_;
             }
-        }
-        mpi_.bcast(&setZToG, 1, CosmoMPI::INT);
-
-        if(setZToG)
             z_->copy(*g_);
+            zg = gradNorm_ * gradNorm_;
+        }
 
         const double tau = 0.5, c = 0.01;
         double rate = 1.0;
@@ -212,15 +207,7 @@ LBFGS_General<LargeVector, LargeVectorFactory, Function>::minimize(LargeVector *
         int searchIter = 0;
         while(true)
         {
-            mpi_.barrier();
-            int stop = 0;
-            if(mpi_.isMaster())
-            {
-                if(val_ - newVal >= rate * c * zg || searchIter > 100)
-                    stop = 1;
-            }
-            mpi_.bcast(&stop, 1, CosmoMPI::INT);
-            if(stop)
+            if(val_ - newVal >= rate * c * zg || searchIter > 100)
                 break;
 
             rate *= tau;
@@ -244,15 +231,7 @@ LBFGS_General<LargeVector, LargeVectorFactory, Function>::minimize(LargeVector *
         const double ratio = deltaVal / std::max(valMax, 1.0);
         const int minIter = 10;
 
-        int converged = 0;
-        if(mpi_.isMaster())
-        {
-            if(ratio < epsilon && iter_ >= minIter)
-                converged = 1;
-        }
-        mpi_.bcast(&converged, 1, CosmoMPI::INT);
-
-        if(converged)
+        if(ratio < epsilon && iter_ >= minIter)
         {
             if(mpi_.isMaster())
             {
@@ -261,15 +240,7 @@ LBFGS_General<LargeVector, LargeVectorFactory, Function>::minimize(LargeVector *
             break;
         }
 
-        int gradConverged = 0;
-        if(mpi_.isMaster())
-        {
-            if(gradNorm_ < gNormTol)
-                gradConverged = 1;
-        }
-        mpi_.bcast(&gradConverged, 1, CosmoMPI::INT);
-
-        if(gradConverged)
+        if(gradNorm_ < gNormTol)
         {
             if(mpi_.isMaster())
             {
@@ -294,8 +265,6 @@ LBFGS_General<LargeVector, LargeVectorFactory, Function>::minimize(LargeVector *
         double ys = s_[0]->dotProduct(*(y_[0]));
         double yy = y_[0]->norm();
         yy = yy * yy;
-        mpi_.bcast(&ys, 1, CosmoMPI::DOUBLE);
-        mpi_.bcast(&yy, 1, CosmoMPI::DOUBLE);
 
         if(ys == 0 || yy == 0)
         {

@@ -25,11 +25,10 @@ public:
         for(int i = 0; i < n_; ++i)
             res += std::pow(x[i] - double(i + processId * n_), 2) / (2 * (i + processId * n_ + 1) * (i + processId * n_ + 1));
 
-        double totalRes = 0;
+        double totalRes = res;
 #ifdef COSMO_MPI
         CosmoMPI::create().reduce(&res, &totalRes, 1, CosmoMPI::DOUBLE, CosmoMPI::SUM);
-#else
-        totalRes = res;
+        CosmoMPI::create().bcast(&totalRes, 1, CosmoMPI::DOUBLE);
 #endif
 
         return totalRes * totalRes / 2;
@@ -44,7 +43,6 @@ public:
     LBFGSFuncGrad(int n) : n_(n)
     {
         check(n_ > 0, "");
-        sumTag_ = CosmoMPI::create().getCommTag();
     }
 
     virtual void evaluate(const std::vector<double>& x, std::vector<double>* res) const
@@ -57,13 +55,11 @@ public:
         for(int i = 0; i < n_; ++i)
             sum += std::pow(x[i] - double(i + processId * n_), 2) / ((i + processId * n_ + 1) * (i + processId * n_ + 1));
 
-        double totalSum = 0;
+        double totalSum = sum;
 #ifdef COSMO_MPI
         CosmoMPI::create().reduce(&sum, &totalSum, 1, CosmoMPI::DOUBLE, CosmoMPI::SUM);
-#else
-        totalSum = sum;
-#endif
         CosmoMPI::create().bcast(&totalSum, 1, CosmoMPI::DOUBLE);
+#endif
 
         for(int i = 0; i < n_; ++i)
             res->at(i) = (x[i] - double(i + processId * n_)) * totalSum / (2 * (i + processId * n_ + 1) * (i + processId * n_ + 1));
@@ -71,7 +67,6 @@ public:
 
 private:
     int n_;
-    int sumTag_;
 };
 
 void printIter(int iter, double f, double gradNorm, const std::vector<double>& x)
