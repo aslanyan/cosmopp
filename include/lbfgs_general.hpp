@@ -186,28 +186,45 @@ LBFGS_General<LargeVector, LargeVectorFactory, Function>::minimize(LargeVector *
             z_->add(*(s_[i]), alpha_[i] - beta);
         }
 
-        double zg = z_->dotProduct(*g_);
-        if(zg <= 0)
+        bool usingCG = false;
+        const double zNorm = z_->norm();
+        double zg = z_->dotProduct(*g_) / zNorm;
+        if(zg / gradNorm_ < 0.01)
         {
             if(mpi_.isMaster())
             {
-                output_screen("LBFGS iteration " << thisIter << ": Weird stuff! The descent direction is not a descent direction. Using conjugate gradient at this step!" << std::endl);
+                output_screen("LBFGS iteration " << thisIter << ": Weird stuff! The descent direction does not have a sufficient projection into the gradient. Using conjugate gradient at this step!" << std::endl);
             }
             z_->copy(*g_);
-            zg = gradNorm_ * gradNorm_;
+            zg = 1.0;
+            usingCG = true;
         }
 
-        const double tau = 0.5, c = 0.01;
+        const double tau = 0.5, c = 1e-5;
         double rate = 1.0;
         searchX_->copy(*x_);
         searchX_->add(*z_, -rate);
         f_->set(*searchX_);
         double newVal = f_->value();
         ++functionEval;
-        int searchIter = 0;
         while(true)
         {
-            if(val_ - newVal >= rate * c * zg || searchIter > 100)
+            const double valMax = std::max(std::abs(val_), std::abs(newVal));
+            if(std::abs(val_ - newVal) / std::max(valMax, 1.0) < epsilon)
+            {
+                // ignore the part below
+                break;
+
+                if(usingCG)
+                    break;
+                output_screen("LBFGS iteration " << thisIter << ": Not sufficient decrease in the descent direction. Trying conjugate gradient instead at this step." << std::endl);
+                z_->copy(*g_);
+                zg = 1.0;
+                usingCG = true;
+                rate = 1.0 / tau;
+            }
+
+            if(val_ - newVal >= rate * c * zg)
                 break;
 
             rate *= tau;
@@ -216,7 +233,6 @@ LBFGS_General<LargeVector, LargeVectorFactory, Function>::minimize(LargeVector *
             f_->set(*searchX_);
             newVal = f_->value();
             ++functionEval;
-            ++searchIter;
         }
 
         // now move
@@ -227,7 +243,7 @@ LBFGS_General<LargeVector, LargeVectorFactory, Function>::minimize(LargeVector *
         gradNorm_ = g_->norm();
 
         const double deltaVal = std::abs(val_ - oldVal);
-        const double valMax = std::max(val_, oldVal);
+        const double valMax = std::max(std::abs(val_), std::abs(oldVal));
         const double ratio = deltaVal / std::max(valMax, 1.0);
         const int minIter = 10;
 
