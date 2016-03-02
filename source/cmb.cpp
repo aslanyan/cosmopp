@@ -431,6 +431,7 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
             check(zMaxPk >= 0, "invalid zMaxPk = " << zMaxPk);
             pt_->has_pk_matter = true;
             pt_->has_density_transfers = true;
+            pt_->has_nl_corrections_based_on_delta_m = true;
             sp_->z_max_pk = zMaxPk;
             pt_->k_max_for_pk = 0.8 * kMax_; // seems like k_max becomes a bit larger than k_max_for_pk, don't know why. so by setting k_max_for_pk a bit smaller than kMax_ we can get k_max similar to kMax_
             nl_->method = nl_halofit;
