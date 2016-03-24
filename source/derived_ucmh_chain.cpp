@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
 
         ModeCode::initialize(12, kPiv, 55, false, false, false, true, kMin, kMax, 500);
 
-        std::vector<double> v(16);
+        std::vector<double> v(17);
 
         int line = 0;
 
@@ -140,10 +140,13 @@ int main(int argc, char *argv[])
 
                 const double r = psTensor.evaluate(kPivR) / ps.evaluate(kPivR);
 
+                const double nPiv = ModeCode::getNPivot();
+
                 v[12] = ns;
                 v[13] = run;
                 v[14] = runRun;
                 v[15] = r;
+                v[16] = nPiv;
                 auto it = v.cbegin();
                 out << *(it++);
                 for(; it != v.cend(); ++it)
