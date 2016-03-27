@@ -190,7 +190,7 @@ ModeCode::addKValue(double k, double sMin, double sMax, double tMin, double tMax
 bool
 ModeCode::calculate(const std::vector<double>& vParams, double *badLike)
 {
-    check(vParams.size() <= 10, "too many params");
+    check(vParams.size() <= 100, "too many params");
 
     double bad1 = 0;
     for(int i = 0; i < vParams.size(); ++i)
