@@ -136,6 +136,9 @@ ModeCode::initialize(int potentialChoice, double kPivot, double NPivot, bool ins
     case 12:
         nVPar_ = 5;
         break;
+    case 14:
+        nVPar_ = 20;
+        break;
     default:
         check(false, "not implemented, TBD better");
         break;
