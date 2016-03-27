@@ -72,6 +72,9 @@ ModeCode::initialize(int potentialChoice, double kPivot, double NPivot, bool ins
     check(nPoints > 0, "invalid nPoints = " << nPoints << ", needs to be positive");
 
     bool outputFlag = false;
+    bool vnDerivs = false;
+    if(potentialChoice == 14)
+        vnDerivs = true;
 #ifdef VERBOSE2
     outputFlag = true;
 #endif
@@ -84,7 +87,7 @@ ModeCode::initialize(int potentialChoice, double kPivot, double NPivot, bool ins
     __modpkparams_MOD_modpk_w_primordial_upper = 1.0;
     __modpkparams_MOD_potential_choice = potentialChoice;
     __modpkparams_MOD_flag_do_reconstruction = false;
-    __modpkparams_MOD_vnderivs = false;
+    __modpkparams_MOD_vnderivs = vnDerivs;
     __modpkparams_MOD_instreheat = instantReheating;
     __modpkparams_MOD_k_pivot = kPivot;
     __modpkparams_MOD_n_pivot = NPivot;
@@ -101,7 +104,7 @@ ModeCode::initialize(int potentialChoice, double kPivot, double NPivot, bool ins
     modpkparams_mp_modpk_w_primordial_upper_ = 1.0;
     modpkparams_mp_potential_choice_ = potentialChoice;
     modpkparams_mp_flag_do_reconstruction_ = false;
-    modpkparams_mp_vnderivs_ = false;
+    modpkparams_mp_vnderivs_ = vnDerivs;
     modpkparams_mp_instreheat_ = instantReheating;
     modpkparams_mp_k_pivot_ = kPivot;
     modpkparams_mp_n_pivot_ = NPivot;
