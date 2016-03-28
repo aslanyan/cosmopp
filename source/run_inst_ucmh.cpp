@@ -502,7 +502,7 @@ int main(int argc, char *argv[])
         unsigned int thin;
 
         const double vMin = -12, vMax = -4;
-        const double vFactorMin = -2, vFactorMax = 2;
+        const double vFactorMin = -0.5, vFactorMax = 0.5;
         const double sigmaVMin = 0, sigmaVMax = 1;
 
         if(usePoly)
