@@ -126,7 +126,12 @@ public:
         if(potentialChoice_ == 14)
         {
             for(int i = 1; i < vParams_.size(); ++i)
-                vParams_[i] = std::pow(10.0, vParams_[i]);
+            {
+                if(i == 1)
+                    vParams_[i] = std::pow(10.0, vParams_[i]);
+                else
+                    vParams_[i] = std::pow(10.0, vParams_[i]) * vParams_[i - 1];
+            }
         }
 
         const bool res = setVParams(vParams_, badLike);
@@ -497,6 +502,7 @@ int main(int argc, char *argv[])
         unsigned int thin;
 
         const double vMin = -12, vMax = -4;
+        const double vFactorMin = -2, vFactorMax = 2;
         const double sigmaVMin = 0, sigmaVMax = 1;
 
         if(usePoly)
@@ -513,7 +519,10 @@ int main(int argc, char *argv[])
                 {
                     std::stringstream paramName;
                     paramName << "V_" << i;
-                    pc->setParam(paramIndex++, paramName.str().c_str(), vMin, vMax, 2);
+                    if(i == 0)
+                        pc->setParam(paramIndex++, paramName.str().c_str(), vMin, vMax, 2);
+                    else
+                        pc->setParam(paramIndex++, paramName.str().c_str(), vFactorMin, vFactorMax, 2);
                 }
             }
             else
@@ -595,7 +604,10 @@ int main(int argc, char *argv[])
                 {
                     std::stringstream paramName;
                     paramName << "V_" << i;
-                    mn->setParam(paramIndex++, paramName.str().c_str(), vMin, vMax);
+                    if(i == 0)
+                        mn->setParam(paramIndex++, paramName.str().c_str(), vMin, vMax);
+                    else
+                        mn->setParam(paramIndex++, paramName.str().c_str(), vFactorMin, vFactorMax);
                 }
             }
             else
