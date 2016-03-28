@@ -572,7 +572,7 @@ int main(int argc, char *argv[])
 
             check(paramIndex == nPar, "");
 
-            std::vector<double> fracs{0.5, 0.4, 0.1};
+            std::vector<double> fracs{0.05, 0.5, 0.45};
             pc->setParameterHierarchy(fracs);
 
             pc->run(true);
