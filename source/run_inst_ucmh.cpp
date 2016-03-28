@@ -487,7 +487,7 @@ int main(int argc, char *argv[])
         std::unique_ptr<MnScanner> mn;
         std::unique_ptr<PolyChord> pc;
         if(usePoly)
-            pc.reset(new PolyChord(nPar, like, 50, root, 10));
+            pc.reset(new PolyChord(nPar, like, 500, root, 10));
         else
             mn.reset(new MnScanner(nPar, like, (pbhLimits ? 2000 : 500), root));
 
@@ -572,7 +572,7 @@ int main(int argc, char *argv[])
 
             check(paramIndex == nPar, "");
 
-            std::vector<double> fracs{0.05, 0.5, 0.45};
+            std::vector<double> fracs{0.025, 0.5, 0.475};
             pc->setParameterHierarchy(fracs);
 
             pc->run(true);
