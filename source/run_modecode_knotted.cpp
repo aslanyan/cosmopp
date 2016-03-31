@@ -11,7 +11,7 @@ int main(int argc, char *argv[])
         StandardException exc;
         if(argc < 22)
         {
-            std::string exceptionString = "Need to specify the 5 potential params.";
+            std::string exceptionString = "Need to specify the 21 potential params.";
             exc.set(exceptionString);
             throw exc;
         }
@@ -22,9 +22,6 @@ int main(int argc, char *argv[])
         std::vector<double> v(21);
         for(int i = 0; i < 21; ++i)
             args >> v[i];
-
-        for(int i = 1; i < 21; ++i)
-            v[i] = std::pow(10.0, v[i]);
         const double NPivot = 70;
 
         //model 1
@@ -58,6 +55,10 @@ int main(int argc, char *argv[])
         {
             output_screen("ModeCode failed!" << std::endl);
             return 1;
+        }
+        else
+        {
+            output_screen("ModeCode succeeded!" << std::endl);
         }
         
         const Math::TableFunction<double, double>& scalarPs = ModeCode::getScalarPs();

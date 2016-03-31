@@ -101,12 +101,6 @@ public:
     {
         check(useClass_ || v.size() == 4 + ModeCode::getNumVParams(), "");
 
-        output_screen1("Param values:");
-        for(int i = 0; i < v.size(); ++i)
-        {
-            output_screen_clean1(std::setprecision(20) << "\t" << v[i]);
-        }
-        output_screen_clean1(std::endl);
 
         setBaseParams(v[0], v[1], v[2], v[3]);
 
@@ -133,6 +127,13 @@ public:
                     vParams_[i] = std::pow(10.0, vParams_[i]) * vParams_[i - 1];
             }
         }
+
+        output_screen1("V param values:");
+        for(int i = 0; i < vParams_.size(); ++i)
+        {
+            output_screen_clean1(std::setprecision(20) << "\t" << vParams_[i]);
+        }
+        output_screen_clean1(std::endl);
 
         const bool res = setVParams(vParams_, badLike);
         if(!useClass_)
