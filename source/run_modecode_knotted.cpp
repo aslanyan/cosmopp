@@ -1,5 +1,6 @@
 #include <fstream>
 #include <sstream>
+#include <iomanip>
 
 #include <macros.hpp>
 #include <exception_handler.hpp>
@@ -31,7 +32,7 @@ int main(int argc, char *argv[])
         //model 2
         const bool slowRollEnd = false;
         const bool eternalInflOK = true;
-        ModeCode::initialize(14, 0.05, NPivot, false, false, slowRollEnd, eternalInflOK, 5e-6, 1.2, 500);
+        ModeCode::initialize(14, 0.05, NPivot, false, true, slowRollEnd, eternalInflOK, 1e-6, 1.0, 10);
 
         ModeCode::addKValue(10, 0, 1e10, 0, 1e10);
         ModeCode::addKValue(1e2, 0, 1e10, 0, 1e10);
@@ -47,6 +48,13 @@ int main(int argc, char *argv[])
 
         //output_screen("Now: " << v[0] << ' ' << v[1] << ' ' << v[2] << ' ' << v[3] << ' ' << v[4] << std::endl);
         //ModeCode::calculate(v1);
+
+
+        output_screen("V params:" << std::endl);
+        for(int i = 0; i < v.size(); ++i)
+        {
+            output_screen_clean("    " << std::scientific << std::setprecision(20) << v[i] << ",&" << std::endl);
+        }
 
         const bool res = ModeCode::calculate(v);
 
