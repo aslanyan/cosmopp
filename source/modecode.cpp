@@ -71,10 +71,15 @@ ModeCode::initialize(int potentialChoice, double kPivot, double NPivot, bool ins
     check(kMax >= kMin, "invalid k_max = " << kMax);
     check(nPoints > 0, "invalid nPoints = " << nPoints << ", needs to be positive");
 
-    bool outputFlag = false;
     bool vnDerivs = false;
+    double findIffdphi = 1.0e-16;
     if(potentialChoice == 14)
+    {
         vnDerivs = true;
+        findIffdphi = 1.0e-4;
+    }
+
+    bool outputFlag = false;
 #ifdef VERBOSE2
     outputFlag = true;
 #endif
@@ -92,7 +97,7 @@ ModeCode::initialize(int potentialChoice, double kPivot, double NPivot, bool ins
     __modpkparams_MOD_k_pivot = kPivot;
     __modpkparams_MOD_n_pivot = NPivot;
     __modpkparams_MOD_slowroll_infl_end = slowRollEnd;
-    __modpkparams_MOD_findiffdphi = 1.0e-16;
+    __modpkparams_MOD_findiffdphi = findIffdphi;
     __modpkparams_MOD_eternal_infl_ok = eternalInflOK;
 
     vParams_ = &__modpkparams_MOD_vparams;
@@ -109,7 +114,7 @@ ModeCode::initialize(int potentialChoice, double kPivot, double NPivot, bool ins
     modpkparams_mp_k_pivot_ = kPivot;
     modpkparams_mp_n_pivot_ = NPivot;
     modpkparams_mp_slowroll_infl_end_ = slowRollEnd;
-    modpkparams_mp_findiffdphi_ = 1.0e-16;
+    modpkparams_mp_findiffdphi_ = findIffdphi;
     modpkparams_mp_eternal_infl_ok_ = eternalInflOK;
 
     vParams_ = &modpkparams_mp_vparams_;
