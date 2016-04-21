@@ -538,13 +538,7 @@ TestMatrix::runSubTestEigen(double& res, double& expected, std::string& subTestN
         }
     }
 
-    //Math::Matrix<double> diag = eigenvecs.getTranspose() * mat * eigenvecs;
-    const Math::Matrix<double> eT = eigenvecs.getTranspose();
-    eT.writeIntoTextFile("mat1.txt");
-    mat.writeIntoTextFile("mat2.txt");
-    Math::Matrix<double> diag = eT * mat;
-    diag.writeIntoTextFile("mat3.txt");
-    diag *= eigenvecs;
+    Math::Matrix<double> diag = eigenvecs.getTranspose() * mat * eigenvecs;
 
     for(int i = 0; i < 3; ++i)
     {
