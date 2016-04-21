@@ -44,22 +44,21 @@ Matrix<double>::multiplyMatrices(const Matrix<double>& a, const Matrix<double>& 
     for(int i = 0; i < a.rows_; ++i)
     {
         for(int j = 0; j < a.cols_; ++j)
-            aVec[i * a.cols_ + j] = a(i, j);
+            aVec[j * a.rows_ + i] = a(i, j);
     }
     for(int i = 0; i < b.rows_; ++i)
     {
         for(int j = 0; j < b.cols_; ++j)
-            bVec[i * b.cols_ + j] = b(i, j);
+            bVec[j * b.rows_ + i] = b(i, j);
     }
 
     double *aPt = &(aVec[0]), *bPt = &(bVec[0]);
     const int r = dgemm_(&transa, &transb, &m, &n, &k, &alpha, aPt, &lda, bPt, &ldb, &beta, &(cVec[0]), &ldc);
-    check(r == 0, "");
 
     for(int i = 0; i < c.rows_; ++i)
     {
         for(int j = 0; j < c.cols_; ++j)
-            c(i, j) = cVec[i * c.cols_ + j];
+            c(i, j) = cVec[j * c.rows_ + i];
     }
 }
 
