@@ -87,7 +87,7 @@ int main(int argc, char *argv[])
         BasicLargeVector x(n), g(n);
         int nFunc = 0;
 
-        double stp = 1;
+        double stp = 1 / g0.norm();
         const double ftol = 0.5;
         const double gtol = 0.5;
         const double xtol = 0;
