@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
         func.derivative(&g0);
 
         BasicLargeVector s(n);
-        s.copy(g0, -2);
+        s.copy(g0, -1);
 
         BasicLargeVector x(n), g(n);
         int nFunc = 0;
@@ -95,6 +95,7 @@ int main(int argc, char *argv[])
         moreThuenteSearch(&func, p, f, g0, s, stp, ftol, gtol, xtol, 0, 10, 100, &x, &g, nFunc);
         std::printf("Step = %.3f\n", stp);
         std::printf("f = %.3f\n", f);
+        std::printf("num evals = %d\n", nFunc);
     } catch (std::exception& e)
     {
         output_screen("EXCEPTION CAUGHT!!! " << std::endl << e.what() << std::endl);

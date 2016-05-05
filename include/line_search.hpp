@@ -15,10 +15,17 @@ int moreThuenteStep(double &stx, double &fx, double &dx, double &sty, double &fy
     const double p66 = 0.66;
     int info = 0;
 
-    check(!(brackt && (stp <= std::min(stx, sty))), "");
-    check(stp < std::max(stx, sty), "");
-    check(dx * (stp - stx) < 0, "");
-    check(stpmax >= stpmin, "");
+    if(brackt && (stp <= std::min(stx, sty)))
+        return info;
+
+    if(stp >= std::max(stx, sty))
+        return info;
+
+    if(dx * (stp - stx) >= 0)
+        return info;
+
+    if(stpmax < stpmin)
+        return info;
     
     check(dx != 0, "");
     double sgnd = dp * (dx / std::abs(dx));
@@ -182,7 +189,7 @@ int moreThuenteSearch(Function *func, const LargeVector& x0, double &f, const La
     int info = 0;
     int infoc = 1;
     bool brackt = false;
-    int stage1 = 1;
+    bool stage1 = true;
 
     nfev = 0;
     double finit = f;
@@ -243,7 +250,7 @@ int moreThuenteSearch(Function *func, const LargeVector& x0, double &f, const La
             return info;
 
         if(stage1 && f <= ftest1 && dg >= std::min(ftol, gtol) * dginit)
-            stage1 = 0;
+            stage1 = false;
 
         if(stage1 && f <= fx && f > ftest1)
         {
