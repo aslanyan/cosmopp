@@ -35,6 +35,8 @@ public:
             const double delta = x_[i] - x0_[i];
             res += delta * delta;
         }
+
+        return res;
     }
 
     void derivative(BasicLargeVector *res)
