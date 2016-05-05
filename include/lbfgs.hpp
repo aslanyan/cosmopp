@@ -98,19 +98,19 @@ public:
     BasicLBFGSCallBack() : cb_(NULL)
     {}
 
-    void set(void (*callback)(int, double, double, const std::vector<double>&, const std::vector<double>&))
+    void set(void (*callback)(int, double, double, const std::vector<double>&, const std::vector<double>&, const std::vector<double>&))
     {
         cb_ = callback;
     }
 
-    void operator()(int iter, double f, double gradNorm, const BasicLargeVector& v, const BasicLargeVector& g)
+    void operator()(int iter, double f, double gradNorm, const BasicLargeVector& v, const BasicLargeVector& g, const BasicLargeVector& z)
     {
         if(!cb_)
             return;
-        cb_(iter, f, gradNorm, v.contents(), g.contents());
+        cb_(iter, f, gradNorm, v.contents(), g.contents(), z.contents());
     }
 private:
-    void (*cb_)(int, double, double, const std::vector<double>&, const std::vector<double>&);
+    void (*cb_)(int, double, double, const std::vector<double>&, const std::vector<double>&, const std::vector<double>&);
 };
 
 class LBFGS
@@ -129,7 +129,7 @@ public:
         lbfgs_->setStarting(*s_);
     }
 
-    double minimize(std::vector<double> *res, double epsilon = 1e-3, double gNormTol = 1e-5, int maxIter = 1000000, void (*callback)(int, double, double, const std::vector<double>&, const std::vector<double>&) = NULL)
+    double minimize(std::vector<double> *res, double epsilon = 1e-3, double gNormTol = 1e-5, int maxIter = 1000000, void (*callback)(int, double, double, const std::vector<double>&, const std::vector<double>&, const std::vector<double>&) = NULL)
     {
         cb_.set(callback);
         const double val = lbfgs_->minimize(s_, epsilon, gNormTol, maxIter, &cb_);

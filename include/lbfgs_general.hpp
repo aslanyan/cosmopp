@@ -5,6 +5,7 @@
 #include <memory>
 
 #include <macros.hpp>
+#include <line_search.hpp>
 #include <cosmo_mpi.hpp>
 
 namespace Math
@@ -48,7 +49,7 @@ public:
     // for MPI, ALL the processes should get the function value
     double value();
     void derivative(LargeVector *res);
-}
+};
 */
 
 template <typename LargeVector, typename LargeVectorFactory, typename Function>
@@ -57,7 +58,7 @@ class LBFGS_General
 private:
     struct DummyCallBack
     {
-        void operator()(int i, double f, double gn, const LargeVector& x, const LargeVector& g)
+        void operator()(int i, double f, double gn, const LargeVector& x, const LargeVector& g, const LargeVector& z)
         {
         }
     };
@@ -80,6 +81,13 @@ public:
 
     void getGradient(LargeVector *g) { g->copy(*g_); }
 
+    void replay(LargeVector *x);
+
+    //template<typename LargeVecIterator>
+    //void replay(LargeVector *x, LargeVecIterator grad);
+
+    void applyInverseHessian(LargeVector *x);
+
 private:
     Function *f_;
     std::unique_ptr<LargeVector> x_, xPrev_;
@@ -95,6 +103,9 @@ private:
     std::unique_ptr<LargeVector> searchX_;
 
     double H0k_;
+
+    std::vector<double> rates_, H0kSaved_;
+    std::vector<bool> usingCGSaved_;
 
     CosmoMPI& mpi_;
 };
@@ -149,6 +160,9 @@ LBFGS_General<LargeVector, LargeVectorFactory, Function>::setStarting(const Larg
     H0k_ = 1;
 
     iter_ = 0;
+    rates_.clear();
+    H0kSaved_.clear();
+    usingCGSaved_.clear();
 }
 
 template<typename LargeVector, typename LargeVectorFactory, typename Function>
@@ -165,7 +179,9 @@ LBFGS_General<LargeVector, LargeVectorFactory, Function>::minimize(LargeVector *
     int functionEval = 0;
 
     if(callback)
-        (*callback)(thisIter, val_, gradNorm_, *x_, *g_);
+        (*callback)(thisIter, val_, gradNorm_, *x_, *g_, *z_);
+
+    int convergedIters = 0;
 
     while(true)
     {
@@ -178,6 +194,7 @@ LBFGS_General<LargeVector, LargeVectorFactory, Function>::minimize(LargeVector *
             alpha_[i] = rho_[i] * dotProduct;
             q_->add(*(y_[i]), -alpha_[i]);
         }
+        H0kSaved_.push_back(H0k_);
         z_->copy(*q_, H0k_);
         for(int i = m - 1; i >= 0; --i)
         {
@@ -193,12 +210,14 @@ LBFGS_General<LargeVector, LargeVectorFactory, Function>::minimize(LargeVector *
         {
             if(mpi_.isMaster())
             {
-                output_screen("LBFGS iteration " << thisIter << ": Weird stuff! The descent direction does not have a sufficient projection into the gradient. Using conjugate gradient at this step!" << std::endl);
+                output_screen("LBFGS iteration " << thisIter << ": Weird stuff! The descent direction does not have a sufficient projection into the gradient. Using steepest descent at this step!" << std::endl);
             }
             z_->copy(*g_);
             zg = 1.0;
             usingCG = true;
         }
+
+        usingCGSaved_.push_back(usingCG);
 
         const double tau = 0.5, c = 1e-5;
         double rate = 1.0;
@@ -211,18 +230,7 @@ LBFGS_General<LargeVector, LargeVectorFactory, Function>::minimize(LargeVector *
         {
             const double valMax = std::max(std::abs(val_), std::abs(newVal));
             if(std::abs(val_ - newVal) / std::max(valMax, 1.0) < epsilon)
-            {
-                // ignore the part below
                 break;
-
-                if(usingCG)
-                    break;
-                output_screen("LBFGS iteration " << thisIter << ": Not sufficient decrease in the descent direction. Trying conjugate gradient instead at this step." << std::endl);
-                z_->copy(*g_);
-                zg = 1.0;
-                usingCG = true;
-                rate = 1.0 / tau;
-            }
 
             if(val_ - newVal >= rate * c * zg)
                 break;
@@ -242,6 +250,10 @@ LBFGS_General<LargeVector, LargeVectorFactory, Function>::minimize(LargeVector *
         f_->derivative(g_.get());
         gradNorm_ = g_->norm();
 
+        ++iter_;
+        ++thisIter;
+        rates_.push_back(rate);
+
         const double deltaVal = std::abs(val_ - oldVal);
         const double valMax = std::max(std::abs(val_), std::abs(oldVal));
         const double ratio = deltaVal / std::max(valMax, 1.0);
@@ -249,12 +261,18 @@ LBFGS_General<LargeVector, LargeVectorFactory, Function>::minimize(LargeVector *
 
         if(ratio < epsilon && iter_ >= minIter)
         {
-            if(mpi_.isMaster())
+            ++convergedIters;
+            if(convergedIters >= 3)
             {
-                output_screen("LBFGS has reached the required precision!" << std::endl);
+                if(mpi_.isMaster())
+                {
+                    output_screen("LBFGS has reached the required precision!" << std::endl);
+                }
+                break;
             }
-            break;
         }
+        else
+            convergedIters = 0;
 
         if(gradNorm_ < gNormTol)
         {
@@ -299,11 +317,9 @@ LBFGS_General<LargeVector, LargeVectorFactory, Function>::minimize(LargeVector *
 
         xPrev_->copy(*x_);
         gPrev_->copy(*g_);
-        ++iter_;
-        ++thisIter;
 
         if(callback)
-            (*callback)(thisIter, val_, gradNorm_, *x_, *g_);
+            (*callback)(thisIter, val_, gradNorm_, *x_, *g_, *z_);
 
         if(thisIter > maxIter)
         {
@@ -324,6 +340,114 @@ LBFGS_General<LargeVector, LargeVectorFactory, Function>::minimize(LargeVector *
     res->copy(*x_);
     return val_;
 }
+
+template<typename LargeVector, typename LargeVectorFactory, typename Function>
+void
+LBFGS_General<LargeVector, LargeVectorFactory, Function>::replay(LargeVector *x)
+{
+    check(rates_.size() == iter_, "");
+    check(H0kSaved_.size() == iter_, "");
+    check(usingCGSaved_.size() == iter_, "");
+
+    check(s_.size() >= iter_ - 1, "don't have enough previous steps saved!");
+
+    for(int it = 0; it < iter_; ++it)
+    {
+        f_->set(*x);
+        const bool usingCG = usingCGSaved_[it];
+        if(usingCG)
+        {
+            f_->derivative(z_.get());
+        }
+        else
+        {
+            f_->derivative(q_.get());
+            const int m = std::min(m_, it); // use this many previous things
+            for(int i = 0; i < m; ++i)
+            {
+                const double dotProduct = s_[iter_ - 1 - it + i]->dotProduct(*q_);
+                alpha_[i] = rho_[iter_ - 1 - it + i] * dotProduct;
+                q_->add(*(y_[iter_ - 1 - it + i]), -alpha_[i]);
+            }
+            H0k_ = H0kSaved_[it];
+            z_->copy(*q_, H0k_);
+            for(int i = m - 1; i >= 0; --i)
+            {
+                const double dotProduct = y_[iter_ - 1 - it + i]->dotProduct(*z_);
+                double beta = rho_[iter_ - 1 - it + i] * dotProduct;
+                z_->add(*(s_[iter_ - 1 - it + i]), alpha_[i] - beta);
+            }
+        }
+        const double rate = rates_[it];
+        x->add(*z_, -rate);
+    }
+}
+
+/*
+template<typename LargeVector, typename LargeVectorFactory, typename Function>
+template<typename LargeVecIterator>
+void
+LBFGS_General<LargeVector, LargeVectorFactory, Function>::replay(LargeVector *x, LargeVecIterator grad)
+{
+    check(rates_.size() == iter_, "");
+    check(H0kSaved_.size() == iter_, "");
+    check(usingCGSaved_.size() == iter_, "");
+
+    check(s_.size() >= iter_ - 1, "don't have enough previous steps saved!");
+
+    for(int it = 0; it < iter_; ++it)
+    {
+        const bool usingCG = usingCGSaved_[it];
+        if(usingCG)
+        {
+            z_->copy(*(grad++));
+        }
+        else
+        {
+            q_->copy(*(grad++));
+            const int m = std::min(m_, it); // use this many previous things
+            for(int i = 0; i < m; ++i)
+            {
+                const double dotProduct = s_[iter_ - 1 - it + i]->dotProduct(*q_);
+                alpha_[i] = rho_[iter_ - 1 - it + i] * dotProduct;
+                q_->add(*(y_[iter_ - 1 - it + i]), -alpha_[i]);
+            }
+            H0k_ = H0kSaved_[it];
+            z_->copy(*q_, H0k_);
+            for(int i = m - 1; i >= 0; --i)
+            {
+                const double dotProduct = y_[iter_ - 1 - it + i]->dotProduct(*z_);
+                double beta = rho_[iter_ - 1 - it + i] * dotProduct;
+                z_->add(*(s_[iter_ - 1 - it + i]), alpha_[i] - beta);
+            }
+        }
+        const double rate = rates_[it];
+        x->add(*z_, -rate);
+    }
+}
+*/
+
+template<typename LargeVector, typename LargeVectorFactory, typename Function>
+void
+LBFGS_General<LargeVector, LargeVectorFactory, Function>::applyInverseHessian(LargeVector *x)
+{
+    q_->copy(*x);
+    const int m = std::min(m_, iter_); // use this many previous things
+    for(int i = 0; i < m; ++i)
+    {
+        const double dotProduct = s_[i]->dotProduct(*q_);
+        alpha_[i] = rho_[i] * dotProduct;
+        q_->add(*(y_[i]), -alpha_[i]);
+    }
+    x->copy(*q_, H0k_);
+    for(int i = m - 1; i >= 0; --i)
+    {
+        const double dotProduct = y_[i]->dotProduct(*z_);
+        double beta = rho_[i] * dotProduct;
+        x->add(*(s_[i]), alpha_[i] - beta);
+    }
+}
+
 
 } // namespace Math
 
