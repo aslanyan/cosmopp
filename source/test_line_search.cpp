@@ -95,10 +95,11 @@ int main(int argc, char *argv[])
         const double stpmax = 1e15;
         const int maxfev = 100;
 
-        moreThuenteSearch(&func, p, f, g0, s, stp, ftol, gtol, xtol, stpmin, stpmax, maxfev, &x, &g, nFunc);
+        const int info = moreThuenteSearch(&func, p, f, g0, s, stp, ftol, gtol, xtol, stpmin, stpmax, maxfev, &x, &g, nFunc);
         std::printf("Step = %.3f\n", stp);
         std::printf("f = %.3f\n", f);
         std::printf("num evals = %d\n", nFunc);
+        std::printf("info = %d\n", info);
     } catch (std::exception& e)
     {
         output_screen("EXCEPTION CAUGHT!!! " << std::endl << e.what() << std::endl);
