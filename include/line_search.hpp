@@ -30,14 +30,17 @@ int moreThuenteStep(double &stx, double &fx, double &dx, double &sty, double &fy
     check(dx != 0, "");
     double sgnd = dp * (dx / std::abs(dx));
 
-    bool bound;
-    double theta, s, gamma, p, q, r, stpc, stpq, stpf;
+    bool bound = false;
+    double theta, s, gamma, p, q, r, stpc = 0, stpq = 0, stpf = 0;
 
     if(fp > fx)
     {
         info = 1;
         bound = true;
         theta = 3 * (fx - fp) / (stp - stx) + dx + dp;
+        check(theta >= 0, "");
+        check(dx >= 0, "");
+        check(dp >= 0, "");
         s = std::max(std::max(std::abs(theta), std::abs(dx)), std::abs(dp));
         check(s > 0, "");
         gamma = s * std::sqrt((theta / s) * (theta / s) - (dx / s) * (dp / s));
@@ -59,6 +62,9 @@ int moreThuenteStep(double &stx, double &fx, double &dx, double &sty, double &fy
         info = 2;
         bound = false;
         theta = 3 * (fx - fp) / (stp - stx) + dx + dp;
+        check(theta >= 0, "");
+        check(dx >= 0, "");
+        check(dp >= 0, "");
         s = std::max(std::max(std::abs(theta), std::abs(dx)), std::abs(dp));
         check(s > 0, "");
         gamma = s * std::sqrt((theta / s) * (theta / s) - (dx / s) * (dp / s));
@@ -80,6 +86,9 @@ int moreThuenteStep(double &stx, double &fx, double &dx, double &sty, double &fy
         info = 3;
         bound = true;
         theta = 3 * (fx - fp) / (stp - stx) + dx + dp;
+        check(theta >= 0, "");
+        check(dx >= 0, "");
+        check(dp >= 0, "");
         s = std::max(std::max(std::abs(theta), std::abs(dx)), std::abs(dp));
         check(s > 0, "");
         gamma = s * std::sqrt(std::max(0.0, (theta / s) * (theta / s) - (dx / s) * (dp / s)));
@@ -117,6 +126,9 @@ int moreThuenteStep(double &stx, double &fx, double &dx, double &sty, double &fy
         if(brackt)
         {
             theta = 3 * (fp - fy) / (sty - stp) + dy + dp;
+            check(theta >= 0, "");
+            check(dy >= 0, "");
+            check(dp >= 0, "");
             s = std::max(std::max(std::abs(theta), std::abs(dy)), std::abs(dp));
             check(s > 0, "");
             gamma = s * std::sqrt((theta / s) * (theta / s) - (dy / s) * (dp / s));
@@ -256,7 +268,7 @@ int moreThuenteSearch(Function *func, const LargeVector& x0, double &f, const La
         {
             fm = f - stp * dgtest;
             fxm = fx - stx * dgtest;
-            fym = fy = sty * dgtest;
+            fym = fy - sty * dgtest;
             dgm = dg - dgtest;
             dgxm = dgx - dgtest;
             dgym = dgy - dgtest;

@@ -88,11 +88,14 @@ int main(int argc, char *argv[])
         int nFunc = 0;
 
         double stp = 1 / g0.norm();
-        const double ftol = 0.5;
-        const double gtol = 0.5;
-        const double xtol = 0;
+        const double ftol = 1e-4;
+        const double gtol = 1e-2;
+        const double xtol = 1e-15;
+        const double stpmin = 1e-15;
+        const double stpmax = 1e15;
+        const int maxfev = 100;
 
-        moreThuenteSearch(&func, p, f, g0, s, stp, ftol, gtol, xtol, 0, 10, 100, &x, &g, nFunc);
+        moreThuenteSearch(&func, p, f, g0, s, stp, ftol, gtol, xtol, stpmin, stpmax, maxfev, &x, &g, nFunc);
         std::printf("Step = %.3f\n", stp);
         std::printf("f = %.3f\n", f);
         std::printf("num evals = %d\n", nFunc);
