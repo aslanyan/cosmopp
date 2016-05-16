@@ -5,6 +5,7 @@
 #include <macros.hpp>
 #include <exception_handler.hpp>
 #include <parser.hpp>
+#include <cosmo_mpi.hpp>
 
 void
 Parser::readFile(const char *fileName)
@@ -44,7 +45,10 @@ Parser::readFile(const char *fileName)
 
         if(equalSign + 1 == sClean.size())
         {
-            output_screen("Invalid string: " << s << std::endl << "\tThere is no value after the equal sign. IGNORING!" << std::endl);
+            if(CosmoMPI::create().isMaster())
+            {
+                output_screen("Invalid string: " << s << std::endl << "\tThere is no value after the equal sign. IGNORING!" << std::endl);
+            }
             continue;
         }
 
@@ -140,6 +144,8 @@ Parser::getStr(const std::string& s, const std::string& def)
 void
 Parser::dump() const
 {
+    if(!CosmoMPI::create().isMaster())
+        return;
     output_screen("All parameters in parser:" << std::endl);
     for(auto it = cbegin(); it != cend(); ++it)
     {
