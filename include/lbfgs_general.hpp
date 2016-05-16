@@ -226,6 +226,9 @@ LBFGS_General<LargeVector, LargeVectorFactory, Function>::minimize(LargeVector *
         double rate = 1.0;
         const double oldVal = val_;
 
+        if(iter_ == 0 || usingCG)
+            rate = 1.0 / gradNorm_;
+
         if(moreThuente_)
         {
             const double ftol = 0.1;
@@ -239,6 +242,7 @@ LBFGS_General<LargeVector, LargeVectorFactory, Function>::minimize(LargeVector *
             ss_->copy(*z_, -1.0);
             searchX_->copy(*x_);
             q_->copy(*g_);
+
 
             const int info = moreThuenteSearch(f_, *searchX_, val_, *q_, *ss_, rate, ftol, gtol, xtol, stpmin, stpmax, maxfev, x_.get(), g_.get(), nfev);
             check(info != 0, "info needs to be nonzero but it is " << info << ", step = " << rate << " iteration: " << iter_);
