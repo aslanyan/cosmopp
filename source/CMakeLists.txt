@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 2.8.10)
 
-set(LIB_FILES macros.cpp cosmo_mpi.cpp test_framework.cpp whole_matrix.cpp scale_factor.cpp markov_chain.cpp matrix_impl.cpp kd_tree.cpp)
+set(LIB_FILES macros.cpp cosmo_mpi.cpp test_framework.cpp whole_matrix.cpp scale_factor.cpp markov_chain.cpp matrix_impl.cpp kd_tree.cpp parser.cpp)
 
 set(TEST_FILES test_unit_conversions.cpp test_int_operations.cpp test_integral.cpp test_conjugate_gradient.cpp test_polynomial.cpp test_legendre.cpp test_spherical_harmonics.cpp test_matrix.cpp test_wigner_3j.cpp test_table_function.cpp test_cubic_spline.cpp test_three_rotation.cpp test_kd_tree.cpp)
 
@@ -103,6 +103,14 @@ if(LAPACK_LIB_FLAGS)
 	target_link_libraries(cosmo_test ${LAPACK_LIB_FLAGS})
 endif(LAPACK_LIB_FLAGS)
 install(TARGETS cosmo_test DESTINATION bin)
+
+add_executable(test_parser test_parser.cpp)
+target_link_libraries(test_parser cosmopp)
+if(MPI_FOUND)
+	target_link_libraries(test_parser ${MPI_CXX_LIBRARIES})
+endif(MPI_FOUND)
+
+add_test(NAME parser COMMAND test_parser test_files/parser_test.txt WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
 
 add_test(NAME unit_conversions COMMAND cosmo_test unit_conversions WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
 add_test(NAME int_operations COMMAND cosmo_test int_operations WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
