@@ -109,12 +109,13 @@ private:
     std::vector<bool> usingCGSaved_;
 
     CosmoMPI& mpi_;
+    double rate_;
 
     const bool moreThuente_;
 };
 
 template<typename LargeVector, typename LargeVectorFactory, typename Function>
-LBFGS_General<LargeVector, LargeVectorFactory, Function>::LBFGS_General(LargeVectorFactory* factory, Function *f, const LargeVector &starting, int m, bool moreThuenteLineSearch): f_(f), m_(m), s_(m), y_(m), rho_(m), alpha_(m), moreThuente_(moreThuenteLineSearch), mpi_(CosmoMPI::create())
+LBFGS_General<LargeVector, LargeVectorFactory, Function>::LBFGS_General(LargeVectorFactory* factory, Function *f, const LargeVector &starting, int m, bool moreThuenteLineSearch): f_(f), m_(m), s_(m), y_(m), rho_(m), alpha_(m), moreThuente_(moreThuenteLineSearch), mpi_(CosmoMPI::create()), rate_(1.0)
 {
     check(m_ > 0, "");
     
@@ -167,6 +168,8 @@ LBFGS_General<LargeVector, LargeVectorFactory, Function>::setStarting(const Larg
     rates_.clear();
     H0kSaved_.clear();
     usingCGSaved_.clear();
+
+    rate_ = 1.0;
 }
 
 template<typename LargeVector, typename LargeVectorFactory, typename Function>
@@ -223,11 +226,10 @@ LBFGS_General<LargeVector, LargeVectorFactory, Function>::minimize(LargeVector *
 
         usingCGSaved_.push_back(usingCG);
 
-        double rate = 1.0;
         const double oldVal = val_;
 
         if(iter_ == 0 || usingCG)
-            rate = 1.0 / gradNorm_;
+            rate_ = 1.0 / gradNorm_;
 
         if(moreThuente_)
         {
@@ -244,8 +246,8 @@ LBFGS_General<LargeVector, LargeVectorFactory, Function>::minimize(LargeVector *
             q_->copy(*g_);
 
 
-            const int info = moreThuenteSearch(f_, *searchX_, val_, *q_, *ss_, rate, ftol, gtol, xtol, stpmin, stpmax, maxfev, x_.get(), g_.get(), nfev);
-            check(info != 0, "info needs to be nonzero but it is " << info << ", step = " << rate << " iteration: " << iter_);
+            const int info = moreThuenteSearch(f_, *searchX_, val_, *q_, *ss_, rate_, ftol, gtol, xtol, stpmin, stpmax, maxfev, x_.get(), g_.get(), nfev);
+            check(info != 0, "info needs to be nonzero but it is " << info << ", step = " << rate_ << " iteration: " << iter_);
 
             functionEval += nfev;
             gradNorm_ = g_->norm();
@@ -253,9 +255,8 @@ LBFGS_General<LargeVector, LargeVectorFactory, Function>::minimize(LargeVector *
         else
         {
             const double tau = 0.5, c = 1e-5;
-            rate = 1.0;
             searchX_->copy(*x_);
-            searchX_->add(*z_, -rate);
+            searchX_->add(*z_, -rate_);
             f_->set(*searchX_);
             double newVal = f_->value();
             ++functionEval;
@@ -265,12 +266,12 @@ LBFGS_General<LargeVector, LargeVectorFactory, Function>::minimize(LargeVector *
                 if(std::abs(val_ - newVal) / std::max(valMax, 1.0) < epsilon)
                     break;
 
-                if(val_ - newVal >= rate * c * zg)
+                if(val_ - newVal >= rate_ * c * zg)
                     break;
 
-                rate *= tau;
+                rate_ *= tau;
                 searchX_->copy(*x_);
-                searchX_->add(*z_, -rate);
+                searchX_->add(*z_, -rate_);
                 f_->set(*searchX_);
                 newVal = f_->value();
                 ++functionEval;
@@ -285,7 +286,7 @@ LBFGS_General<LargeVector, LargeVectorFactory, Function>::minimize(LargeVector *
 
         ++iter_;
         ++thisIter;
-        rates_.push_back(rate);
+        rates_.push_back(rate_);
 
         const double deltaVal = std::abs(val_ - oldVal);
         const double valMax = std::max(std::abs(val_), std::abs(oldVal));
