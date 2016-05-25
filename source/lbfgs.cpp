@@ -1,9 +1,12 @@
 #include <cmath>
 #include <algorithm>
+#include <vector>
 
 #include <macros.hpp>
 #include <exception_handler.hpp>
 #include <lbfgs.hpp>
+#include <random.hpp>
+#include <cosmo_mpi.hpp>
 
 /*
 #ifdef COSMO_OMP
@@ -363,10 +366,53 @@ BasicLargeVector::add(const BasicLargeVector& other, double c)
 }
 
 void
+BasicLargeVector::multiply(const BasicLargeVector& other)
+{
+    check(other.v_.size() == v_.size(), "");
+    for(int i = 0; i < v_.size(); ++i)
+        v_[i] *= other.v_[i];
+}
+
+void
+BasicLargeVector::divide(const BasicLargeVector& other)
+{
+    check(other.v_.size() == v_.size(), "");
+    for(int i = 0; i < v_.size(); ++i)
+    {
+        check(other.v_[i] != 0, "division by 0 at index" << i);
+        v_[i] /= other.v_[i];
+    }
+}
+
+void
+BasicLargeVector::pow(double p)
+{
+    for(int i = 0; i < v_.size(); ++i)
+        v_[i] = std::pow(v_[i], p);
+}
+
+void
 BasicLargeVector::swap(BasicLargeVector& other)
 {
     check(other.v_.size() == v_.size(), "");
     v_.swap(other.v_);
+}
+
+void
+BasicLBFGSFunc::whitenoise(int seed, BasicLargeVector* x, double amplitude)
+{
+    const int nProc = CosmoMPI::create().numProcesses();
+    const int pid = CosmoMPI::create().processId();
+    std::vector<int> seeds(nProc);
+    Math::UniformRealGenerator g1(seed, 0, 1);
+    for(int i = 0; i < nProc; ++i)
+        seeds[i] = static_cast<int>(std::ceil(1000000 * g1.generate()));
+
+    Math::GaussianGenerator g(seeds[pid], 0, 1);
+
+    std::vector<double>& v = x->contents();
+    for(int i = 0; i < v.size(); ++i)
+        v[i] = amplitude * g.generate();
 }
 
 } // namespace Math
