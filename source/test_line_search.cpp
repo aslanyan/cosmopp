@@ -1,6 +1,7 @@
 #include <cstdio>
 
 #include <macros.hpp>
+#include <exception_handler.hpp>
 #include <line_search.hpp>
 #include <lbfgs.hpp>
 
