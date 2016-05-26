@@ -15,18 +15,8 @@ int moreThuenteStep(double &stx, double &fx, double &dx, double &sty, double &fy
     const double p66 = 0.66;
     int info = 0;
 
-    if(brackt && (stp <= std::min(stx, sty)))
+    if((brackt && (stp <= std::min(stx, sty) || stp >= std::max(stx, sty))) || dx * (stp - stx) >= 0 || stpmax < stpmin)
         return info;
-
-    if(stp >= std::max(stx, sty))
-        return info;
-
-    if(dx * (stp - stx) >= 0)
-        return info;
-
-    if(stpmax < stpmin)
-        return info;
-    
     check(dx != 0, "");
     double sgnd = dp * (dx / std::abs(dx));
 
@@ -38,9 +28,6 @@ int moreThuenteStep(double &stx, double &fx, double &dx, double &sty, double &fy
         info = 1;
         bound = true;
         theta = 3 * (fx - fp) / (stp - stx) + dx + dp;
-        check(theta >= 0, "");
-        check(dx >= 0, "");
-        check(dp >= 0, "");
         s = std::max(std::max(std::abs(theta), std::abs(dx)), std::abs(dp));
         check(s > 0, "");
         gamma = s * std::sqrt((theta / s) * (theta / s) - (dx / s) * (dp / s));
@@ -62,9 +49,6 @@ int moreThuenteStep(double &stx, double &fx, double &dx, double &sty, double &fy
         info = 2;
         bound = false;
         theta = 3 * (fx - fp) / (stp - stx) + dx + dp;
-        check(theta >= 0, "");
-        check(dx >= 0, "");
-        check(dp >= 0, "");
         s = std::max(std::max(std::abs(theta), std::abs(dx)), std::abs(dp));
         check(s > 0, "");
         gamma = s * std::sqrt((theta / s) * (theta / s) - (dx / s) * (dp / s));
@@ -86,9 +70,6 @@ int moreThuenteStep(double &stx, double &fx, double &dx, double &sty, double &fy
         info = 3;
         bound = true;
         theta = 3 * (fx - fp) / (stp - stx) + dx + dp;
-        check(theta >= 0, "");
-        check(dx >= 0, "");
-        check(dp >= 0, "");
         s = std::max(std::max(std::abs(theta), std::abs(dx)), std::abs(dp));
         check(s > 0, "");
         gamma = s * std::sqrt(std::max(0.0, (theta / s) * (theta / s) - (dx / s) * (dp / s)));
@@ -126,9 +107,6 @@ int moreThuenteStep(double &stx, double &fx, double &dx, double &sty, double &fy
         if(brackt)
         {
             theta = 3 * (fp - fy) / (sty - stp) + dy + dp;
-            check(theta >= 0, "");
-            check(dy >= 0, "");
-            check(dp >= 0, "");
             s = std::max(std::max(std::abs(theta), std::abs(dy)), std::abs(dp));
             check(s > 0, "");
             gamma = s * std::sqrt((theta / s) * (theta / s) - (dy / s) * (dp / s));

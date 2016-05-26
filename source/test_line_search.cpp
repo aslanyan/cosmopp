@@ -1,6 +1,7 @@
 #include <cstdio>
 
 #include <macros.hpp>
+#include <exception_handler.hpp>
 #include <line_search.hpp>
 #include <lbfgs.hpp>
 
@@ -33,7 +34,7 @@ public:
         for(int i = 0; i < n; ++i)
         {
             const double delta = x_[i] - x0_[i];
-            res += delta * delta;
+            res += delta * delta * delta * delta;
         }
 
         return res;
@@ -50,7 +51,7 @@ public:
         for(int i = 0; i < n; ++i)
         {
             const double delta = x_[i] - x0_[i];
-            g[i] = 2 * delta;
+            g[i] = 4 * delta * delta * delta;
         }
     }
 
@@ -82,12 +83,12 @@ int main(int argc, char *argv[])
         func.derivative(&g0);
 
         BasicLargeVector s(n);
-        s.copy(g0, -1);
+        s.copy(g0, -0.1);
 
         BasicLargeVector x(n), g(n);
         int nFunc = 0;
 
-        double stp = 1 / g0.norm();
+        double stp = 100;
         const double ftol = 1e-4;
         const double gtol = 1e-2;
         const double xtol = 1e-15;

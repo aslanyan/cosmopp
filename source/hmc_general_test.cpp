@@ -9,10 +9,112 @@
 #include <markov_chain.hpp>
 #include <cosmo_mpi.hpp>
 #include <hmc_general.hpp>
+#include <lbfgs.hpp>
 
 namespace
 {
 
+class HMCFunc : public Math::RealFunctionMultiDim
+{
+public:
+    HMCFunc(int nPar, double mean, double sigma) : nPar_(nPar), mean_(mean), sigma_(sigma)
+    {
+        check(nPar_ > 0, "");
+        check(sigma_ > 0, "");
+    }
+
+    virtual double evaluate(const std::vector<double>& x) const
+    {
+        check(x.size() == nPar_, "");
+        CosmoMPI::create().barrier();
+        double myLike = 0;
+        for(int i = 0; i < nPar_; ++i)
+        {
+            const double delta = x[i] - mean_;
+            myLike += delta * delta / (sigma_ * sigma_);
+        }
+
+        double totalLike = 0;
+#ifdef COSMO_MPI
+        CosmoMPI::create().reduce(&myLike, &totalLike, 1, CosmoMPI::DOUBLE, CosmoMPI::SUM);
+#else
+        totalLike = myLike;
+#endif
+
+        return totalLike;
+    }
+
+private:
+    const int nPar_;
+    const double mean_;
+    const double sigma_;
+};
+
+class HMCFuncGrad : public Math::RealFunctionMultiToMulti
+{
+public:
+    HMCFuncGrad(int nPar, double mean, double sigma) : nPar_(nPar), mean_(mean), sigma_(sigma)
+    {
+        check(nPar_ > 0, "");
+        check(sigma_ > 0, "");
+    }
+
+    virtual void evaluate(const std::vector<double>& x, std::vector<double>* res) const
+    {
+        check(x.size() == nPar_, "");
+        res->resize(nPar_);
+        for(int i = 0; i < nPar_; ++i)
+            res->at(i) = 2 * (x[i] - mean_) / (sigma_ * sigma_);
+    }
+
+private:
+    const int nPar_;
+    const double mean_;
+    const double sigma_;
+};
+
+class HMCCallback
+{
+public:
+    HMCCallback(const std::string& fileRoot)
+    {
+        std::stringstream fileName;
+        fileName << fileRoot;
+        if(CosmoMPI::create().numProcesses() > 1)
+            fileName << "_" << CosmoMPI::create().processId();
+
+        fileName << ".txt";
+        out_.open(fileName.str().c_str());
+
+        StandardException exc;
+        if(!out_)
+        {
+            std::stringstream exceptionStr;
+            exceptionStr << "Cannot write into file " << fileName.str() << ".";
+            exc.set(exceptionStr.str());
+            throw exc;
+        }
+    }
+
+    ~HMCCallback()
+    {
+        out_.close();
+    }
+
+    void operator()(const Math::BasicLargeVector& v, double like)
+    {
+        const std::vector<double>& x = v.contents();
+        out_ << "1\t" << like;
+        for(int i = 0; i < x.size(); ++i)
+            out_ << '\t' << x[i];
+        out_ << std::endl;
+    }
+
+private:
+    std::ofstream out_;
+};
+
+/*
 class TestHMCTraits
 {
 public:
@@ -120,11 +222,13 @@ private:
     
     std::ofstream out_;
 };
+*/
 
 }
 
 int main(int argc, char *argv[])
 {
+    using namespace Math;
     try {
         StandardException exc;
 
@@ -136,10 +240,24 @@ int main(int argc, char *argv[])
 
         const std::string root = "hmc_general_test";
 
-        TestHMCTraits hmcTraits(n, mean, sigma, mass, starting, root);
-        Math::HMCGeneral<TestHMCTraits> hmc(&hmcTraits, 5.0, 10);
+        BasicLargeVectorFactory factory(n);
+        HMCFunc func(n, mean, sigma);
+        HMCFuncGrad grad(n, mean, sigma);
+        BasicLBFGSFunc f(func, grad);
 
-        hmc.run(10000);
+        BasicLargeVector st(n), m(n);
+        for(int i = 0; i < n; ++i)
+        {
+            st.contents()[i] = starting;
+            m.contents()[i] = mass;
+        }
+
+        HMCGeneral<BasicLargeVector, BasicLargeVectorFactory, BasicLBFGSFunc> hmc(&factory, &f, st, m, 5.0, 10);
+
+
+        HMCCallback cb(root);
+
+        hmc.run(10000, &cb);
 
         const unsigned int thin = 1;
         const unsigned long burnin = 100;

@@ -50,6 +50,12 @@ public:
     double dotProduct(const BasicLargeVector& other) const;
     // add another vector with a given coefficient (for MPI, the correct coefficient should be passed for EVERY process)
     void add(const BasicLargeVector& other, double c = 1.);
+    // multiply with another vector TERM BY TERM
+    void multiply(const BasicLargeVector& other);
+    // divide by another vector TERM BY TERM
+    void divide(const BasicLargeVector& other);
+    // take power of elements TERM BY TERM
+    void pow(double p);
     // swap
     void swap(BasicLargeVector& other);
 
@@ -85,6 +91,9 @@ public:
     void set(const BasicLargeVector& x) { x_ = x.contents(); }
     double value() { return f_.evaluate(x_); }
     void derivative(BasicLargeVector *res) { grad_.evaluate(x_, &(res->contents())); }
+
+    // generate white noise with given amplitude
+    void whitenoise(int seed, BasicLargeVector* x, double amplitude);
 
 private:
     std::vector<double> x_;
