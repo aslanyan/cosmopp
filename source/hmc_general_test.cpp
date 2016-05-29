@@ -232,10 +232,10 @@ int main(int argc, char *argv[])
     try {
         StandardException exc;
 
-        const int n = 5;
+        const int n = 10;
         const int mean = 0;
         const int sigma = 5;
-        const double mass = 1;
+        const double mass = 2;
         const int starting = 1;
 
         const std::string root = "hmc_general_test";
