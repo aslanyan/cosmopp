@@ -26,6 +26,9 @@ public:
     double getDouble(const std::string& s) const;
     double getDouble(const std::string& s, double def);
 
+    bool getBool(const std::string& s) const;
+    bool getBool(const std::string& s, bool def);
+
     std::string getStr(const std::string& s) const;
     std::string getStr(const std::string& s, const std::string& def);
 };
