@@ -26,7 +26,7 @@ extern "C" bool __modpkparams_MOD_eternal_infl_ok;
 extern "C" double __modpkparams_MOD_modpk_w_primordial_lower;
 extern "C" double __modpkparams_MOD_modpk_w_primordial_upper;
 extern "C" double __modpkparams_MOD_modpk_rho_reheat;
-extern "C" char* __potential_MOD_v_ispline_field_range;
+extern "C" int __potential_MOD_v_ispline_field_range;
 #else
 extern "C"
 {
@@ -50,7 +50,7 @@ extern "C" bool modpkparams_mp_eternal_infl_ok_;
 extern "C" double modpkparams_mp_modpk_w_primordial_lower_;
 extern "C" double modpkparams_mp_modpk_w_primordial_upper_;
 extern "C" double modpkparams_mp_modpk_rho_reheat_;
-extern "C" char* modpkparams_mp_modpk_field_range_;
+extern "C" int modpkparams_mp_modpk_field_range_;
 #endif
 
 int ModeCode::nVPar_ = 0;
@@ -159,28 +159,11 @@ void
 ModeCode::setFieldRange(FieldRange range)
 {
     check(range >= 0 && range < FIELD_RANGE_MAX, "");
-    std::string r;
-    switch(range)
-    {
-    case SMALL:
-        r = "small";
-        break;
-    case LARGE:
-        r = "large";
-        break;
-    default:
-        check(false, "");
-        break;
-    }
-
-    for(int i = 0; i < r.size(); ++i)
-    {
 #ifdef MODECODE_GFORT
-        __potential_MOD_v_ispline_field_range[i] = r[i];
+    __potential_MOD_v_ispline_field_range = static_cast<int>(range);
 #else
-        modpkparams_mp_modpk_field_range_[i] = r[i];
+    modpkparams_mp_modpk_field_range_ = static_cast<int>(range);
 #endif
-    }
 
 }
 
