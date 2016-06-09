@@ -28,7 +28,7 @@ public:
     inline static const Math::TableFunction<double, double>& getScalarPs() { return scalarPs_; }
     inline static const Math::TableFunction<double, double>& getTensorPs() { return tensorPs_; }
 
-    enum FieldRange { SMALL = 0, LARGE, FIELD_RANGE_MAX };
+    enum FieldRange { LARGE = 0, SMALL, FIELD_RANGE_MAX };
 
     static void setFieldRange(FieldRange range);
 
