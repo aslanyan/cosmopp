@@ -51,8 +51,8 @@ extern "C" bool modpkparams_mp_eternal_infl_ok_;
 extern "C" double modpkparams_mp_modpk_w_primordial_lower_;
 extern "C" double modpkparams_mp_modpk_w_primordial_upper_;
 extern "C" double modpkparams_mp_modpk_rho_reheat_;
-extern "C" int potential_mp_modpk_v_ispline_field_range_;
-extern "C" int modpkparams_mp_modpk_phi_init0_;
+extern "C" int potential_mp_v_ispline_field_range_;
+extern "C" int modpkparams_mp_phi_init0_;
 #endif
 
 int ModeCode::nVPar_ = 0;
@@ -170,8 +170,8 @@ ModeCode::setFieldRange(FieldRange range)
     __potential_MOD_v_ispline_field_range = static_cast<int>(range);
     __modpkparams_MOD_phi_init0 = (range == LARGE ? 10.0 : 0.2);
 #else
-    potential_mp_modpk_field_range_ = static_cast<int>(range);
-    modpkparams_phi_init0_ = (range == LARGE ? 10.0 : 0.2);
+    potential_mp_v_ispline_field_range_ = static_cast<int>(range);
+    modpkparams_mp_phi_init0_ = (range == LARGE ? 10.0 : 0.2);
 #endif
 
 }
