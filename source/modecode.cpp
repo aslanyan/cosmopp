@@ -27,6 +27,7 @@ extern "C" double __modpkparams_MOD_modpk_w_primordial_lower;
 extern "C" double __modpkparams_MOD_modpk_w_primordial_upper;
 extern "C" double __modpkparams_MOD_modpk_rho_reheat;
 extern "C" int __potential_MOD_v_ispline_field_range;
+extern "C" double __modpkparams_MOD_phi_init0;
 #else
 extern "C"
 {
@@ -50,7 +51,8 @@ extern "C" bool modpkparams_mp_eternal_infl_ok_;
 extern "C" double modpkparams_mp_modpk_w_primordial_lower_;
 extern "C" double modpkparams_mp_modpk_w_primordial_upper_;
 extern "C" double modpkparams_mp_modpk_rho_reheat_;
-extern "C" int modpkparams_mp_modpk_field_range_;
+extern "C" int potential_mp_modpk_v_ispline_field_range_;
+extern "C" int modpkparams_mp_modpk_phi_init0_;
 #endif
 
 int ModeCode::nVPar_ = 0;
@@ -101,6 +103,7 @@ ModeCode::initialize(int potentialChoice, double kPivot, double NPivot, bool ins
     __modpkparams_MOD_slowroll_infl_end = slowRollEnd;
     __modpkparams_MOD_findiffdphi = findIffdphi;
     __modpkparams_MOD_eternal_infl_ok = eternalInflOK;
+    __modpkparams_MOD_phi_init0 = 10.0;
 
     vParams_ = &__modpkparams_MOD_vparams;
 #else
@@ -118,6 +121,7 @@ ModeCode::initialize(int potentialChoice, double kPivot, double NPivot, bool ins
     modpkparams_mp_slowroll_infl_end_ = slowRollEnd;
     modpkparams_mp_findiffdphi_ = findIffdphi;
     modpkparams_mp_eternal_infl_ok_ = eternalInflOK;
+    modpkparams_mp_phi_init0_ = 10.0;
 
     vParams_ = &modpkparams_mp_vparams_;
 #endif
@@ -164,8 +168,10 @@ ModeCode::setFieldRange(FieldRange range)
     check(range >= 0 && range < FIELD_RANGE_MAX, "");
 #ifdef MODECODE_GFORT
     __potential_MOD_v_ispline_field_range = static_cast<int>(range);
+    __modpkparams_MOD_phi_init0 = (range == LARGE ? 10.0 : 0.2);
 #else
-    modpkparams_mp_modpk_field_range_ = static_cast<int>(range);
+    potential_mp_modpk_field_range_ = static_cast<int>(range);
+    modpkparams_phi_init0_ = (range == LARGE ? 10.0 : 0.2);
 #endif
 
 }
