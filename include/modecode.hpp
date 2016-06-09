@@ -28,6 +28,10 @@ public:
     inline static const Math::TableFunction<double, double>& getScalarPs() { return scalarPs_; }
     inline static const Math::TableFunction<double, double>& getTensorPs() { return tensorPs_; }
 
+    enum FieldRange { SMALL = 0, LARGE, FIELD_RANGE_MAX };
+
+    static void setFieldRange(FieldRange range);
+
 private:
     static int nVPar_;
     static double* vParams_;

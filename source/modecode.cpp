@@ -26,6 +26,7 @@ extern "C" bool __modpkparams_MOD_eternal_infl_ok;
 extern "C" double __modpkparams_MOD_modpk_w_primordial_lower;
 extern "C" double __modpkparams_MOD_modpk_w_primordial_upper;
 extern "C" double __modpkparams_MOD_modpk_rho_reheat;
+extern "C" char* __potential_MOD_v_ispline_field_range;
 #else
 extern "C"
 {
@@ -49,6 +50,7 @@ extern "C" bool modpkparams_mp_eternal_infl_ok_;
 extern "C" double modpkparams_mp_modpk_w_primordial_lower_;
 extern "C" double modpkparams_mp_modpk_w_primordial_upper_;
 extern "C" double modpkparams_mp_modpk_rho_reheat_;
+extern "C" char* modpkparams_mp_modpk_field_range_;
 #endif
 
 int ModeCode::nVPar_ = 0;
@@ -73,7 +75,7 @@ ModeCode::initialize(int potentialChoice, double kPivot, double NPivot, bool ins
 
     bool vnDerivs = false;
     double findIffdphi = 1.0e-16;
-    if(potentialChoice == 14)
+    if(potentialChoice == 14 || potentialChoice == 15)
     {
         vnDerivs = true;
         findIffdphi = 1.0e-4;
@@ -151,6 +153,35 @@ ModeCode::initialize(int potentialChoice, double kPivot, double NPivot, bool ins
         check(false, "not implemented, TBD better");
         break;
     }
+}
+
+void
+ModeCode::setFieldRange(FieldRange range)
+{
+    check(range >= 0 && range < FIELD_RANGE_MAX, "");
+    std::string r;
+    switch(range)
+    {
+    case SMALL:
+        r = "small";
+        break;
+    case LARGE:
+        r = "large";
+        break;
+    default:
+        check(false, "");
+        break;
+    }
+
+    for(int i = 0; i < r.size(); ++i)
+    {
+#ifdef MODECODE_GFORT
+        __potential_MOD_v_ispline_field_range[i] = r[i];
+#else
+        modpkparams_mp_modpk_field_range_[i] = r[i];
+#endif
+    }
+
 }
 
 void
