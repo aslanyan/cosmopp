@@ -135,7 +135,6 @@ if(LAPACK_LIB_FLAGS)
 endif(LAPACK_LIB_FLAGS)
 install(TARGETS cosmo_test DESTINATION bin)
 
-<<<<<<< HEAD
 if(CLASS_DIR AND PLANCK_DIR AND MULTINEST_DIR AND MODECODE_DIR AND POLYCHORD_DIR)
     add_executable(run_inst_ucmh run_inst_ucmh.cpp)
     target_link_libraries(run_inst_ucmh cosmopp)
@@ -314,7 +313,7 @@ if(CLASS_DIR)
     endif(CFITSIO_DIR)
     target_link_libraries(run_classpk ${CLASSLIB})
 endif(CLASS_DIR)
-=======
+
 add_executable(test_parser test_parser.cpp)
 target_link_libraries(test_parser cosmopp)
 if(MPI_FOUND)
@@ -322,7 +321,6 @@ if(MPI_FOUND)
 endif(MPI_FOUND)
 
 add_test(NAME parser COMMAND test_parser test_files/parser_test.txt WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
->>>>>>> modecode
 
 add_test(NAME unit_conversions COMMAND cosmo_test unit_conversions WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
 add_test(NAME int_operations COMMAND cosmo_test int_operations WORKING_DIRECTORY ${PROJECT_BINARY_DIR})

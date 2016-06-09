@@ -1,6 +1,7 @@
 #include <fstream>
 #include <sstream>
 #include <iomanip>
+#include <cstdlib>
 
 #include <macros.hpp>
 #include <exception_handler.hpp>
@@ -23,7 +24,10 @@ int main(int argc, char *argv[])
         std::vector<double> v(21);
         for(int i = 0; i < 21; ++i)
             args >> v[i];
-        const double NPivot = 70;
+
+        for(int i = 0; i < 21; ++i)
+            v[i] = std::atof(argv[i + 1]);
+        const double NPivot = 55;
 
         //model 1
         //const bool slowRollEnd = true;
@@ -32,7 +36,7 @@ int main(int argc, char *argv[])
         //model 2
         const bool slowRollEnd = false;
         const bool eternalInflOK = true;
-        ModeCode::initialize(14, 0.05, NPivot, false, true, slowRollEnd, eternalInflOK, 1e-6, 1.0, 10);
+        ModeCode::initialize(14, 0.05, NPivot, false, false, slowRollEnd, eternalInflOK, 5e-6, 1.2, 500);
 
         ModeCode::addKValue(10, 0, 1e10, 0, 1e10);
         ModeCode::addKValue(1e2, 0, 1e10, 0, 1e10);

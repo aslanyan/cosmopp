@@ -88,18 +88,21 @@ public:
     virtual void getAllParameters(std::vector<double>& v) const
     {
         check(useClass_ || vParams_.size() == ModeCode::getNumVParams(), "");
-        v.resize(4 + vParams_.size());
+        v.resize(4 + vParams_.size() + (potentialChoice_ == 15 ? 1 : 0));
         v[0] = omBH2_;
         v[1] = omCH2_;
         v[2] = h_;
         v[3] = tau_;
         for(int i = 0; i < vParams_.size(); ++i)
             v[4 + i] = vParams_[i];
+
+        if(potentialChoice_ == 15)
+            v[4 + vParams_.size()] = ModeCode::getNPivot();
     }
 
     virtual bool setAllParameters(const std::vector<double>& v, double *badLike)
     {
-        check(useClass_ || v.size() == 4 + ModeCode::getNumVParams(), "");
+        check(useClass_ || v.size() == 4 + ModeCode::getNumVParams() + (potentialChoice_ == 15 ? 1 : 0), "");
 
 
         setBaseParams(v[0], v[1], v[2], v[3]);
@@ -127,6 +130,9 @@ public:
                     vParams_[i] = std::pow(10.0, vParams_[i]) * vParams_[i - 1];
             }
         }
+
+        if(potentialChoice_ == 15)
+            ModeCode::setNPivot(v[4 + vParams_.size()]);
 
         output_screen1("V param values:");
         for(int i = 0; i < vParams_.size(); ++i)
@@ -410,12 +416,14 @@ int main(int argc, char *argv[])
         else
             root = "slow_test_files/mn_ucmh";
 
-        const int nKnots = 20;
+        //const int nKnots = 20;
+        const int nSplineCoefficients = 18;
 
         PlanckLikelihood planck(true, true, true, highP, !foreground, false, false, true, 500);
         int nPar = 4;
         if(knottedPotential)
-            nPar += (nKnots + 1);
+            //nPar += (nKnots + 1);
+            nPar += (nSplineCoefficients + 2);
         else
             nPar += 5;
 
@@ -433,7 +441,11 @@ int main(int argc, char *argv[])
 
         int potentialChoice = 12;
         if(knottedPotential)
-            potentialChoice = 14;
+        {
+            //potentialChoice = 14;
+            potentialChoice = 15;
+            ModeCode::setFieldRange(ModeCode::LARGE);
+        }
 
         TaylorParamsUCMH modelParams(0.02, 0.1, 0.7, 0.1, kPivot, 55, potentialChoice, slowRollEnd, eternalInflOK, 5e-6, 1.2, 500, useClass);
 
@@ -506,6 +518,10 @@ int main(int argc, char *argv[])
         const double vFactorMin = -0.5, vFactorMax = 0.5;
         const double sigmaVMin = 0, sigmaVMax = 1;
 
+        const double NPivMin = 40, NPivMax = 60;
+        const double linearCoeffMin = 0, linearCoeffMax = 1e-12;
+        const double alphaMin = 0, alphaMax = 1e-11;
+
         if(usePoly)
         {
             int paramIndex = 0;
@@ -515,6 +531,15 @@ int main(int argc, char *argv[])
             pc->setParam(paramIndex++, "tau", 0.02, 0.20, 1);
             if(knottedPotential)
             {
+                for(int i = 0; i < nSplineCoefficients; ++i)
+                {
+                    std::stringstream paramName;
+                    paramName << "alpha_" << i;
+                    pc->setParam(paramIndex++, paramName.str().c_str(), alphaMin, alphaMax, 2);
+                }
+                pc->setParam(paramIndex++, "linear_coeff", linearCoeffMin, linearCoeffMax, 2);
+                pc->setParam(paramIndex++, "N_piv", NPivMin, NPivMax, 2);
+                /*
                 pc->setParam(paramIndex++, "sigma_v", sigmaVMin, sigmaVMax, 2);
                 for(int i = 0; i < nKnots; ++i)
                 {
@@ -525,6 +550,7 @@ int main(int argc, char *argv[])
                     else
                         pc->setParam(paramIndex++, paramName.str().c_str(), vFactorMin, vFactorMax, 2);
                 }
+                */
             }
             else
             {
@@ -600,6 +626,15 @@ int main(int argc, char *argv[])
             mn->setParam(paramIndex++, "tau", 0.02, 0.20);
             if(knottedPotential)
             {
+                for(int i = 0; i < nSplineCoefficients; ++i)
+                {
+                    std::stringstream paramName;
+                    paramName << "alpha_" << i;
+                    mn->setParam(paramIndex++, paramName.str().c_str(), alphaMin, alphaMax);
+                }
+                mn->setParam(paramIndex++, "linear_coeff", linearCoeffMin, linearCoeffMax);
+                mn->setParam(paramIndex++, "N_piv", NPivMin, NPivMax);
+                /*
                 mn->setParam(paramIndex++, "sigma_v", sigmaVMin, sigmaVMax);
                 for(int i = 0; i < nKnots; ++i)
                 {
@@ -610,6 +645,7 @@ int main(int argc, char *argv[])
                     else
                         mn->setParam(paramIndex++, paramName.str().c_str(), vFactorMin, vFactorMax);
                 }
+                */
             }
             else
             {
