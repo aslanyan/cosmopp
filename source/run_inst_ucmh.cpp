@@ -223,6 +223,7 @@ public:
                 }
             }
         }
+        output_screen1("Likelihood = " << l << std::endl);
         return l;
     }
 private:
@@ -520,7 +521,7 @@ int main(int argc, char *argv[])
 
         const double NPivMin = 40, NPivMax = 60;
         const double linearCoeffMin = 0, linearCoeffMax = 1e-12;
-        const double alphaMin = 0, alphaMax = 1e-8;
+        const double alphaMin = 0, alphaMax = 1e-10;
 
         if(usePoly)
         {
