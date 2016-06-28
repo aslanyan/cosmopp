@@ -160,7 +160,7 @@ private:
 class CombinedLikelihood : public Math::LikelihoodFunction
 {
 public:
-    CombinedLikelihood(PlanckLikelihood& planck, CosmologicalParams *params, bool ucmhLim, bool noGamma, bool use200, bool use500, bool useWeak, bool lateDec) : planck_(planck), params_(params)
+    CombinedLikelihood(PlanckLikelihood& planck, CosmologicalParams *params, bool ucmhLim, bool noGamma, bool noPulsar, bool use200, bool use500, bool useWeak, bool lateDec) : planck_(planck), params_(params)
     {
         if(ucmhLim)
         {
@@ -194,7 +194,8 @@ public:
             if(!noGamma)
                 gamma_.reset(new UCMHLikelihood(gammaFileName.str().c_str(), lateDec));
 
-            pulsar_.reset(new UCMHLikelihood(pulsarFileName.str().c_str(), lateDec));
+            if(!noPulsar)
+                pulsar_.reset(new UCMHLikelihood(pulsarFileName.str().c_str(), lateDec));
         }
     }
 
@@ -242,6 +243,7 @@ int main(int argc, char *argv[])
         bool useClass = false;
         bool usePoly = false;
         bool noGamma = false;
+        bool noPulsar = false;
         bool use200 = false;
         bool use500 = false;
         bool useWeak = false;
@@ -269,6 +271,9 @@ int main(int argc, char *argv[])
 
             if(std::string(argv[i]) == std::string("no_gamma"))
                 noGamma = true;
+
+            if(std::string(argv[i]) == std::string("no_pulsar"))
+                noPulsar = true;
 
             if(std::string(argv[i]) == std::string("ucmh_200"))
                 use200 = true;
@@ -358,6 +363,15 @@ int main(int argc, char *argv[])
                 else
                 {
                     output_screen("The gamma-ray ucmh limits are included. To not include those specify \"no_gamma\" as an argument." << std::endl);
+                }
+
+                if(noPulsar)
+                {
+                    output_screen("The pulsar ucmh limits will NOT be included." << std::endl);
+                }
+                else
+                {
+                    output_screen("The pulsar ucmh limits are included. To not include those specify \"no_pulsar\" as an argument." << std::endl);
                 }
 
                 if(useWeak)
@@ -501,7 +515,7 @@ int main(int argc, char *argv[])
 
         planck.setModelCosmoParams(&modelParams);
 
-        CombinedLikelihood like(planck, &modelParams, ucmhLim, noGamma, use200, use500, useWeak, lateDecoupling);
+        CombinedLikelihood like(planck, &modelParams, ucmhLim, noGamma, noPulsar, use200, use500, useWeak, lateDecoupling);
 
         std::unique_ptr<MnScanner> mn;
         std::unique_ptr<PolyChord> pc;
