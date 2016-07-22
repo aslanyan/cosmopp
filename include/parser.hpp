@@ -14,6 +14,9 @@ public:
         readFile(fileName);
     }
 
+    Parser(const Parser& other) : std::map<std::string, std::string>(other) {}
+    Parser(Parser&& other) : std::map<std::string, std::string>(other) {}
+
     ~Parser() {}
 
     void dump() const;
