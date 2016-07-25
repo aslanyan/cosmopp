@@ -230,7 +230,7 @@ LBFGS_General<LargeVector, LargeVectorFactory, Function>::minimize(LargeVector *
 
         if(iter_ == 0 || usingCG)
             rate_ = 1.0 / gradNorm_;
-        else if(iter_ < 10)
+        else
             rate_ = 1.0;
 
         if(moreThuente_)
