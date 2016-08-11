@@ -79,7 +79,7 @@
                       character(len=100) :: froot, fdir
                       integer :: i
 
-                      double precision, dimension(5) :: output_info
+                      double precision, dimension(4) :: output_info
                       type(program_settings) :: settings
                       type(prior), allocatable, dimension(:) :: priors
                       type(param_type),dimension(:),allocatable ::params
@@ -167,10 +167,10 @@
 
 
 #ifdef COSMO_MPI
-                      output_info = NestedSampling(loglike_f, priors, &
+                      output_info = NestedSampling(loglike_f, prior_wrapper, &
                         settings, MPI_COMM_WORLD) 
 #else
-                      output_info = NestedSampling(loglike_f, priors, &
+                      output_info = NestedSampling(loglike_f, prior_wrapper, &
                         settings, 0) 
 #endif
 
@@ -178,9 +178,18 @@
                       errorz = output_info(2)
                       ndead = output_info(3)
                       nlike = output_info(4)
-                      logzpluslogp = output_info(5)
+                      !logzpluslogp = output_info(5)
 
                       deallocate(priors)
+
+                      contains
+
+                        function prior_wrapper(cube) result(theta)
+                                implicit none
+                                double precision, intent(in), dimension(:) :: cube
+                                double precision, dimension(size(cube))    :: theta
+                                theta = hypercube_to_physical(cube,priors)
+                        end function prior_wrapper
 
               end subroutine
       end module
