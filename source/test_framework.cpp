@@ -12,9 +12,7 @@ TestFramework::TestFramework(double precision) : precision_(precision)
 bool
 TestFramework::run(unsigned int& pass, unsigned int& fail)
 {
-#ifdef COSMO_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
+    CosmoMPI::create().barrier();
     if(isMaster())
     {
         output_screen_clean(std::endl << "TEST: " << name() << std::endl << std::endl);
@@ -48,10 +46,7 @@ TestFramework::run(unsigned int& pass, unsigned int& fail)
         }
     }
 
-#ifdef COSMO_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
-
+    CosmoMPI::create().barrier();
     if(isMaster())
     {
         output_screen_clean(std::endl << "Total subtests: " << pass + fail << std::endl << "Pass: " << pass << std::endl << "Fail: " << fail << std::endl << std::endl);

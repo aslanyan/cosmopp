@@ -19,8 +19,10 @@
 #include <test_matrix.hpp>
 #include <test_mcmc.hpp>
 #include <test_multinest.hpp>
+#include <test_polychord.hpp>
 #include <test_mcmc_planck.hpp>
 #include <test_multinest_planck.hpp>
+#include <test_polychord_planck.hpp>
 #include <test_cmb.hpp>
 #include <test_cmb_gibbs.hpp>
 #include <test_fit.hpp>
@@ -67,6 +69,10 @@ TestFramework* createTest(const std::string& name)
     else if(name == "multinest_fast")
         test = new TestMultinestFast;
 #endif
+#ifdef COSMO_POLYCHORD
+    else if(name == "polychord_fast")
+        test = new TestPolyChordFast;
+#endif
 #ifdef COSMO_PLANCK
 #ifdef COSMO_CLASS
 #ifdef COSMO_LAPACK
@@ -76,6 +82,10 @@ TestFramework* createTest(const std::string& name)
 #ifdef COSMO_MULTINEST
     else if(name == "multinest_planck")
         test = new TestMultinestPlanck;
+#endif
+#ifdef COSMO_POLYCHORD
+    else if(name == "polychord_planck")
+        test = new TestPolyChordPlanck;
 #endif
 #endif
 #endif
@@ -121,7 +131,7 @@ TestFramework* createTest(const std::string& name)
         test = new TestThreeRotation;
 #ifdef COSMO_HEALPIX
     else if(name == "mask_apodizer")
-        test = new TestMaskApodizer(1e-3);
+        test = new TestMaskApodizer(1e-2);
 #endif
     else if(name == "kd_tree")
         test = new TestKDTree;
@@ -190,6 +200,9 @@ int main(int argc, char *argv[])
 #ifdef COSMO_MULTINEST
         fastTests.insert("multinest_fast");
 #endif
+#ifdef COSMO_POLYCHORD
+        fastTests.insert("polychord_fast");
+#endif
 #ifdef COSMO_CLASS
         fastTests.insert("cmb");
 #endif
@@ -223,6 +236,9 @@ int main(int argc, char *argv[])
 #endif
 #ifdef COSMO_MULTINEST
         slowTests.insert("multinest_planck");
+#endif
+#ifdef COSMO_POLYCHORD
+        slowTests.insert("polychord_planck");
 #endif
 #endif
 #endif
