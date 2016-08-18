@@ -1,44 +1,12 @@
 #ifndef COSMO_PP_COSMO_MPI_HPP
 #define COSMO_PP_COSMO_MPI_HPP
 
-#ifdef COSMO_MPI
-#include <mpi.h>
-#endif
-
-#include <macros.hpp>
-
 class CosmoMPI
 {
 private:
-    CosmoMPI()
-    {
-#ifdef COSMO_MPI
-#ifdef CHECKS_ON
-        int hasMpiInitialized;
-        MPI_Initialized(&hasMpiInitialized);
-        check(!hasMpiInitialized, "MPI already initialized");
-#endif
+    CosmoMPI();
+    ~CosmoMPI();
 
-        MPI_Init(NULL, NULL);
-#endif
-        commTag_ = 1000;
-    }
-
-    ~CosmoMPI()
-    {
-#ifdef COSMO_MPI
-#ifdef CHECKS_ON
-        int hasMpiInitialized;
-        MPI_Initialized(&hasMpiInitialized);
-        check(hasMpiInitialized, "MPI not initialized");
-
-        int hasMpiFinalized;
-        MPI_Finalized(&hasMpiFinalized);
-        check(!hasMpiFinalized, "MPI already finalized");
-#endif
-        MPI_Finalize();
-#endif
-    }
 public:
 	static CosmoMPI& create()
     {
@@ -46,66 +14,20 @@ public:
         return c;
     }
 
-    int processId() const
-    {
-#ifdef COSMO_MPI
-#ifdef CHECKS_ON
-        int hasMpiInitialized;
-        MPI_Initialized(&hasMpiInitialized);
-        check(hasMpiInitialized, "MPI not initialized");
+    int processId() const;
+    int numProcesses() const;
+    bool isMaster() const { return (processId() == 0); }
+    void barrier() const;
+    int getCommTag();
 
-        int hasMpiFinalized;
-        MPI_Finalized(&hasMpiFinalized);
-        check(!hasMpiFinalized, "MPI already finalized");
-#endif
-        int rank;
-        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-        return rank;
-#else
-        return 0;
-#endif
-    }
+    enum DataType { DOUBLE = 0, INT, LONG, DATA_TYPE_MAX };
+    enum ReduceOp { SUM = 0, MAX, MIN, PROD, REDUCE_OP_MAX };
 
-    int numProcesses() const
-    {
-#ifdef COSMO_MPI
-#ifdef CHECKS_ON
-        int hasMpiInitialized;
-        MPI_Initialized(&hasMpiInitialized);
-        check(hasMpiInitialized, "MPI not initialized");
+    int send(int dest, void *buf, int count, DataType type, int tag);
+    int recv(int source, void *buf, int count, DataType type, int tag);
 
-        int hasMpiFinalized;
-        MPI_Finalized(&hasMpiFinalized);
-        check(!hasMpiFinalized, "MPI already finalized");
-#endif
-        int n;
-        MPI_Comm_size(MPI_COMM_WORLD, &n);
-        return n;
-#else
-        return 1;
-#endif
-    }
-
-    bool isMaster() const
-    {
-        return (processId() == 0);
-    }
-
-    void barrier() const
-    {
-#ifdef COSMO_MPI
-        MPI_Barrier(MPI_COMM_WORLD);
-#endif
-    }
-
-    int getCommTag()
-    {
-        barrier();
-
-        commTag_ += 10 * numProcesses();
-
-        return commTag_;
-    }
+    int reduce(void *send, void *recv, int count, DataType type, ReduceOp op);
+    int bcast(void *data, int count, DataType type);
 
 private:
     int commTag_;

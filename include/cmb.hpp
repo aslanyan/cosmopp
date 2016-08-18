@@ -18,7 +18,7 @@ struct nonlinear;
 struct lensing;
 struct output;
 
-/// This class can be used to calculate cmb power spectra, transfer functions, etc. It uses the publicly availble code CLASS.
+/// This class can be used to calculate cmb power spectra, transfer functions, etc. It uses the publicly available code CLASS.
 /// To do calculations one needs to first pre-initialize it, then initialize it, after which one can get the power spectra and the transfer functions.
 /// Initialization can be done multiple times after pre-initialization with new parameters. The initialization is divided into two steps for faster calculations with different cosmological parameters.
 /// Pre-initialization usually needs to be done once, for example in MCMC runs, then one can initialize multiple times leaving the pre-initialization parameters unchanged.
@@ -132,6 +132,12 @@ protected:
     double kMax_;
 
     double* dum1_[1000], *dum2_[1000];
+
+    // previous values of params
+    double prevH_, prevT_, prevOmB_, prevOmC_, prevOmK_, prevOmG_, prevOmNeutrino_, prevTau_, prevYHe_, prevZMaxPk_;
+    int prevNCDM_;
+    std::vector<double> prevTCDM_, prevMCDM_;
+    bool prevWantMatter_, prevWantT_, prevWantP_, prevWantLens_;
 };
 
 #endif

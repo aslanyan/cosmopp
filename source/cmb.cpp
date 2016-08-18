@@ -7,6 +7,7 @@
 #include <cmath>
 #include <cstring>
 #include <cstdlib>
+#include <limits>
 
 #include <macros.hpp>
 #include <exception_handler.hpp>
@@ -131,6 +132,28 @@ CMB::preInitialize(int lMax, bool wantAllL, bool primordialInitialize, bool incl
         lMaxTensors_ = lMaxTensors;
     }
 
+    // prev parameter values
+    const double badVal = std::numeric_limits<double>::max();
+    prevH_ = badVal;
+    prevT_ = badVal;
+    prevOmB_ = badVal;
+    prevOmC_ = badVal;
+    prevOmK_ = badVal;
+    prevOmG_ = badVal;
+    prevOmNeutrino_ = badVal;
+    prevTau_ = badVal;
+    prevYHe_ = badVal;
+    prevZMaxPk_ = badVal;
+
+    prevNCDM_ = 0;
+    prevWantT_ = false;
+    prevWantP_ = false;
+    prevWantLens_ = false;
+    prevWantMatter_ = false;
+    
+    prevTCDM_.clear();
+    prevMCDM_.clear();
+
     preInit_ = true;
 }
 
@@ -143,222 +166,78 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
 
     params_ = &params;
 
+    /*
     if(init_)
         clean();
+    */
 
-    br_->H0 = params.getH() * 1e5 / _c_;
-    br_->h = params.getH();
-    br_->T_cmb = params.getTemperature();
-    br_->Omega0_b = params.getOmB();
-    br_->Omega0_cdm = params.getOmC();
-    br_->Omega0_k = params.getOmK();
-    br_->Omega0_fld = 0;
-    br_->Omega0_g = params.getOmG();
-    br_->Omega0_ur = params.getOmNeutrino();
-    br_->Omega0_ncdm_tot = 0.0;
+    const double ncdm = params.getNumNCDM();
+
+    bool initBr = false;
+    if(!init_)
+        initBr = true;
+    else if(params.getH() != prevH_ || params.getTemperature() != prevT_ || params.getOmB() != prevOmB_ || params.getOmC() != prevOmC_ || params.getOmK() != prevOmK_ || params.getOmG() != prevOmG_ || params.getOmNeutrino() != prevOmNeutrino_)
+        initBr = true;
+    else if(params.getNumNCDM() != prevNCDM_)
+        initBr = true;
+    else
+    {
+        check(prevTCDM_.size() == prevNCDM_, "");
+        check(prevMCDM_.size() == prevNCDM_, "");
+
+        for(int i = 0; i < prevNCDM_; ++i)
+        {
+            if(prevTCDM_[i] != params.getNCDMParticleTemp(i))
+            {
+                initBr = true;
+                break;
+            }
+            if(prevMCDM_[i] != params.getNCDMParticleMass(i))
+            {
+                initBr = true;
+                break;
+            }
+        }
+    }
 
     //Timer t1("BACKGROUND");
     //t1.start();
 
-    const double ncdm = params.getNumNCDM();
-    check(ncdm >= 0, "invalid ncdm = " << ncdm);
-    if(ncdm != 0)
+    if(initBr)
     {
-        br_->N_ncdm = ncdm;
 
-        br_->T_ncdm = (double*) malloc(ncdm * sizeof(double));
-        br_->ksi_ncdm = (double*) malloc(ncdm * sizeof(double));
-        br_->deg_ncdm = (double*) malloc(ncdm * sizeof(double));
-        br_->M_ncdm = (double*) malloc(ncdm * sizeof(double));
-        br_->Omega0_ncdm = (double*) malloc(ncdm * sizeof(double));
-        br_->m_ncdm_in_eV = (double*) malloc(ncdm * sizeof(double));
-
-        br_->got_files = (int*) malloc(ncdm * sizeof(int));
-
-        br_->ncdm_psd_files = NULL;
-        br_->ncdm_psd_parameters = NULL;
-
-        for(int i = 0; i < ncdm; ++i)
-        {
-            br_->T_ncdm[i] = params.getNCDMParticleTemp(i);
-            br_->ksi_ncdm[i] = br_->ksi_ncdm_default;
-            br_->deg_ncdm[i] = br_->deg_ncdm_default;
-            br_->M_ncdm[i] = 0.0;
-            br_->Omega0_ncdm[i] = 0.0;
-            br_->m_ncdm_in_eV[i] = params.getNCDMParticleMass(i);
-
-            br_->got_files[i] = 0;
-        }
-
-        if(background_ncdm_init(pr_, br_) == _FAILURE_)
+        if(init_ && background_free(br_) == _FAILURE_)
         {
             std::stringstream exceptionStr;
-            exceptionStr << "CLASS: background_ncdm_init failed!" << std::endl << br_->error_message;
+            exceptionStr << "CLASS: background_free failed!" << std::endl << br_->error_message;
             exc.set(exceptionStr.str());
             throw exc;
         }
 
-        for(int i = 0; i < ncdm; ++i)
-        {
-            double rhoNCDM;
-            br_->M_ncdm[i] = br_->m_ncdm_in_eV[i] * Phys::eCharge / Phys::kB / (br_->T_ncdm[i] * br_->T_cmb);
-            if(background_ncdm_momenta(br_->q_ncdm_bg[i], br_->w_ncdm_bg[i], br_->q_size_ncdm_bg[i], br_->M_ncdm[i], br_->factor_ncdm[i], 0.0, NULL, &rhoNCDM, NULL, NULL, NULL) == _FAILURE_)
-            {
-                std::stringstream exceptionStr;
-                exceptionStr << "CLASS: background_ncdm_momenta failed!" << std::endl << br_->error_message;
-                exc.set(exceptionStr.str());
-                throw exc;
-            }
-            br_->Omega0_ncdm[i] = rhoNCDM / (br_->H0 * br_->H0);
-            br_->Omega0_ncdm_tot += br_->Omega0_ncdm[i];
-        }
-    }
+        br_->H0 = params.getH() * 1e5 / _c_;
+        br_->h = params.getH();
+        br_->T_cmb = params.getTemperature();
+        br_->Omega0_b = params.getOmB();
+        br_->Omega0_cdm = params.getOmC();
+        br_->Omega0_k = params.getOmK();
+        br_->Omega0_fld = 0;
+        br_->Omega0_g = params.getOmG();
+        br_->Omega0_ur = params.getOmNeutrino();
+        br_->Omega0_ncdm_tot = 0.0;
 
-    br_->Omega0_lambda = 1 + br_->Omega0_k - br_->Omega0_b - br_->Omega0_cdm - br_->Omega0_g - br_->Omega0_ur - br_->Omega0_ncdm_tot;
+        prevH_ = params.getH();
+        prevT_ = params.getTemperature();
+        prevOmB_ = params.getOmB();
+        prevOmC_ = params.getOmC();
+        prevOmK_ = params.getOmK();
+        prevOmG_ = params.getOmG();
+        prevOmNeutrino_ = params.getOmNeutrino();
 
-    int backgroundInitFailures = 0;
-    while(background_init(pr_, br_) == _FAILURE_)
-    {
-        ++backgroundInitFailures;
-        if(backgroundInitFailures >= 100)
-        {
-            std::stringstream exceptionStr;
-            exceptionStr << "CLASS: background_init failed!" << std::endl << br_->error_message;
-            exc.set(exceptionStr.str());
-            throw exc;
-        }
+        prevNCDM_ = params.getNumNCDM();
+        prevTCDM_.resize(prevNCDM_);
+        prevMCDM_.resize(prevNCDM_);
 
-        output_screen("background_init failed, trying again!" << std::endl);
-        std::ofstream outLog("cmb_error_log.txt", std::ios::app);
-        outLog << "background_init failed for:" << std::endl;
-        outLog << std::setprecision(30) << "h = " << br_->h << std::endl;
-        outLog << "Omega0_b = " << br_->Omega0_b << std::endl;
-        outLog << "Omega0_cdm = " << br_->Omega0_cdm << std::endl;
-        outLog << "Omega0_g = " << br_->Omega0_g << std::endl;
-        outLog << "Omega0_ur = " << br_->Omega0_ur << std::endl;
-        outLog << "tau = " << th_->tau_reio << std::endl;
-        outLog.close();
-
-        br_->h += 1e-5;
-        br_->H0 = br_->h * 1e5 / _c_;
-    }
-
-    //pr_->k_min_tau0 = kMin_ * br_->conformal_age;
-    //pr_->k_max_tau0_over_l_max = kMax_ * br_->conformal_age / lMax_;
-
-    //t1.end();
-
-    //Timer t2("THERMO");
-    //t2.start();
-
-    th_->reio_parametrization = reio_camb;
-    th_->reio_z_or_tau = reio_tau;
-    th_->tau_reio = params.getTau();
-    
-    const double yHe = params.getYHe();
-    if(yHe == 0.0)
-        th_->YHe = _BBN_;
-    else
-    {
-        check(yHe > 0 && yHe < 1, "invalid yHe = " << yHe);
-        th_->YHe = yHe;
-    }
-
-    th_->recombination = recfast;
-    
-    int thermoInitFailures = 0;
-    while(thermodynamics_init(pr_, br_, th_) == _FAILURE_)
-    {
-        ++thermoInitFailures;
-        if(thermoInitFailures >= 100)
-        {
-            std::stringstream exceptionStr;
-            exceptionStr << "CLASS: thermodynamics_init failed!" << std::endl << th_->error_message;
-            exc.set(exceptionStr.str());
-            throw exc;
-        }
-
-        output_screen("thermodynamics_init failed, trying again!" << std::endl);
-        std::ofstream outLog("cmb_error_log.txt", std::ios::app);
-        outLog << "thermodynamics_init failed for:" << std::endl;
-        outLog << std::setprecision(30) << "h = " << br_->h << std::endl;
-        outLog << "Omega0_b = " << br_->Omega0_b << std::endl;
-        outLog << "Omega0_cdm = " << br_->Omega0_cdm << std::endl;
-        outLog << "Omega0_g = " << br_->Omega0_g << std::endl;
-        outLog << "Omega0_ur = " << br_->Omega0_ur << std::endl;
-        outLog << "tau = " << th_->tau_reio << std::endl;
-        outLog.close();
-
-        background_free(br_);
-        br_->Omega0_b -= 1e-4;
-        background_init(pr_, br_);
-    }
-
-    //t2.end();
-
-    //Timer t3("PERTURBATIONS");
-    //t3.start();
-
-    if(wantMatterPs)
-    {
-        check(zMaxPk >= 0, "invalid zMaxPk = " << zMaxPk);
-        pt_->has_pk_matter = true;
-        pt_->has_density_transfers = true;
-        sp_->z_max_pk = zMaxPk;
-        //pt_->k_max_for_pk = kMax_;
-        //nl_->method = nl_halofit;
-        //pr_->halofit_dz = 0.1;
-        //pr_->halofit_min_k_nonlinear = 0.0035;
-        //pr_->halofit_sigma_precision = 0.05;
-    }
-
-    pt_->has_scalars = true;
-    pt_->has_vectors = false;
-    pt_->has_tensors = includeTensors_;
-    //pt_->has_cmb = true;
-    pt_->has_cls = true;
-    pt_->l_scalar_max = lMax_;
-    if(includeTensors_)
-        pt_->l_tensor_max = lMaxTensors_;
-
-    pt_->has_perturbations = true;
-    pt_->has_cl_cmb_temperature = wantT;
-    pt_->has_cl_cmb_polarization = wantPol;
-    pt_->has_cl_cmb_lensing_potential = wantLensing;
-    //pt_->has_source_t = wantT;
-    //pt_->has_source_p = wantPol;
-    //pt_->has_source_g = wantLensing;
-
-    
-    int perturbInitFailures = 0;
-    while(perturb_init(pr_, br_, th_, pt_) == _FAILURE_)
-    {
-        ++perturbInitFailures;
-        if(perturbInitFailures >= 100)
-        {
-            std::stringstream exceptionStr;
-            exceptionStr << "CLASS: perturb_init failed!" << std::endl << pt_->error_message;
-            exc.set(exceptionStr.str());
-            throw exc;
-        }
-
-        output_screen("perturb_init failed, trying again!" << std::endl);
-        std::ofstream outLog("cmb_error_log.txt", std::ios::app);
-        outLog << "perturb_init failed for:" << std::endl;
-        outLog << std::setprecision(30) << "h = " << br_->h << std::endl;
-        outLog << "Omega0_b = " << br_->Omega0_b << std::endl;
-        outLog << "Omega0_cdm = " << br_->Omega0_cdm << std::endl;
-        outLog << "Omega0_g = " << br_->Omega0_g << std::endl;
-        outLog << "Omega0_ur = " << br_->Omega0_ur << std::endl;
-        outLog << "tau = " << th_->tau_reio << std::endl;
-        outLog << "Message: " << pt_->error_message;
-        outLog.close();
-
-        thermodynamics_free(th_);
-        background_free(br_);
-        br_->h += 1e-5;
-        br_->H0 = br_->h * 1e5 / _c_;
-
+        check(ncdm >= 0, "invalid ncdm = " << ncdm);
         if(ncdm != 0)
         {
             br_->N_ncdm = ncdm;
@@ -385,6 +264,9 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
                 br_->m_ncdm_in_eV[i] = params.getNCDMParticleMass(i);
 
                 br_->got_files[i] = 0;
+
+                prevTCDM_[i] = params.getNCDMParticleTemp(i);
+                prevMCDM_[i] = params.getNCDMParticleMass(i);
             }
 
             if(background_ncdm_init(pr_, br_) == _FAILURE_)
@@ -411,16 +293,270 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
             }
         }
 
+        br_->Omega0_lambda = 1 + br_->Omega0_k - br_->Omega0_b - br_->Omega0_cdm - br_->Omega0_g - br_->Omega0_ur - br_->Omega0_ncdm_tot;
 
-        background_init(pr_, br_);
-        thermodynamics_init(pr_, br_, th_);
+        int backgroundInitFailures = 0;
+        while(background_init(pr_, br_) == _FAILURE_)
+        {
+            ++backgroundInitFailures;
+            if(backgroundInitFailures >= 100)
+            {
+                std::stringstream exceptionStr;
+                exceptionStr << "CLASS: background_init failed!" << std::endl << br_->error_message;
+                exc.set(exceptionStr.str());
+                throw exc;
+            }
 
+            output_screen("background_init failed, trying again!" << std::endl);
+            std::ofstream outLog("cmb_error_log.txt", std::ios::app);
+            outLog << "background_init failed for:" << std::endl;
+            outLog << std::setprecision(30) << "h = " << br_->h << std::endl;
+            outLog << "Omega0_b = " << br_->Omega0_b << std::endl;
+            outLog << "Omega0_cdm = " << br_->Omega0_cdm << std::endl;
+            outLog << "Omega0_g = " << br_->Omega0_g << std::endl;
+            outLog << "Omega0_ur = " << br_->Omega0_ur << std::endl;
+            outLog << "tau = " << th_->tau_reio << std::endl;
+            outLog.close();
+
+            br_->h += 1e-5;
+            br_->H0 = br_->h * 1e5 / _c_;
+        }
+
+        //pr_->k_min_tau0 = kMin_ * br_->conformal_age;
+        //pr_->k_max_tau0_over_l_max = kMax_ * br_->conformal_age / lMax_;
+    }
+
+    //t1.end();
+
+    bool initThermo = false;
+    if(!init_)
+        initThermo = true;
+    else if(initBr)
+        initThermo = true;
+    else if(prevTau_ != params.getTau() || prevYHe_ != params.getYHe())
+        initThermo = true;
+
+    //Timer t2("THERMO");
+    //t2.start();
+
+    if(initThermo)
+    {
+        if(init_ && thermodynamics_free(th_) == _FAILURE_)
+        {
+            std::stringstream exceptionStr;
+            exceptionStr << "CLASS: thermodynamics_free failed!" << std::endl << th_->error_message;
+            exc.set(exceptionStr.str());
+            throw exc;
+        }
+
+        th_->reio_parametrization = reio_camb;
+        th_->reio_z_or_tau = reio_tau;
+        th_->tau_reio = params.getTau();
+        prevTau_ = params.getTau();
+        prevYHe_ = params.getYHe();
+        
+        const double yHe = params.getYHe();
+        if(yHe == 0.0)
+            th_->YHe = _BBN_;
+        else
+        {
+            check(yHe > 0 && yHe < 1, "invalid yHe = " << yHe);
+            th_->YHe = yHe;
+        }
+
+        th_->recombination = recfast;
+        
+        int thermoInitFailures = 0;
+        while(thermodynamics_init(pr_, br_, th_) == _FAILURE_)
+        {
+            ++thermoInitFailures;
+            if(thermoInitFailures >= 100)
+            {
+                std::stringstream exceptionStr;
+                exceptionStr << "CLASS: thermodynamics_init failed!" << std::endl << th_->error_message;
+                exc.set(exceptionStr.str());
+                throw exc;
+            }
+
+            output_screen("thermodynamics_init failed, trying again!" << std::endl);
+            std::ofstream outLog("cmb_error_log.txt", std::ios::app);
+            outLog << "thermodynamics_init failed for:" << std::endl;
+            outLog << std::setprecision(30) << "h = " << br_->h << std::endl;
+            outLog << "Omega0_b = " << br_->Omega0_b << std::endl;
+            outLog << "Omega0_cdm = " << br_->Omega0_cdm << std::endl;
+            outLog << "Omega0_g = " << br_->Omega0_g << std::endl;
+            outLog << "Omega0_ur = " << br_->Omega0_ur << std::endl;
+            outLog << "tau = " << th_->tau_reio << std::endl;
+            outLog.close();
+
+            background_free(br_);
+            br_->Omega0_b -= 1e-4;
+            background_init(pr_, br_);
+        }
+    }
+
+    //t2.end();
+
+    bool initPt = false;
+    if(!init_)
+        initPt = true;
+    else if(initThermo)
+        initPt = true;
+    else if(prevWantT_ != wantT || prevWantP_ != wantPol || prevWantLens_ != wantLensing || prevWantMatter_ != wantMatterPs)
+        initPt = true;
+    else if(prevZMaxPk_ != zMaxPk)
+        initPt = true;
+
+    //Timer t3("PERTURBATIONS");
+    //t3.start();
+
+    if(initPt)
+    {
+        if(init_ && perturb_free(pt_) == _FAILURE_)
+        {
+            std::stringstream exceptionStr;
+            exceptionStr << "CLASS: perturb_free failed!" << std::endl << pt_->error_message;
+            exc.set(exceptionStr.str());
+            throw exc;
+        }
+
+        prevWantT_ = wantT;
+        prevWantP_ = wantPol;
+        prevWantLens_ = wantLensing;
+        prevWantMatter_ = wantMatterPs;
+        prevZMaxPk_ = zMaxPk;
+
+        if(wantMatterPs)
+        {
+            check(zMaxPk >= 0, "invalid zMaxPk = " << zMaxPk);
+            pt_->has_pk_matter = true;
+            pt_->has_density_transfers = true;
+            pt_->has_nl_corrections_based_on_delta_m = true;
+            sp_->z_max_pk = zMaxPk;
+            pt_->k_max_for_pk = 0.8 * kMax_; // seems like k_max becomes a bit larger than k_max_for_pk, don't know why. so by setting k_max_for_pk a bit smaller than kMax_ we can get k_max similar to kMax_
+            nl_->method = nl_halofit;
+            pr_->halofit_dz = 0.1;
+            pr_->halofit_min_k_nonlinear = 0.0035;
+            pr_->halofit_sigma_precision = 0.05;
+        }
+
+        pt_->has_scalars = true;
+        pt_->has_vectors = false;
+        pt_->has_tensors = includeTensors_;
+        //pt_->has_cmb = true;
+        pt_->has_cls = true;
+        pt_->l_scalar_max = lMax_;
+        if(includeTensors_)
+            pt_->l_tensor_max = lMaxTensors_;
+
+        pt_->has_perturbations = true;
+        pt_->has_cl_cmb_temperature = wantT;
+        pt_->has_cl_cmb_polarization = wantPol;
+        pt_->has_cl_cmb_lensing_potential = wantLensing;
+        //pt_->has_source_t = wantT;
+        //pt_->has_source_p = wantPol;
+        //pt_->has_source_g = wantLensing;
+
+        
+        int perturbInitFailures = 0;
+        while(perturb_init(pr_, br_, th_, pt_) == _FAILURE_)
+        {
+            ++perturbInitFailures;
+            if(perturbInitFailures >= 100)
+            {
+                std::stringstream exceptionStr;
+                exceptionStr << "CLASS: perturb_init failed!" << std::endl << pt_->error_message;
+                exc.set(exceptionStr.str());
+                throw exc;
+            }
+
+            output_screen("perturb_init failed, trying again!" << std::endl);
+            std::ofstream outLog("cmb_error_log.txt", std::ios::app);
+            outLog << "perturb_init failed for:" << std::endl;
+            outLog << std::setprecision(30) << "h = " << br_->h << std::endl;
+            outLog << "Omega0_b = " << br_->Omega0_b << std::endl;
+            outLog << "Omega0_cdm = " << br_->Omega0_cdm << std::endl;
+            outLog << "Omega0_g = " << br_->Omega0_g << std::endl;
+            outLog << "Omega0_ur = " << br_->Omega0_ur << std::endl;
+            outLog << "tau = " << th_->tau_reio << std::endl;
+            outLog << "Message: " << pt_->error_message;
+            outLog.close();
+
+            thermodynamics_free(th_);
+            background_free(br_);
+            br_->h += 1e-5;
+            br_->H0 = br_->h * 1e5 / _c_;
+
+            if(ncdm != 0)
+            {
+                br_->N_ncdm = ncdm;
+
+                br_->T_ncdm = (double*) malloc(ncdm * sizeof(double));
+                br_->ksi_ncdm = (double*) malloc(ncdm * sizeof(double));
+                br_->deg_ncdm = (double*) malloc(ncdm * sizeof(double));
+                br_->M_ncdm = (double*) malloc(ncdm * sizeof(double));
+                br_->Omega0_ncdm = (double*) malloc(ncdm * sizeof(double));
+                br_->m_ncdm_in_eV = (double*) malloc(ncdm * sizeof(double));
+
+                br_->got_files = (int*) malloc(ncdm * sizeof(int));
+
+                br_->ncdm_psd_files = NULL;
+                br_->ncdm_psd_parameters = NULL;
+
+                for(int i = 0; i < ncdm; ++i)
+                {
+                    br_->T_ncdm[i] = params.getNCDMParticleTemp(i);
+                    br_->ksi_ncdm[i] = br_->ksi_ncdm_default;
+                    br_->deg_ncdm[i] = br_->deg_ncdm_default;
+                    br_->M_ncdm[i] = 0.0;
+                    br_->Omega0_ncdm[i] = 0.0;
+                    br_->m_ncdm_in_eV[i] = params.getNCDMParticleMass(i);
+
+                    br_->got_files[i] = 0;
+                }
+
+                if(background_ncdm_init(pr_, br_) == _FAILURE_)
+                {
+                    std::stringstream exceptionStr;
+                    exceptionStr << "CLASS: background_ncdm_init failed!" << std::endl << br_->error_message;
+                    exc.set(exceptionStr.str());
+                    throw exc;
+                }
+
+                for(int i = 0; i < ncdm; ++i)
+                {
+                    double rhoNCDM;
+                    br_->M_ncdm[i] = br_->m_ncdm_in_eV[i] * Phys::eCharge / Phys::kB / (br_->T_ncdm[i] * br_->T_cmb);
+                    if(background_ncdm_momenta(br_->q_ncdm_bg[i], br_->w_ncdm_bg[i], br_->q_size_ncdm_bg[i], br_->M_ncdm[i], br_->factor_ncdm[i], 0.0, NULL, &rhoNCDM, NULL, NULL, NULL) == _FAILURE_)
+                    {
+                        std::stringstream exceptionStr;
+                        exceptionStr << "CLASS: background_ncdm_momenta failed!" << std::endl << br_->error_message;
+                        exc.set(exceptionStr.str());
+                        throw exc;
+                    }
+                    br_->Omega0_ncdm[i] = rhoNCDM / (br_->H0 * br_->H0);
+                    br_->Omega0_ncdm_tot += br_->Omega0_ncdm[i];
+                }
+            }
+
+
+            background_init(pr_, br_);
+            thermodynamics_init(pr_, br_, th_);
+        }
     }
 
     //t3.end();
 
     //Timer t4("PRIMORDIAL");
     //t4.start();
+
+    if(init_ && primordial_free(pm_) == _FAILURE_)
+    {
+        std::stringstream exceptionStr;
+        exceptionStr << "CLASS: primordial_free failed!" << std::endl << pm_->error_message;
+        exc.set(exceptionStr.str());
+        throw exc;
+    }
 
     pm_->n_s = params.getNs();
     pm_->A_s = params.getAs();
@@ -451,16 +587,15 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
             throw exc;
         }
 
-        const double decades = std::log(kMax_ / kMin_) / std::log(10.0);
+        const double decades = std::log(pt_->k_max / pt_->k_min) / std::log(10.0);
         check(decades > 0, "");
         const int nPoints = int(decades * kPerDecade_);
         check(nPoints > 0, "");
-        const double kDelta = (std::log(kMax_) - std::log(kMin_)) / nPoints;
+        const double kDelta = (std::log(pt_->k_max) - std::log(pt_->k_min)) / nPoints;
 
         for(int i = -2; i <= nPoints + 2; ++i)
         {
-            //const double k = (i == nPoints ? kMax_ : (i == 0 ? kMin_ : std::exp(std::log(kMin_) + i * kDelta)));
-            const double k = std::exp(std::log(kMin_) + i * kDelta);
+            const double k = std::exp(std::log(pt_->k_min) + i * kDelta);
             outPk << k << ' ' << params.powerSpectrum().evaluate(k);
             
             if(includeTensors_)
@@ -535,6 +670,14 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
     //Timer t5("NONLINEAR");
     //t5.start();
 
+    if(init_ && nonlinear_free(nl_) == _FAILURE_)
+    {
+        std::stringstream exceptionStr;
+        exceptionStr << "CLASS: nonlinear_free failed!" << std::endl << nl_->error_message;
+        exc.set(exceptionStr.str());
+        throw exc;
+    }
+
     if(nonlinear_init(pr_, br_, th_, pt_, pm_, nl_) == _FAILURE_)
     {
         std::stringstream exceptionStr;
@@ -545,21 +688,48 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
 
     //t5.end();
 
+    bool initTr = false;
+    if(!init_)
+        initTr = true;
+    else if(initPt)
+        initTr = true;
+    else if(nl_->method != nl_none) // TBD: this condition might be too strict
+        initTr = true;
 
     //Timer t6("TRANSFER");
     //t6.start();
-    if(transfer_init(pr_, br_, th_, pt_, nl_, tr_) == _FAILURE_)
+    if(initTr)
     {
-        std::stringstream exceptionStr;
-        exceptionStr << "CLASS: transfer_init failed!" << std::endl << tr_->error_message;
-        exc.set(exceptionStr.str());
-        throw exc;
+        if(init_ && transfer_free(tr_) == _FAILURE_)
+        {
+            std::stringstream exceptionStr;
+            exceptionStr << "CLASS: transfer_free failed!" << std::endl << tr_->error_message;
+            exc.set(exceptionStr.str());
+            throw exc;
+        }
+
+        if(transfer_init(pr_, br_, th_, pt_, nl_, tr_) == _FAILURE_)
+        {
+            std::stringstream exceptionStr;
+            exceptionStr << "CLASS: transfer_init failed!" << std::endl << tr_->error_message;
+            exc.set(exceptionStr.str());
+            throw exc;
+        }
     }
     //t6.end();
 
 
     //Timer t7("SPECTRA");
     //t7.start();
+
+    if(init_ && spectra_free(sp_) == _FAILURE_)
+    {
+        std::stringstream exceptionStr;
+        exceptionStr << "CLASS: spectra_free failed!" << std::endl << sp_->error_message;
+        exc.set(exceptionStr.str());
+        throw exc;
+    }
+
     sp_->has_tt = wantT;
     sp_->has_ee = wantPol;
     sp_->has_te = (wantT && wantPol);
@@ -584,6 +754,15 @@ CMB::initialize(const CosmologicalParams& params, bool wantT, bool wantPol, bool
 
     if(wantLensing)
     {
+        //TBD: may be able to skip lensing init sometimes, need to check nl_
+        if(init_ && lensing_free(le_) == _FAILURE_)
+        {
+            std::stringstream exceptionStr;
+            exceptionStr << "CLASS: lensing_free failed!" << std::endl << le_->error_message;
+            exc.set(exceptionStr.str());
+            throw exc;
+        }
+
         le_->has_lensed_cls = true;
         le_->has_tt = wantT;
         le_->has_ee = wantPol;
@@ -793,14 +972,6 @@ CMB::clean()
             exc.set(exceptionStr.str());
             throw exc;
         }
-
-        if(nonlinear_free(nl_) == _FAILURE_)
-        {
-            std::stringstream exceptionStr;
-            exceptionStr << "CLASS: nonlinear_free failed!" << std::endl << nl_->error_message;
-            exc.set(exceptionStr.str());
-            throw exc;
-        }
     }
 
     if(spectra_free(sp_) == _FAILURE_)
@@ -815,6 +986,14 @@ CMB::clean()
     {
         std::stringstream exceptionStr;
         exceptionStr << "CLASS: transfer_free failed!" << std::endl << tr_->error_message;
+        exc.set(exceptionStr.str());
+        throw exc;
+    }
+
+    if(nonlinear_free(nl_) == _FAILURE_)
+    {
+        std::stringstream exceptionStr;
+        exceptionStr << "CLASS: nonlinear_free failed!" << std::endl << nl_->error_message;
         exc.set(exceptionStr.str());
         throw exc;
     }

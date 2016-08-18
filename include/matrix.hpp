@@ -163,7 +163,7 @@ public:
     /// \return A reference to self after multiplication.
     Matrix<DataType>& operator*=(const Matrix<DataType>& other) { multiply(other); return *this; }
 
-    /// Multiplication operator. It is recommended to use the multiplyMatrices static function instead sincethe multiplication operator returns the result by value which is not efficient.
+    /// Multiplication operator. It is recommended to use the multiplyMatrices static function instead since the multiplication operator returns the result by value which is not efficient.
     /// \param other The other matrix (rhs).
     /// \return A matrix that is the product of this and other.
     Matrix<DataType> operator*(const Matrix<DataType>& other) const { Matrix<DataType> res; multiplyMatrices(*this, other, &res); return res; }
