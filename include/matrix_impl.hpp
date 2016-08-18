@@ -352,6 +352,14 @@ Matrix<T>::multiplyMatrices(const Matrix<DataType>& a, const Matrix<DataType>& b
 
 #ifdef COSMO_LAPACK
 
+template<>
+void
+Matrix<double>::multiplyMatrices(const Matrix<double>& a, const Matrix<double>& b, Matrix<double>* res);
+
+#endif
+
+#ifdef COSMO_LAPACK
+
 template<typename T>
 int
 Matrix<T>::luFactorize(std::vector<int>* pivot)

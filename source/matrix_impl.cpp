@@ -7,11 +7,59 @@ namespace Math
 
 extern "C"
 {
+    // maltiplication
+    int dgemm_(char *transa, char *transb, int *m, int *n, int *k, double *alpha, double *A, int *lda, double *B, int *ldb, double *beta, double *C, int *ldc);
+
     // LU Factorization
     void dgetrf_(int *m, int *n, double *a, int *lda, int *piv, int *info);
 
     // invert from LU factorization
     void dgetri_(int *n, double *a, int *lda, int *piv, double *work, int *lwork, int *info);
+}
+
+template<>
+void
+Matrix<double>::multiplyMatrices(const Matrix<double>& a, const Matrix<double>& b, Matrix<double>* res)
+{
+    check(a.cols_ == b.rows_, "invalid multiplication, a must have the same number of columns as b rows");
+
+    check(!res->isSymmetric(), "the product of two matrices is not necessarily symmetric, even if both are");
+
+    res->resize(a.rows_, b.cols_);
+
+    Matrix<double> &c = *res;
+
+    char transa = 'n';
+    char transb = 'n';
+    int m = a.rows_;
+    int n = b.cols_;
+    int k = a.cols_;
+    double alpha = 1;
+    double beta = 0;
+    int lda = a.rows_;
+    int ldb = b.rows_;
+    int ldc = c.rows_;
+
+    std::vector<double> aVec(a.rows_ * a.cols_), bVec(b.rows_ * b.cols_), cVec(c.rows_ * c.cols_);
+    for(int i = 0; i < a.rows_; ++i)
+    {
+        for(int j = 0; j < a.cols_; ++j)
+            aVec[j * a.rows_ + i] = a(i, j);
+    }
+    for(int i = 0; i < b.rows_; ++i)
+    {
+        for(int j = 0; j < b.cols_; ++j)
+            bVec[j * b.rows_ + i] = b(i, j);
+    }
+
+    double *aPt = &(aVec[0]), *bPt = &(bVec[0]);
+    const int r = dgemm_(&transa, &transb, &m, &n, &k, &alpha, aPt, &lda, bPt, &ldb, &beta, &(cVec[0]), &ldc);
+
+    for(int i = 0; i < c.rows_; ++i)
+    {
+        for(int j = 0; j < c.cols_; ++j)
+            c(i, j) = cVec[j * c.rows_ + i];
+    }
 }
 
 template<>
