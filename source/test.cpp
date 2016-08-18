@@ -40,6 +40,8 @@
 #include <test_fast_approximator_error.hpp>
 #include <test_mcmc_planck_fast.hpp>
 #include <test_multinest_planck_fast.hpp>
+#include <test_modecode.hpp>
+#include <test_mn_modecode.hpp>
 
 TestFramework* createTest(const std::string& name)
 {
@@ -153,6 +155,18 @@ TestFramework* createTest(const std::string& name)
 #endif
 #endif
 #endif
+#ifdef COSMO_MODECODE
+    else if(name == "modecode")
+        test = new TestModeCode;
+#ifdef COSMO_PLANCK
+#ifdef COSMO_CLASS
+#ifdef COSMO_MULTINEST
+    else if(name == "mn_modecode")
+        test = new TestMNModeCode;
+#endif
+#endif
+#endif
+#endif
 
     return test;
 }
@@ -228,6 +242,9 @@ int main(int argc, char *argv[])
         fastTests.insert("fast_approximator");
         fastTests.insert("fast_approximator_error");
 #endif
+#ifdef COSMO_MODECODE
+        fastTests.insert("modecode");
+#endif
 
 #ifdef COSMO_PLANCK
 #ifdef COSMO_CLASS
@@ -264,6 +281,16 @@ int main(int argc, char *argv[])
 
 #ifdef COSMO_HEALPIX
         slowTests.insert("mask_apodizer");
+#endif
+
+#ifdef COSMO_MODECODE
+#ifdef COSMO_PLANCK
+#ifdef COSMO_CLASS
+#ifdef COSMO_MULTINEST
+        slowTests.insert("mn_modecode");
+#endif
+#endif
+#endif
 #endif
 
         if(argument == "all")

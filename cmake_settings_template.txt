@@ -46,6 +46,9 @@ set(PLANCK_2015 ON)
 #wmap9
 set(WMAP9_DIR "/Users/aslanyan/programs/wmap_likelihood_v5")
 
+#modecode
+set(MODECODE_DIR "/Users/aslanyan/programs/modecode/camb/clean_modecode")
+
 #minuit
 set(MINUIT_DIR "/usr/local")
 
