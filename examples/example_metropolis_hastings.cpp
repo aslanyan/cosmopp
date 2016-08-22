@@ -1,7 +1,3 @@
-#ifdef COSMO_MPI
-#include <mpi.h>
-#endif
-
 #include <string>
 #include <fstream>
 
@@ -9,6 +5,7 @@
 #include <exception_handler.hpp>
 #include <mcmc.hpp>
 #include <markov_chain.hpp>
+#include <cosmo_mpi.hpp>
 
 // Simple two dimensional Gaussian likelihood function
 class ExampleMHLikelihood : public Math::LikelihoodFunction
@@ -40,17 +37,7 @@ int main(int argc, char *argv[])
         using namespace Math;
 
         // Check if this is the master MPI process
-        bool isMaster = true;
-#ifdef COSMO_MPI
-        int hasMpiInitialized;
-        MPI_Initialized(&hasMpiInitialized);
-        if(!hasMpiInitialized)
-            MPI_Init(NULL, NULL);
-        int rank;
-        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-        if(rank != 0)
-            isMaster = false;
-#endif
+        const bool isMaster = (CosmoMPI::create().processId() == 0);
 
         // Create the likelihood
         ExampleMHLikelihood like;
@@ -113,13 +100,6 @@ int main(int argc, char *argv[])
             delete py;
             delete pxy;
         }
-        // Finalize MPI if not done so yet
-#ifdef COSMO_MPI
-        int hasMpiFinalized;
-        MPI_Finalized(&hasMpiFinalized);
-        if(!hasMpiFinalized)
-            MPI_Finalize();
-#endif
     } catch (std::exception& e)
     {
         output_screen("EXCEPTION CAUGHT!!! " << std::endl << e.what() << std::endl);
