@@ -311,6 +311,12 @@ if(MPI_FOUND)
 	target_link_libraries(test_parser ${MPI_CXX_LIBRARIES})
 endif(MPI_FOUND)
 
+add_executable(expressions_test expressions_test.cpp)
+target_link_libraries(expressions_test cosmopp)
+if(MPI_FOUND)
+	target_link_libraries(expressions_test ${MPI_CXX_LIBRARIES})
+endif(MPI_FOUND)
+
 add_test(NAME parser COMMAND test_parser test_files/parser_test.txt WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
 
 add_test(NAME unit_conversions COMMAND cosmo_test unit_conversions WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
