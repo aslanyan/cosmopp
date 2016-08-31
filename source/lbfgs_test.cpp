@@ -87,7 +87,9 @@ int main(int argc, char *argv[])
         StandardException exc;
         using namespace Math;
 
-        output_screen("Input the dimensionality of the problem or it shall be 1 by default." << std::endl);
+        const bool isMaster = (CosmoMPI::create().processId() == 0);
+        if(isMaster)
+            output_screen("Input the dimensionality of the problem or it shall be 1 by default." << std::endl);
 
         int n = 1;
         if(argc > 1)
@@ -96,7 +98,7 @@ int main(int argc, char *argv[])
             str << argv[1];
             str >> n;
 
-            if(n < 1)
+            if(n < 1 && isMaster)
             {
                 output_screen("Invalid argument " << argv[1] << " for dimension. Setting it to 1." << std::endl);
                 n = 1;
@@ -109,20 +111,8 @@ int main(int argc, char *argv[])
         const double epsilon = 1e-3;
         const double gradTol = 1e-3 * n * CosmoMPI::create().numProcesses();
 
-        //LBFGS lbfgs(n, f, g, 10); 
-        //lbfgs.minimize(&x, epsilon, gradTol, 1000000);
-
         LBFGS lbfgs(n, f, g, x, 10);
         lbfgs.minimize(&x, epsilon, gradTol, 1000000);
-
-        /*
-        output_screen("LBFGS is done! Minimum is (found then expected):" << std::endl);
-        const int processId = CosmoMPI::create().processId();
-        for(int i = 0; i < n; ++i)
-        {
-            output_screen('\t' << x[i] << '\t' << i + processId * n << std::endl);
-        }
-        */
     } catch (std::exception& e)
     {
         output_screen("EXCEPTION CAUGHT!!! " << std::endl << e.what() << std::endl);

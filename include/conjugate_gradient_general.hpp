@@ -52,6 +52,9 @@ public:
 };
 */
 
+/// A general Non-linear conjugate gradient optimizer.
+
+/// This class can be used to optimize functions (including nonlinear) of possibly very large dimensions using the nonlinear conjugate gradient method.
 template <typename LargeVector, typename LargeVectorFactory, typename Function>
 class CG_General
 {
@@ -63,23 +66,47 @@ private:
         }
     };
 public:
+    /// Choice of the nonlinear method.
     enum Method {FLETCHER_REEVES = 0, POLAK_RIBIERE, HESTENES_STIEFEL, DAI_YUAN, METHOD_MAX };
+
+    /// Constructor.
+    /// \param factory A factory for LargeVector. This needs to be of type that support a function "LargeVector* giveMeOne()" which will create a new LargeVector and return the pointer.
+    /// \param f The function to be optimized. This needs to be of type that supports functions "void set(const LargeVector& x)", "double value()", and "void derivative(LargeVector *res)". You first set a point x with set, then you can get the function value and the derivative using value and derivative, respectively.
+    /// \param starting The starting point.
     CG_General(LargeVectorFactory *factory, Function *f, const LargeVector& starting);
+
+    /// Destructor.
     ~CG_General(){}
 
+    /// Set a new starting point.
+    /// This function resets the optimizer completely and sets a new starting point. Can run minimize again after this.
+    /// \param starting The new starting point.
     void setStarting(const LargeVector& starting);
 
-    // class Callback needs to have
-    // void operator()(int iter, double f, double gradNorm, const LargeVector& x, const LargeVector& grad);
-    template<typename CallBack>
-    double minimize(LargeVector *res, double epsilon = 1e-3, double gNormTol = 1e-5, int maxIter = 1000000, Method m = FLETCHER_REEVES, CallBack* callback = NULL);
-
+    /// Function for minimization (the main function of this class) without callback.
+    /// \param res A pointer to LargeVector where the resulting minimum point will be stored.
+    /// \param epsilon Threshold for optimization. Will stop if two successive iterations change the function value by less than epsilon.
+    /// \param gNormTol Threshold for the norm of the gradient. The minimizer will stop if the gradient norm at the given iteration is less than gNormTol.
+    /// \param maxIter Maximum number of iterations. The optimizer will stop if it reaches this maximum number, regardless of convergence.
+    /// \param m The nonlinear method to use.
     double minimize(LargeVector *res, double epsilon = 1e-3, double gNormTol = 1e-5, int maxIter = 1000000, Method m = FLETCHER_REEVES)
     {
         DummyCallBack* cb = NULL; // this is a hack
         minimize(res, epsilon, gNormTol, maxIter, m, cb);
     }
 
+    /// Function for minimization (the main function of this class) WITH callback.
+    /// \param res A pointer to LargeVector where the resulting minimum point will be stored.
+    /// \param epsilon Threshold for optimization. Will stop if two successive iterations change the function value by less than epsilon.
+    /// \param gNormTol Threshold for the norm of the gradient. The minimizer will stop if the gradient norm at the given iteration is less than gNormTol.
+    /// \param maxIter Maximum number of iterations. The optimizer will stop if it reaches this maximum number, regardless of convergence.
+    /// \param m The nonlinear method to use.
+    /// \param callback A pointer to a callback object. This is a template type and needs to support "void operator()(int iter, double f, double gradNorm, const LargeVector& x, const LargeVector& grad)". This operator will be called at each iteration. If callback = NULL then no callback will be used.
+    template<typename CallBack>
+    double minimize(LargeVector *res, double epsilon, double gNormTol, int maxIter, Method m, CallBack* callback);
+
+    /// Get the gradient at current iteration (can be used after minimization to get the gradient at minimum, for example).
+    /// \param g A LargeVector pointer where the result will be returned.
     void getGradient(LargeVector *g) { g->copy(*g_); }
 
 private:

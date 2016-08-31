@@ -122,9 +122,16 @@ private:
     void (*cb_)(int, double, double, const std::vector<double>&, const std::vector<double>&, const std::vector<double>&);
 };
 
+/// An L-BFGS optimizer. This is a simpler version which would be used for many applications. For a more general interface use LBFGS_GENERAL.
 class LBFGS
 {
 public:
+    /// Constructor.
+    /// \param n The number of dimensions.
+    /// \param f The function to minimize.
+    /// \param grad The gradient of the function.
+    /// \param starting The starting point.
+    /// \param m The number of previous iterations to store for L-BFGS.
     LBFGS(int n, const RealFunctionMultiDim& f, const RealFunctionMultiToMulti& grad, const std::vector<double>& starting, int m = 10) : factory_(n), f_(f, grad)
     {
         s_ = factory_.giveMeOne();
@@ -132,12 +139,20 @@ public:
         lbfgs_.reset(new LBFGS_General<BasicLargeVector, BasicLargeVectorFactory, BasicLBFGSFunc>(&factory_, &f_, *s_, m)); 
     }
 
+    /// Set a new starting point. This will completely reset the minimizer so you can run minimize again from the new starting point.
+    /// \param starting The new starting point.
     void setStarting(const std::vector<double>& starting)
     {
         s_->contents() = starting;
         lbfgs_->setStarting(*s_);
     }
 
+    /// Function for minimization (the main function of this class).
+    /// \param res A pointer to a vector where the result will be stored.
+    /// \param epsilon Threshold for optimization. Will stop if two successive iterations change the function value by less than epsilon.
+    /// \param gNormTol Threshold for the norm of the gradient. The minimizer will stop if the gradient norm at the given iteration is less than gNormTol.
+    /// \param maxIter Maximum number of iterations. The optimizer will stop if it reaches this maximum number, regardless of convergence.
+    /// \param callback A callback function to be called at each iteration. If NULL (default) then no callback will be used.
     double minimize(std::vector<double> *res, double epsilon = 1e-3, double gNormTol = 1e-5, int maxIter = 1000000, void (*callback)(int, double, double, const std::vector<double>&, const std::vector<double>&, const std::vector<double>&) = NULL)
     {
         cb_.set(callback);
