@@ -2,6 +2,7 @@
 #define COSMO_PP_EXPRESSIONS_HPP
 
 #include <memory>
+#include <vector>
 #include <cmath>
 
 #include <macros.hpp>
@@ -28,12 +29,31 @@ public:
     virtual VectorPtr derivative(VectorPtr other) = 0;
 };
 
+class VectorDevice
+{
+public:
+    virtual ~VectorDevice() {}
+
+    virtual int create() = 0;
+    virtual void remove(int v) = 0;
+
+    virtual void copy(int from, int to) = 0;
+    virtual void setToZero(int v) = 0;
+    virtual void multiplyBy(int v, double c) = 0;
+    virtual void add(int a, int b) = 0; // add b to a
+    virtual void swap(int a, int b) = 0;
+    virtual void elementwiseMultiply(int a, int b) = 0; // a * b stored in a
+    virtual double sum(int v) = 0;
+    virtual double dotProduct(int a, int b) = 0;
+};
+
 class Vector
 {
 public:
     virtual ~Vector() {}
 
-    virtual double sum() = 0;
+    virtual VectorDevice& device() = 0;
+    virtual int id() = 0;
 
     virtual VectorPtr derivative(ScalarPtr other) = 0;
     virtual Vector2VectorPtr derivative(VectorPtr other) = 0;
@@ -68,7 +88,10 @@ class InVector
 public:
     virtual ~InVector() {}
 
-    virtual void setInputVector(VectorPtr v) = 0;
+    void setInputVector(VectorPtr v) { inV_ = v; }
+
+protected:
+    VectorPtr inV_;
 };
 
 class InVectorVector
@@ -76,17 +99,18 @@ class InVectorVector
 public:
     virtual ~InVectorVector() {}
 
-    virtual void setInputVector1(VectorPtr v) = 0;
-    virtual void setInputVector2(VectorPtr v) = 0;
+    void setInputVector1(VectorPtr v) { inV1_ = v; }
+    void setInputVector2(VectorPtr v) { inV2_ = v; }
+
+protected:
+    VectorPtr inV1_;
+    VectorPtr inV2_;
 };
 
-class InScalarVector
+class InScalarVector : public InScalar, public InVector
 {
 public:
     virtual ~InScalarVector() {}
-
-    virtual void setInputScalar(ScalarPtr n) = 0;
-    virtual void setInputVector(VectorPtr v) = 0;
 };
 
 class Scalar2Scalar : public Scalar, public InScalar
@@ -115,36 +139,48 @@ class Vector2Scalar : public Scalar, public InVector
 {
 public:
     virtual ~Vector2Scalar() {}
+
+    // Scalar functions
+    virtual double value() = 0;
+    virtual ScalarPtr derivative(ScalarPtr other) = 0;
+    virtual VectorPtr derivative(VectorPtr other) = 0;
 };
 
 class Vector2Vector : public Vector, public InVector
 {
 public:
     virtual ~Vector2Vector() {}
+
+    // Vector functions
+    virtual VectorDevice& device() = 0;
+    virtual int id() = 0;
+    virtual VectorPtr derivative(ScalarPtr other) = 0;
+    virtual Vector2VectorPtr derivative(VectorPtr other) = 0;
 };
 
 class VectorVector2Vector : public Vector, public InVectorVector
 {
 public:
     virtual ~VectorVector2Vector() {}
+
+    // Vector functions
+    virtual VectorDevice& device() = 0;
+    virtual int id() = 0;
+    virtual VectorPtr derivative(ScalarPtr other) = 0;
+    virtual Vector2VectorPtr derivative(VectorPtr other) = 0;
 };
 
-class ZeroVector : public Vector
+class ScalarVector2Vector : public Vector, public InScalarVector
 {
 public:
-    ZeroVector() {}
-    virtual ~ZeroVector() {}
+    virtual ~ScalarVector2Vector() {}
 
-    double sum() { return 0; }
-
-    virtual VectorPtr derivative(ScalarPtr other) { return VectorPtr(new ZeroVector); }
-    virtual Vector2VectorPtr derivative(VectorPtr other)
-    {
-        //TBD
-        return Vector2VectorPtr();
-    }
+    // Vector functions
+    virtual VectorDevice& device() = 0;
+    virtual int id() = 0;
+    virtual VectorPtr derivative(ScalarPtr other) = 0;
+    virtual Vector2VectorPtr derivative(VectorPtr other) = 0;
 };
-
 
 class JustScalar : public Scalar
 {
@@ -155,11 +191,88 @@ public:
     void set(double val) { val_ = val; }
     virtual double value() { return val_; }
     virtual ScalarPtr derivative(ScalarPtr other) { return ScalarPtr(new JustScalar(other.get() == this ? 1.0 : 0.0)); }
-    virtual VectorPtr derivative(VectorPtr other) { return VectorPtr(new ZeroVector()); }
+    virtual VectorPtr derivative(VectorPtr other);
 
 private:
     double val_;
 };
+
+class JustVector : Vector
+{
+public:
+    JustVector(VectorDevice& d) : d_(d), v_(d.create()) {}
+    virtual ~JustVector() { d_.remove(v_); }
+
+    virtual VectorDevice& device() { return d_; }
+    virtual int id() { return v_; }
+
+    virtual VectorPtr derivative(ScalarPtr other) { return ScalarPtr(new JustScalar(0)); }
+    virtual Vector2VectorPtr derivative(VectorPtr other);
+    
+private:
+    VectorDevice& d_;
+    const int v_;
+};
+
+VectorPtr
+JustScalar::derivative(VectorPtr other);
+{
+    VectorDevice& d = other->device();
+    return VectorPtr<new JustVector(d);
+}
+
+class IdentityMatrix : public Vector2Vector
+{
+public:
+    IdentityMatrix(VectorDevice& d) : d_(d) {}
+    virtual ~IdentityMatrix() {}
+
+    // Vector functions
+    virtual VectorDevice& device() { return d_; }
+    virtual int id() { return inV_->id(); }
+    virtual VectorPtr derivative(ScalarPtr other) { return inV->derivative(other); }
+    virtual Vector2VectorPtr derivative(VectorPtr other)
+    {
+        if(other.get() == this)
+            return Vector2VectorPtr(new IdentityMatrix(d_));
+
+        return inV_->derivative(other);
+    }
+    
+private:
+    VectorDevice& d_;
+};
+
+class ZeroMatrix : public Vector2Vector
+{
+public:
+    ZeroMatrix(VectorDevice& d) : d_(d), v_(d.create()) {}
+    virtual ~ZeroMatrix() { d_.remove(v_); }
+
+    // Vector functions
+    virtual VectorDevice& device() { return d_; }
+    virtual int id() { return v_; }
+    virtual VectorPtr derivative(ScalarPtr other) { return ScalarPtr(new JustScalar(0)); }
+    virtual Vector2VectorPtr derivative(VectorPtr other)
+    {
+        if(other.get() == this)
+            return Vector2VectorPtr(new IdentityMatrix(d_));
+
+        return Vector2VectorPtr(new ZeroMatrix(d_));
+    }
+    
+private:
+    VectorDevice& d_;
+    int v_;
+};
+
+Vector2VectorPtr JustVector::derivative(VectorPtr other)
+{
+    if(other.get() == this)
+        return Vector2VectorPtr(new IdentityMatrix(d_));
+    return Vector2VectorPtr(new ZeroMatrix(d_));
+}
+
 
 class ScalarAdd : public ScalarScalar2Scalar
 {
@@ -372,6 +485,106 @@ public:
 
 inline
 ScalarPtr exp(ScalarPtr x) { return ScalarPtr(new ScalarExp(x)); }
+
+class BasicVectorDevice : public VectorDevice
+{
+public:
+    BasicVectorDevice(int n) : n_(n) { check(n_ > 0, ""); }
+    virtual ~BasicVectorDevice() {}
+
+    virtual int create()
+    {
+        data_.push_back(std::vector<double>(n_));
+        return data_.size() - 1;
+    }
+
+    virtual void remove(int v)
+    {
+        checkElement(v);
+        std::vector<double>().swap(data_[v]); // clear with reallocation
+    }
+
+    virtual void copy(int from, int to)
+    {
+        checkElement(from);
+        checkElement(to);
+        data_[to] = data_[from];
+    }
+
+    virtual void setToZero(int v)
+    {
+        checkElement(v);
+        for(double& x : data_[v])
+            x = 0;
+    }
+
+    virtual void multiplyBy(int v, double c)
+    {
+        checkElement(v);
+        for(double& x : data_[v])
+            x *= c;
+    }
+
+    virtual void add(int a, int b) // add b to a
+    {
+        checkElement(a);
+        checkElement(b);
+
+        for(int i = 0; i < n_; ++i)
+            a[i] += b[i];
+    }
+
+    virtual void swap(int a, int b)
+    {
+        checkElement(a);
+        checkElement(b);
+        data_[a].swap(data_[b]);
+    }
+
+    virtual void elementwiseMultiply(int a, int b) // a * b stored in a
+    {
+        checkElement(a);
+        checkElement(b);
+
+        for(int i = 0; i < n_; ++i)
+            a[i] *= b[i];
+    }
+
+    virtual double sum(int v)
+    {
+        checkElement(v);
+        double s = 0;
+        for(double x : data_[v])
+            s += x;
+
+        // do MPI
+        
+        return s;
+    }
+
+    virtual double dotProduct(int a, int b)
+    {
+        checkElement(a);
+        checkElement(b);
+        double s = 0;
+        for(int i = 0; i < n_; ++i)
+            s += data_[a][i] * data_[b][i];
+
+        // do MPI
+
+        return s;
+    }
+
+private:
+    void checkElement(int i)
+    {
+        check(i >= 0 && i < data_.size() && data_[i].size() == n_, "");
+    }
+
+private:
+    const int n_;
+    std::vector<std::vector<double>> data_;
+};
 
 } // namespace Expressions
 
