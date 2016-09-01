@@ -141,6 +141,46 @@ Parser::getStr(const std::string& s, const std::string& def)
     return getStr(s);
 }
 
+bool
+Parser::getBool(const std::string& s) const
+{
+    auto it = find(s);
+    StandardException exc;
+    if(it == cend())
+    {
+        std::stringstream exceptionStr;
+        exceptionStr << "The key " << s << " is not found!";
+        exc.set(exceptionStr.str());
+        throw exc;
+    }
+    const std::string& r = it->second;
+    if(r == "yes" || r == "YES" || r == "Yes" || r == "y" || r == "Y" || r == "true" || r == "TRUE" || r == "True" || r == "t" || r == "T" || r == ".true." || r == ".True." || r == ".TRUE." || r == "1")
+        return true;
+    if(r == "no" || r == "NO" || r == "No" || r == "n" || r == "N" || r == "false" || r == "FALSE" || r == "False" || r == "f" || r == "F" || r == ".false." || r == ".False." || r == ".FALSE." || r == "0")
+        return false;
+    
+    std::stringstream exceptionStr;
+    exceptionStr << "Cannot interpret boolean value of \"" << r << "\" of the key \"" << s << "\"!";
+    exc.set(exceptionStr.str());
+    throw exc;
+}
+
+bool
+Parser::getBool(const std::string& s, bool def)
+{
+    if(find(s) == end())
+    {
+        (*this)[s] = (def ? "true" : "false");
+        return def;
+    }
+    try {
+        return getBool(s);
+    } catch (std::exception& e)
+    {
+        return def;
+    }
+}
+
 void
 Parser::dump() const
 {

@@ -1,4 +1,5 @@
 #include <macros.hpp>
+#include <exception_handler.hpp>
 #include <parser.hpp>
 
 int main(int argc, char *argv[])
@@ -21,8 +22,11 @@ int main(int argc, char *argv[])
         double d = p.getDouble("d");
         output_screen("d = " << d << std::endl);
 
-        int x= p.getInt("x", 15);
+        int x = p.getInt("x", 15);
         output_screen("x = " << x << std::endl);
+
+        bool b = p.getBool("b");
+        output_screen("b = " << b << std::endl);
     } catch (std::exception& e)
     {
         output_screen("EXCEPTION CAUGHT!!! " << std::endl << e.what() << std::endl);
