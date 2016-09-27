@@ -1268,6 +1268,205 @@ CMB::getLListLens(std::vector<double>& list) const
         list.push_back((le_->l)[i]);
 }
 
+double
+CMB::getrsdrag() const
+{
+    check(init_, "need to initialize first");
+    return th_->rs_d;   
+} 
+
+double
+CMB::getAngularDistance(double z)
+{
+    double tau;
+    int last_index;
+    double* pvecback;
+
+    pvecback = (double*) calloc(br_->bg_size, sizeof(double));
+    background_tau_of_z(br_, z, &tau);
+    background_at_tau(br_, tau, br_->long_info, br_->inter_normal, &last_index, pvecback);
+
+    const double res = pvecback[br_->index_bg_ang_distance];
+    free(pvecback);
+    return res;
+}
+
+double
+CMB::getHubble(double z)
+{
+    double tau;
+    int last_index;
+    double* pvecback;
+
+    pvecback = (double*) calloc(br_->bg_size, sizeof(double));
+    background_tau_of_z(br_, z, &tau);
+    background_at_tau(br_, tau, br_->long_info, br_->inter_normal, &last_index, pvecback);
+    
+    const double res = pvecback[br_->index_bg_H];
+    free(pvecback);
+    return res;
+}
+
+std::vector<double>
+CMB::z_of_r(std::vector<double>& z_array)
+{
+    double tau = 0.0;
+    int last_index = 0;
+    double* pvecback;
+    std::vector<double> r(z_array.size(), 0);
+    std::vector<double> dzdr(z_array.size(), 0);
+    std::vector<double> out(2*z_array.size(), 0);
+
+    pvecback = (double*) calloc(br_->bg_size, sizeof(double));
+
+    for(int i = 0; i < z_array.size(); ++i)
+    {
+        background_tau_of_z(br_, z_array[i], &tau);
+
+        background_at_tau(br_, tau, br_->long_info, br_->inter_normal, &last_index, pvecback);
+
+        // store r
+        r[i] = pvecback[br_->index_bg_conf_distance];
+        // store dz/dr = H
+        dzdr[i] = pvecback[br_->index_bg_H];
+    }
+
+    for(int i = 0; i < z_array.size(); ++i)
+    {
+        out[i] = r[i];
+        out[i+z_array.size()] = dzdr[i];
+    }
+
+    free(pvecback);
+    return out;
+}
+
+void
+CMB::getMatterPsNL(double z, Math::TableFunction<double, double>* ps)
+{
+    StandardException exc;
+    check(init_, "need to initialize first");
+    check(pt_->has_pk_matter, "matter ps not requested");
+    check(z >= 0 && z <= sp_->z_max_pk, "invalid z = " << z);
+    const int kSize = sp_->ln_k_size;
+    check(kSize > 0, "");
+    check(nl_->method == nl_halofit, "nonlinear corrections from halofit not requested");
+
+    // To be done better
+    check(kSize < 10000, "");
+    double outTot[100000];
+    double outIc[100000];
+    double outTotNL[100000];
+    double tau;
+    double k_nl;
+
+    if(spectra_pk_at_z(br_, sp_, linear, z, outTot, outIc) == _FAILURE_)
+    {
+        std::stringstream exceptionStr;
+        exceptionStr << "CLASS: spectra_pk_at_z failed!" << std::endl << sp_->error_message;
+        exc.set(exceptionStr.str());
+        throw exc;
+    }
+
+    if(background_tau_of_z(br_, z, &tau) == _FAILURE_)
+    {
+        std::stringstream exceptionStr;
+        exceptionStr << "CLASS: background_tau_of_z failed!" << std::endl << br_->error_message;
+        exc.set(exceptionStr.str());
+        throw exc;
+    }
+
+    if(nonlinear_halofit(pr_, br_, pm_, nl_, tau, outTot, outTotNL, &k_nl) == _FAILURE_)
+    {
+        std::stringstream exceptionStr;
+        exceptionStr << "CLASS: nonlinear_halofit failed!" << std::endl << nl_->error_message;
+        exc.set(exceptionStr.str());
+        throw exc;
+    }
+
+    ps->clear();
+
+    for(int i = 0; i < kSize; ++i)
+    {
+        const double k = std::exp(sp_->ln_k[i]);
+        (*ps)[k] = outTotNL[i];
+    }
+}
+
+void
+CMB::getMatterPsNL2(double z, Math::TableFunction<double, double>* ps)
+{
+    StandardException exc;
+    check(init_, "need to initialize first");
+    check(pt_->has_pk_matter, "matter ps not requested");
+    check(z >= 0 && z <= sp_->z_max_pk, "invalid z = " << z);
+    const int kSize = sp_->ln_k_size;
+    check(kSize > 0, "");
+
+    // To be done better
+    check(kSize < 10000, "");
+    double outTot[100000];
+
+    if(spectra_pk_nl_at_z(br_, sp_, linear, z, outTot) == _FAILURE_)
+    {
+        std::stringstream exceptionStr;
+        exceptionStr << "CLASS: spectra_pk_nl_at_z failed!" << std::endl << sp_->error_message;
+        exc.set(exceptionStr.str());
+        throw exc;
+    }
+
+    ps->clear();
+
+    for(int i = 0; i < kSize; ++i)
+    {
+        const double k = std::exp(sp_->ln_k[i]);
+        (*ps)[k] = outTot[i];
+    }
+}
+
+double
+CMB::getPkNLatk(double k, double z)
+{
+    StandardException exc;
+    check(init_, "need to initialize first");
+    check(pt_->has_pk_matter, "matter ps not requested");
+    check(z >= 0 && z <= sp_->z_max_pk, "invalid z = " << z);
+
+    double pk;
+
+    if(spectra_pk_nl_at_k_and_z(br_, pm_, sp_, k, z, &pk) == _FAILURE_)
+    {
+        std::stringstream exceptionStr;
+        exceptionStr << "CLASS: spectra_pk_nl_at_k_and_z failed!" << std::endl << sp_->error_message;
+        exc.set(exceptionStr.str());
+        throw exc;
+    }
+
+    return pk;
+}
+
+double
+CMB::getPkatk(double k, double z)
+{
+    StandardException exc;
+    check(init_, "need to initialize first");
+    check(pt_->has_pk_matter, "matter ps not requested");
+    check(z >= 0 && z <= sp_->z_max_pk, "invalid z = " << z);
+
+    double pk;
+    double *pk_ic = (double*) calloc(sp_->ic_ic_size[sp_->index_md_scalars], sizeof(double));
+
+    if(spectra_pk_at_k_and_z(br_, pm_, sp_, k, z, &pk, pk_ic) == _FAILURE_)
+    {
+        std::stringstream exceptionStr;
+        exceptionStr << "CLASS: spectra_pk_nl_at_k_and_z failed!" << std::endl << sp_->error_message;
+        exc.set(exceptionStr.str());
+        throw exc;
+    }
+
+    return pk;
+}
+
 /*
 extern "C"
 {

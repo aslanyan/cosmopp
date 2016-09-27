@@ -91,6 +91,17 @@ public:
 
     virtual void getLList(std::vector<double>& list) const;
     virtual void getLListLens(std::vector<double>& list) const;
+    
+
+    double getrsdrag() const;
+    double getAngularDistance(double z);
+    double getHubble(double z);
+    std::vector<double> z_of_r(std::vector<double>& z_array);
+    void getMatterPsNL(double z, Math::TableFunction<double, double>* ps);
+    void getMatterPsNL2(double z, Math::TableFunction<double, double>* ps);
+    double getPkNLatk(double k, double z);
+    double getPkatk(double k, double z);
+    double getNLRatioatk(double k, double z) { return getPkNLatk(k, z) / getPkatk(k, z); }
 
     //virtual bool getExtraData(std::vector<double>& v) { return false; /* not relevant for this class, used in CMBTurbo */ }
 
