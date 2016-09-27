@@ -136,7 +136,23 @@ if(LAPACK_LIB_FLAGS)
     target_link_libraries(test_wigglez_like ${CLASSLIB})
 	target_link_libraries(test_wigglez_like ${LAPACK_LIB_FLAGS})
 endif(LAPACK_LIB_FLAGS)
+
+add_executable(test_h0_like test_h0_like.cpp)
+target_link_libraries(test_h0_like cosmopp)
+if(MPI_FOUND)
+	target_link_libraries(test_h0_like ${MPI_CXX_LIBRARIES})
+endif(MPI_FOUND)
+target_link_libraries(test_h0_like ${CLASSLIB})
+
+add_executable(test_plancksz_like test_plancksz_like.cpp)
+target_link_libraries(test_plancksz_like cosmopp)
+if(MPI_FOUND)
+	target_link_libraries(test_plancksz_like ${MPI_CXX_LIBRARIES})
+endif(MPI_FOUND)
+target_link_libraries(test_plancksz_like ${CLASSLIB})
+
 endif(CLASS_DIR)
+
 
 
 add_executable(test_hmc test_hmc.cpp)
@@ -363,6 +379,8 @@ if(CLASS_DIR)
     if(LAPACK_LIB_FLAGS)
         add_test(NAME wigglez_like COMMAND test_wigglez_like WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
     endif(LAPACK_LIB_FLAGS)
+    add_test(NAME h0_like COMMAND test_h0_like WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+    add_test(NAME plancksz_like COMMAND test_plancksz_like WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
 endif(CLASS_DIR)
 if(MINUIT_DIR)
 	add_test(NAME fit COMMAND cosmo_test fit WORKING_DIRECTORY ${PROJECT_BINARY_DIR})

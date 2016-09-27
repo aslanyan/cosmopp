@@ -1,7 +1,5 @@
-#pragma once
-#ifdef COSMO_MPI
-#include <mpi.h>
-#endif
+#ifndef COSMO_PP_WIGGLEZ_LIKE_HPP
+#define COSMO_PP_WIGGLEZ_LIKE_HPP
 
 #include <string>
 #include <fstream>
@@ -460,3 +458,6 @@ private:
     // Location of data/model files
     std::string root_;
 };
+
+#endif
+
