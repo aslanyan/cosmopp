@@ -9,7 +9,7 @@
 #include <likelihood_function.hpp>
 
 /// H0 Likelihood (written by Nicolas Canac)
-class H0Likelihood : public Math::LikelihoodFunction
+class H0Likelihood : public Math::CosmoLikelihood
 {
 public:
     /// Constructor.

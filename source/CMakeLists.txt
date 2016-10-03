@@ -151,6 +151,17 @@ if(MPI_FOUND)
 endif(MPI_FOUND)
 target_link_libraries(test_plancksz_like ${CLASSLIB})
 
+if(PLANCK_DIR AND LAPACK_LIB_FLAGS)
+add_executable(test_combined_like test_combined_like.cpp)
+target_link_libraries(test_combined_like cosmopp)
+if(MPI_FOUND)
+	target_link_libraries(test_combined_like ${MPI_CXX_LIBRARIES})
+endif(MPI_FOUND)
+target_link_libraries(test_combined_like ${CLASSLIB})
+target_link_libraries(test_combined_like ${PLANCKLIB})
+target_link_libraries(test_combined_like ${LAPACK_LIB_FLAGS})
+endif(PLANCK_DIR AND LAPACK_LIB_FLAGS)
+
 endif(CLASS_DIR)
 
 

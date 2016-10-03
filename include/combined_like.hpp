@@ -1,10 +1,9 @@
-#pragma once
-#ifdef COSMO_MPI
-#include <mpi.h>
-#endif
+#ifndef COSMO_PP_COMBINED_LIKE_HPP
+#define COSMO_PP_COMBINED_LIKE_HPP
 
 #include <string>
 #include <fstream>
+#include <memory>
 
 #include <macros.hpp>
 #include <planck_like.hpp>
@@ -15,78 +14,58 @@
 #include <plancksz_like.hpp>
 #include <h0_like.hpp>
 
-class CombinedLikelihood : public Math::LikelihoodFunction
+/// Combined Likelihood (written by Nicolas Canac)
+class CombinedLikelihood : public Math::CosmoLikelihood
 {
 public:
-    CombinedLikelihood(bool usePlanck, bool useWMAP, bool useBAO, bool useWiggleZ, bool useSZ = false, bool useH0 = false, bool useHighP = false, bool planckLikeLite = true) : usePlanck_(usePlanck), useWMAP_(useWMAP), useBAO_(useBAO), useLRG_(useLRG), useWiggleZ_(useWiggleZ), useSZ_(useSZ), useH0_(useH0), useHighP_(useHighP), planckLikeLite_(planckLikeLite), planckExtraParams_(planckLikeLite ? 0 : 15 + (useHighP ? 17 : 0))
+    CombinedLikelihood(std::string datapath, bool usePlanck, bool useBAO, bool useWiggleZ, bool useSZ = false, bool useH0 = false, bool useHighP = false, bool planckLikeLite = true) : usePlanck_(usePlanck), useBAO_(useBAO), useWiggleZ_(useWiggleZ), useSZ_(useSZ), useH0_(useH0), useHighP_(useHighP), planckLikeLite_(planckLikeLite), planckExtraParams_(planckLikeLite ? 0 : 15 + (useHighP ? 17 : 0))
     {
-        cosmo_.preInitialize(3500, false, true, false, 0, 100, 1e-6, 1.0);
-        nLikes_ = 0;
+        cmb_.preInitialize(3500, false, true, false, 0, 100, 1e-6, 1.0);
         //check(!(usePlanck_ && useWMAP_), "Both Planck and WMAP likelihoods should not be used at the same time.");
         //check(!(useBAO_ && useLRG_), "Both BAO and LRG likelihoods should not be used at the same time.");
         if(usePlanck_)
         {
-            planckLike_ = new PlanckLikelihood(true, true, true, useHighP, planckLikeLite, false, false, false, 100, false);
+            planckLike_.reset(new PlanckLikelihood(true, true, true, useHighP, planckLikeLite, false, false, false, 100, false));
             if(!planckLikeLite)
                 planckLike_->setSZPrior(true);
         }
-        if(useWMAP_)
-            wmapLike_ = new WMAP9Likelihood(true, true, true, true, true, true);
         if(useBAO_)
         {
-            likes_.push_back(new BAOLikelihood(cosmo_, false, useLRG_));
-            ++nLikes_;
-        }
-        if(useLRG_)
-        {
-            likes_.push_back(new LRGDR7Likelihood(datapath, cosmo_, false));
-            ++nLikes_;
+            likes_.push_back(new BAOLikelihood(cmb_, false));
         }
         if(useWiggleZ_)
         {
-            likes_.push_back(new WiggleZLikelihood(datapath, cosmo_, 'a', false)); 
-            likes_.push_back(new WiggleZLikelihood(datapath, cosmo_, 'b', false)); 
-            likes_.push_back(new WiggleZLikelihood(datapath, cosmo_, 'c', false)); 
-            likes_.push_back(new WiggleZLikelihood(datapath, cosmo_, 'd', false)); 
-            nLikes_ += 4;
+            likes_.push_back(new WiggleZLikelihood(datapath, cmb_, 'a', false)); 
+            likes_.push_back(new WiggleZLikelihood(datapath, cmb_, 'b', false)); 
+            likes_.push_back(new WiggleZLikelihood(datapath, cmb_, 'c', false)); 
+            likes_.push_back(new WiggleZLikelihood(datapath, cmb_, 'd', false)); 
         }
         if(useSZ_)
         {
-            likes_.push_back(new PlanckSZLikelihood(cosmo_, false));
-            ++nLikes_;
+            likes_.push_back(new PlanckSZLikelihood(cmb_, false));
         }
         if(useH0_)
         {
             likes_.push_back(new H0Likelihood);
-            ++nLikes_;
         }
     }
 
     ~CombinedLikelihood()
     {
-        if(usePlanck_)
-            delete planckLike_;
-        if(useWMAP_)
-            delete wmapLike_;
     }
 
     void setCosmoParams(const CosmologicalParams& params)
     {
         params_ = &params;
-        cosmo_.initialize(params, true, true, true, true, 1.0);
+        cmb_.initialize(params, true, true, true, true, 1.0);
         if(usePlanck_)
         {
-            cosmo_.getLensedCl(&clTT_, &clEE_, &clTE_, &clBB_);
-            cosmo_.getCl(NULL, NULL, NULL, &clPP_, NULL, NULL);
+            cmb_.getLensedCl(&clTT_, &clEE_, &clTE_, &clBB_);
+            cmb_.getCl(NULL, NULL, NULL, &clPP_, NULL, NULL);
             planckLike_->setCls(&clTT_, &clEE_, &clTE_, &clBB_, &clPP_);
         }
-        if(useWMAP_)
-        {
-            wmapLike_->setCosmoParams(params);
-            wmapLike_->calculateCls();
-        }
-        for(int i = 0; i < nLikes_; ++i)
-            likes_[i]->setCosmoParams(params);
+        for(auto like : likes_)
+            like->setCosmoParams(params);
     }
 
     double likelihood()
@@ -94,10 +73,8 @@ public:
         double lnLike = 0; // This is -2*ln(likelihood)
         if(usePlanck_)
             lnLike = lnLike + planckLike_->likelihood();
-        if(useWMAP_)
-            lnLike = lnLike + wmapLike_->likelihood();
-        for(int i = 0; i < nLikes_; ++i)
-            lnLike += likes_[i]->likelihood();
+        for(auto like : likes_)
+            lnLike += like->likelihood();
         return lnLike;
     }
 
@@ -182,7 +159,7 @@ public:
     }
 
 private:
-    Cosmo cosmo_;
+    CMB cmb_;
     const CosmologicalParams* params_; // Cosmological parameters for initialization
     
 
@@ -194,15 +171,13 @@ private:
     std::vector<double> planckExtraParams_;
 
     // Specifies which likelihoods to include
-    bool usePlanck_, useWMAP_, useBAO_, useLRG_, useWiggleZ_, useSZ_, useH0_;
+    bool usePlanck_, useBAO_, useWiggleZ_, useSZ_, useH0_;
     bool useHighP_, planckLikeLite_;
 
     // Likelihood objects
-    PlanckLikelihood* planckLike_;
-    WMAP9Likelihood* wmapLike_;
+    std::unique_ptr<PlanckLikelihood> planckLike_;
     std::vector<Math::CosmoLikelihood*> likes_;
-    //BAOLikelihood* BAOLike_;
-
-    // Number of likelihood objects excluding Planck and WMAP
-    int nLikes_;
 };
+
+#endif
+

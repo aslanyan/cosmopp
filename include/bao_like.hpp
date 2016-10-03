@@ -9,7 +9,7 @@
 #include <cmb.hpp>
 
 /// BAO Likelihood (written by Nicolas Canac)
-class BAOLikelihood : public Math::LikelihoodFunction
+class BAOLikelihood : public Math::CosmoLikelihood
 {
 public:
     /// Constructor.

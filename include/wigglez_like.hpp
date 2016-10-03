@@ -16,7 +16,7 @@
 #include <class.h>
 
 /// WiggleZ Likelihood (written by Nicolas Canac)
-class WiggleZLikelihood : public Math::LikelihoodFunction
+class WiggleZLikelihood : public Math::CosmoLikelihood
 {
 public:
     /// Constructor.

@@ -8,7 +8,7 @@
 #include <cmb.hpp>
 #include <likelihood_function.hpp>
 
-class PlanckSZLikelihood : public Math::LikelihoodFunction
+class PlanckSZLikelihood : public Math::CosmoLikelihood
 {
 public:
     PlanckSZLikelihood(CMB& cmb, bool initializeCosmoAtEachStep = true, bool fixedBias = false) : initializeCosmoAtEachStep_(initializeCosmoAtEachStep), fixedBias_(fixedBias), cmb_(&cmb)
