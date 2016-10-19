@@ -87,10 +87,11 @@ public:
     /// \param epsilon Threshold for optimization. Will stop if two successive iterations change the function value by less than epsilon.
     /// \param gNormTol Threshold for the norm of the gradient. The minimizer will stop if the gradient norm at the given iteration is less than gNormTol.
     /// \param maxIter Maximum number of iterations. The optimizer will stop if it reaches this maximum number, regardless of convergence.
+    /// \return The minimum value found.
     double minimize(LargeVector *res, double epsilon = 1e-3, double gNormTol = 1e-5, int maxIter = 1000000)
     {
         DummyCallBack* cb = NULL; // this is a hack
-        minimize(res, epsilon, gNormTol, maxIter, cb);
+        return minimize(res, epsilon, gNormTol, maxIter, cb);
     }
 
     /// Function for minimization (the main function of this class) WITH callback.
@@ -99,6 +100,7 @@ public:
     /// \param gNormTol Threshold for the norm of the gradient. The minimizer will stop if the gradient norm at the given iteration is less than gNormTol.
     /// \param maxIter Maximum number of iterations. The optimizer will stop if it reaches this maximum number, regardless of convergence.
     /// \param callback A pointer to a callback object. This is a template type and needs to support "void operator()(int iter, double f, double gradNorm, const LargeVector& x, const LargeVector& grad)". This operator will be called at each iteration. If callback = NULL then no callback will be used.
+    /// \return The minimum value found.
     template<typename CallBack>
     double minimize(LargeVector *res, double epsilon, double gNormTol, int maxIter, CallBack* callback);
 
