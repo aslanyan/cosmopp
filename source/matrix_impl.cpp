@@ -94,7 +94,7 @@ Matrix<double>::invertFromLUFactorization(std::vector<int>* pivot)
     int info;
 
     dgetri_(&n, &(v_[0]), &lda, &((*pivot)[0]), work, &lwork, &info);
-    delete work;
+    delete[] work;
 
     return info;
 }
