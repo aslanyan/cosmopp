@@ -255,7 +255,7 @@ LBFGS_General<LargeVector, LargeVectorFactory, Function>::minimize(LargeVector *
 
         const double oldVal = val_;
 
-        if(iter_ <= 10 || usingCG)
+	if(iter_ == 0 || usingCG)
             rate_ = 1.0 / gradNorm_;
         else
             rate_ = 1.0;
