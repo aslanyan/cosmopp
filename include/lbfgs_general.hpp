@@ -292,7 +292,7 @@ LBFGS_General<LargeVector, LargeVectorFactory, Function>::minimize(LargeVector *
             while(true)
             {
                 const double valMax = std::max(std::abs(val_), std::abs(newVal));
-                if(std::abs(val_ - newVal) / std::max(valMax, 1.0) < epsilon)
+                if(std::abs(val_ - newVal) / std::max(valMax, 1.0) < epsilon && val_ >= newVal)
                     break;
 
                 if(val_ - newVal >= rate_ * c * zg)
